@@ -357,32 +357,32 @@ ALTER TABLE client_data ADD CONSTRAINT client_data_user_id_key UNIQUE (user_id);
 -- profiles: coach ser alle klienter
 DROP POLICY IF EXISTS "profiles_access" ON profiles;
 CREATE POLICY "profiles_access" ON profiles FOR ALL
-  USING (auth.uid() = id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com');
+  USING (auth.uid() = id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = id OR auth.email() = 'hamzaelouaz@gmail.com');
 
 -- intake_forms: coach kan læse alle opstartsskemaer
 DROP POLICY IF EXISTS "intake_forms_access" ON intake_forms;
 CREATE POLICY "intake_forms_access" ON intake_forms FOR ALL
-  USING (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com');
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
 
 -- client_data: coach kan gemme kost- og træningsplaner
 DROP POLICY IF EXISTS "client_data_access" ON client_data;
 CREATE POLICY "client_data_access" ON client_data FOR ALL
-  USING (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com');
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
 
 -- weight_log: coach kan se vægtkurver
 DROP POLICY IF EXISTS "weight_log_access" ON weight_log;
 CREATE POLICY "weight_log_access" ON weight_log FOR ALL
-  USING (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com');
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
 
 -- checkins: coach kan se check-in historik
 DROP POLICY IF EXISTS "checkins_access" ON checkins;
 CREATE POLICY "checkins_access" ON checkins FOR ALL
-  USING (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com');
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
 
 -- weight_log: tilføj skridt og søvn kolonner
 ALTER TABLE weight_log ADD COLUMN IF NOT EXISTS steps INTEGER;
@@ -400,8 +400,8 @@ CREATE TABLE IF NOT EXISTS workout_completions (
 ALTER TABLE workout_completions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "wc_access" ON workout_completions;
 CREATE POLICY "wc_access" ON workout_completions FOR ALL
-  USING (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com');
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
 
 -- strength_logs: klienter logger vægt + reps per sæt
 CREATE TABLE IF NOT EXISTS strength_logs (
@@ -419,8 +419,19 @@ CREATE TABLE IF NOT EXISTS strength_logs (
 ALTER TABLE strength_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "sl_access" ON strength_logs;
 CREATE POLICY "sl_access" ON strength_logs FOR ALL
-  USING (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) = 'hamzaelouaz@gmail.com');</pre>
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+
+-- progress-photos: Storage bucket + upload-politik
+-- OBS: Opret først bucket 'progress-photos' (Public) i Supabase Dashboard → Storage
+INSERT INTO storage.buckets (id, name, public) VALUES ('progress-photos', 'progress-photos', true) ON CONFLICT DO NOTHING;
+DROP POLICY IF EXISTS "photo_upload" ON storage.objects;
+CREATE POLICY "photo_upload" ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'progress-photos' AND auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "photo_view" ON storage.objects;
+CREATE POLICY "photo_view" ON storage.objects FOR SELECT
+  USING (bucket_id = 'progress-photos' AND
+    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
@@ -2682,11 +2693,14 @@ async function runDiagnostic() {
   out.innerHTML = 'Tester læse-adgang...';
 
   const readTests = [
-    { name: 'profiles',     query: () => sb.from('profiles').select('id').limit(1) },
-    { name: 'intake_forms', query: () => sb.from('intake_forms').select('id').limit(1) },
-    { name: 'client_data',  query: () => sb.from('client_data').select('id').limit(1) },
-    { name: 'weight_log',   query: () => sb.from('weight_log').select('id').limit(1) },
-    { name: 'checkins',     query: () => sb.from('checkins').select('id').limit(1) },
+    { name: 'profiles',              query: () => sb.from('profiles').select('id').limit(1) },
+    { name: 'intake_forms',          query: () => sb.from('intake_forms').select('id').limit(1) },
+    { name: 'client_data',           query: () => sb.from('client_data').select('id').limit(1) },
+    { name: 'weight_log',            query: () => sb.from('weight_log').select('id').limit(1) },
+    { name: 'checkins',              query: () => sb.from('checkins').select('id').limit(1) },
+    { name: 'workout_completions',   query: () => sb.from('workout_completions').select('id').limit(1) },
+    { name: 'strength_logs',         query: () => sb.from('strength_logs').select('id').limit(1) },
+    { name: 'storage: progress-photos', query: () => sb.storage.from('progress-photos').list('', { limit: 1 }) },
   ];
   const readRows = await Promise.all(readTests.map(async t => {
     const { error } = await t.query();
