@@ -908,7 +908,7 @@ async function openClient(id) {
     sb.from('weight_log').select('*').eq('user_id', id).order('date', { ascending: false }).limit(60),
     sb.from('checkins').select('*').eq('user_id', id).order('created_at', { ascending: false }),
     sb.from('workout_completions').select('week_number,year,day_name').eq('user_id', id).order('created_at', { ascending: false }).limit(60),
-    sb.from('strength_logs').select('exercise_name,week_number,year,weight_kg,reps').eq('user_id', id).order('created_at', { ascending: false }).limit(500)
+    sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500)
   ]);
 
   const intake = intakeRes.data?.[0] || null;
@@ -1652,6 +1652,29 @@ function removeDay(dayName) {
 function renderDataTab() {
   const wl = currentClientData.weightLog || [];
   const ci = currentClientData.checkins || [];
+
+  // Gruppér weight_log pr. dato — behold nyeste rækkes id, fyld tomme felter fra ældre rækker
+  const wlByDate = {};
+  wl.forEach(w => {
+    const d = w.date;
+    if (!wlByDate[d]) {
+      wlByDate[d] = { ...w };
+    } else {
+      if (wlByDate[d].weight == null && w.weight != null) wlByDate[d].weight = w.weight;
+      if (wlByDate[d].steps == null && w.steps != null) wlByDate[d].steps = w.steps;
+      if (wlByDate[d].sleep_hours == null && w.sleep_hours != null) wlByDate[d].sleep_hours = w.sleep_hours;
+      if (!wlByDate[d].notes && w.notes) wlByDate[d].notes = w.notes;
+    }
+  });
+  const wlMerged = Object.values(wlByDate).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  // Gruppér checkins pr. uge — behold nyeste (allerede sorteret desc)
+  const ciByWeek = {};
+  ci.forEach(c => {
+    const key = `${c.year}-${c.week_number}`;
+    if (!ciByWeek[key]) ciByWeek[key] = c;
+  });
+  const ciMerged = Object.values(ciByWeek).sort((a,b) => b.year - a.year || b.week_number - a.week_number);
   const comps = currentClientData.completions || [];
   const sl = currentClientData.strengthLogs || [];
 
@@ -1747,17 +1770,57 @@ function renderDataTab() {
         </table>
       </div>
     </div>` : ''}
+    ${sl.length ? (() => {
+      // Gruppér pr. session (dag + uge + år) — nyeste først
+      const sessMap = {};
+      [...sl].reverse().forEach(r => {
+        const key = `${r.year}-${String(r.week_number).padStart(2,'0')}-${r.day_name||'Ukendt'}`;
+        if (!sessMap[key]) sessMap[key] = { week: r.week_number, year: r.year, day: r.day_name||'Træning', exercises: {}, ts: r.created_at };
+        if (!sessMap[key].exercises[r.exercise_name]) sessMap[key].exercises[r.exercise_name] = [];
+        sessMap[key].exercises[r.exercise_name].push({ set: r.set_number, kg: r.weight_kg, reps: r.reps });
+        if (r.created_at > sessMap[key].ts) sessMap[key].ts = r.created_at;
+      });
+      const sessions = Object.values(sessMap).sort((a,b) => b.ts.localeCompare(a.ts)).slice(0,10);
+      return `<div class="card" style="margin-bottom:18px">
+        <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px">🏋️ Træningslogger</h3>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          ${sessions.map(s => {
+            const exEntries = Object.entries(s.exercises);
+            return `<div style="border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden">
+              <div style="background:var(--surf2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr)">
+                <span style="font-weight:700;font-size:.88rem">${escHtml(s.day)}</span>
+                <span style="font-size:.75rem;color:var(--muted)">Uge ${s.week}, ${s.year}</span>
+              </div>
+              <div style="padding:10px 14px;display:flex;flex-direction:column;gap:10px">
+                ${exEntries.map(([exName, sets]) => {
+                  const sortedSets = sets.sort((a,b) => (a.set||0)-(b.set||0));
+                  const topSet = sortedSets.reduce((best, s) => s.kg > (best.kg||0) ? s : best, sortedSets[0]);
+                  return `<div>
+                    <div style="font-size:.82rem;font-weight:700;margin-bottom:4px;color:var(--txt)">${escHtml(exName)}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:5px">
+                      ${sortedSets.map(s => `<span style="background:var(--surf3);border:1px solid ${s.kg===topSet.kg?'var(--bdr-g)':'var(--bdr)'};border-radius:6px;padding:3px 9px;font-size:.75rem;color:${s.kg===topSet.kg?'var(--gold)':'var(--muted)'}">
+                        Sæt ${s.set||'?'}: ${s.kg!=null?s.kg+'kg':'—'}${s.reps?' × '+s.reps+' reps':''}
+                      </span>`).join('')}
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    })() : ''}
     <div class="data-chart-card">
       <h3>Vægtkurve</h3>
-      ${wl.filter(w=>w.weight).length ? '<canvas id="client-weight-chart" height="90"></canvas>' : '<p style="color:var(--muted);font-size:.87rem">Ingen vejninger logget endnu.</p>'}
+      ${wlMerged.filter(w=>w.weight).length ? '<canvas id="client-weight-chart" height="90"></canvas>' : '<p style="color:var(--muted);font-size:.87rem">Ingen vejninger logget endnu.</p>'}
     </div>
     <div class="card" style="margin-bottom:18px">
       <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Daglig log</h3>
-      ${wl.length ? `
+      ${wlMerged.length ? `
         <table class="ci-table">
           <thead><tr><th>Dato</th><th>Vægt</th><th>Skridt</th><th>Søvn</th><th>Note</th><th></th></tr></thead>
           <tbody>
-            ${wl.map(w => `
+            ${wlMerged.map(w => `
               <tr>
                 <td>${new Date(w.date).toLocaleDateString('da-DK',{weekday:'short',day:'numeric',month:'short'})}</td>
                 <td id="w-val-${w.id}">${w.weight ? `<strong>${w.weight} kg</strong>` : '<span style="color:var(--dim)">—</span>'}</td>
@@ -1774,11 +1837,11 @@ function renderDataTab() {
     </div>
     <div class="card">
       <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Check-in historik</h3>
-      ${ci.length ? `
+      ${ciMerged.length ? `
         <table class="ci-table">
           <thead><tr><th>Uge</th><th>Vægt</th><th>Energi</th><th>Søvn</th><th>Humør</th><th>Bemærkninger</th></tr></thead>
           <tbody>
-            ${ci.map(c => `
+            ${ciMerged.map(c => `
               <tr>
                 <td>Uge ${c.week_number}, ${c.year}</td>
                 <td><strong>${c.weight||'—'} kg</strong></td>
@@ -1791,7 +1854,7 @@ function renderDataTab() {
         </table>` : '<p style="color:var(--muted);font-size:.87rem">Ingen check-ins endnu.</p>'}
     </div>`;
 
-  const wlWithWeight = wl.filter(w => w.weight);
+  const wlWithWeight = wlMerged.filter(w => w.weight);
   if (wlWithWeight.length) {
     const sorted = [...wlWithWeight].reverse();
     const ctx = document.getElementById('client-weight-chart')?.getContext('2d');
