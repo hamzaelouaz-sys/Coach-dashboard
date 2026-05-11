@@ -234,6 +234,10 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
         <div class="sb-stat-v" id="st-pending">0</div>
         <div class="sb-stat-l">Afventer</div>
       </div>
+      <div class="sb-stat" style="grid-column:1/-1">
+        <div class="sb-stat-v" id="st-unread" style="color:var(--gold)">0</div>
+        <div class="sb-stat-l">Ulæste beskeder</div>
+      </div>
     </div>
     <nav class="sb-nav">
       <div class="nav-item active" onclick="showClientList()">
@@ -281,6 +285,10 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
         <button class="filter-tab" data-filter="pending" onclick="setFilter('pending',this)">Afventer godkendelse</button>
         <button class="filter-tab" data-filter="active" onclick="setFilter('active',this)">Aktive</button>
         <input class="search-input" type="text" id="client-search" placeholder="Søg navn eller email..." oninput="renderClientList()">
+      </div>
+      <div id="activity-section" class="hidden" style="margin-bottom:22px">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:10px">Seneste aktivitet</div>
+        <div id="activity-list" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
       <div class="clients-grid" id="clients-grid">
         <div class="empty-state"><div class="icon">👥</div><p>Indlæser klienter...</p></div>
@@ -800,6 +808,7 @@ async function loadClients() {
   document.getElementById('st-total').textContent = clients.length;
   document.getElementById('st-pending').textContent = pending;
   renderClientList();
+  loadDashboardStats();
 }
 
 function setFilter(filter, el) {
@@ -875,6 +884,38 @@ async function loadClientQuickStats(clientId) {
     wkEl.textContent = n === 0 ? '⚠ Ingen' : n + ' gennemført';
     wkEl.style.color = n === 0 ? 'var(--red)' : n >= 3 ? 'var(--green)' : 'var(--gold)';
   }
+}
+
+async function loadDashboardStats() {
+  const { count: unread } = await sb.from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender', 'client').eq('read', false);
+  document.getElementById('st-unread').textContent = unread || 0;
+
+  const { data: recentCI } = await sb.from('checkins')
+    .select('user_id, weight, energy_level, created_at')
+    .order('created_at', { ascending: false }).limit(5);
+
+  if (!recentCI?.length) return;
+  const actSection = document.getElementById('activity-section');
+  const actList = document.getElementById('activity-list');
+  actSection.classList.remove('hidden');
+  actList.innerHTML = recentCI.map(ci => {
+    const client = clients.find(c => c.id === ci.user_id);
+    const name = client?.full_name || client?.email?.split('@')[0] || 'Ukendt';
+    const when = new Date(ci.created_at).toLocaleDateString('da-DK', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const weight = ci.weight ? `${ci.weight} kg · ` : '';
+    const energy = ci.energy_level ? `Energi: ${ci.energy_level}/10` : '';
+    return `
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color var(--trans)" onmouseover="this.style.borderColor='rgba(201,168,76,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'" onclick="openClient('${ci.user_id}')">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0">${name.charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600">${escHtml(name)} <span style="font-weight:400;color:var(--muted)">sendte et check-in</span></div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px">${weight}${energy}</div>
+        </div>
+        <div style="font-size:.73rem;color:var(--dim);flex-shrink:0;white-space:nowrap">${when}</div>
+      </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
