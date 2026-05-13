@@ -2206,78 +2206,123 @@ function calcClientTDEE() {
 }
 
 function openGenerator() {
-  const m = calcClientTDEE();
   const d = currentClientData.intake || {};
-  const goalLabel = d.primary_goal || 'Ikke angivet';
   const savedKey = localStorage.getItem('claude_api_key') || '';
+
+  const exp = +(d.years_training || 0);
+  const levelDefault = exp === 0 ? 'Begynder' : exp <= 2 ? 'Let øvet' : exp <= 5 ? 'Øvet' : 'Avanceret';
+  const daysDefault = parseInt(d.trainingDays) || 4;
+  const eqRaw = (d.equipment || '').toLowerCase();
+  const eqDefault = eqRaw.includes('hjemme') ? 'Hjemmetræning' : 'Fitnesscenter';
+  const goalRaw = (d.primary_goal || '').toLowerCase();
+  const goalDefault = goalRaw.includes('vægt') || goalRaw.includes('cut') ? 'Vægttab'
+    : goalRaw.includes('performance') || goalRaw.includes('styrke') ? 'Performance'
+    : 'Muskelopbygning';
+
   document.getElementById('gen-body').innerHTML = `
-    <div style="background:var(--surf2);border-radius:var(--r);padding:13px 15px;margin-bottom:16px;font-size:.86rem;line-height:1.8">
-      <div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Klientdata</div>
-      <div>Mål: <strong>${escHtml(goalLabel)}</strong> &nbsp;|&nbsp; Erfaring: <strong>${d.years_training||'?'} år</strong></div>
-      <div>TDEE: <strong>${m.tdee} kcal</strong> → Mål: <strong style="color:var(--gold)">${m.cal} kcal</strong> &nbsp;|&nbsp; P: ${m.pro}g · KH: ${m.carb}g · F: ${m.fat}g</div>
+    <div style="background:var(--surf2);border-radius:var(--r);padding:9px 13px;margin-bottom:12px;font-size:.82rem">
+      <span style="color:var(--muted)">Klient: </span><strong>${escHtml(currentClient?.full_name || '—')}</strong>
     </div>
 
-    <div style="background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(201,168,76,.02));border:1px solid var(--bdr-g);border-radius:var(--r2);padding:18px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <span style="font-size:.9rem;font-weight:700;color:var(--gold)">✨ Claude AI Generator</span>
-        <span style="font-size:.72rem;color:var(--green);background:rgba(76,175,125,.12);border:1px solid rgba(76,175,125,.25);border-radius:10px;padding:1px 8px">Anbefalet</span>
-      </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="label">Anthropic API-nøgle</label>
+    <div style="border:1px solid var(--bdr-g);border-radius:var(--r2);padding:16px;margin-bottom:12px">
+      <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:12px">💪 Generér Træningsplan</div>
+
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="label">API-nøgle (Anthropic)</label>
         <input class="input" type="password" id="claude-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
-        <div style="font-size:.72rem;color:var(--dim);margin-top:4px">Gemmes kun i din browser · Hent på console.anthropic.com</div>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:3px">Gemmes lokalt · console.anthropic.com</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <div class="form-group" style="margin:0">
-          <label class="label">Antal måltider</label>
-          <select class="input" id="gen-n-meals">
-            <option value="3">3 måltider</option>
-            <option value="4" selected>4 måltider</option>
-            <option value="5">5 måltider</option>
+          <label class="label">Træningsdage/uge</label>
+          <select class="input" id="gen-days">
+            ${[2,3,4,5,6].map(n=>`<option value="${n}"${n===daysDefault?' selected':''}>${n} dage</option>`).join('')}
           </select>
         </div>
         <div class="form-group" style="margin:0">
-          <label class="label">Træningssplit</label>
+          <label class="label">Split</label>
           <select class="input" id="gen-split">
             <option value="fb2">Fullbody 2x/uge</option>
             <option value="fb3">Fullbody 3x/uge</option>
-            <option value="brab3">Bryst/Ryg + Arme/Skuldre + Ben 3x/uge</option>
-            <option value="brab5">Bryst/Ryg + Arme/Skuldre + Ben 5x/uge</option>
-            <option value="ul4">Upper/Lower 4x/uge (ULUL)</option>
-            <option value="ul5">Upper/Lower 5x/uge (ULUL)</option>
+            <option value="brab3">Bryst/Ryg + Arme + Ben 3x</option>
+            <option value="brab5">Bryst/Ryg + Arme + Ben 5x</option>
+            <option value="ul4">Upper/Lower 4x/uge</option>
+            <option value="ul5">Upper/Lower 5x/uge</option>
             <option value="ppl6">Push/Pull/Legs 6x/uge</option>
-            <option value="custom">Custom (egne dage)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Mål</label>
+          <select class="input" id="gen-goal">
+            ${['Muskelopbygning','Vægttab','Performance','Generel form'].map(g=>`<option${g===goalDefault?' selected':''}>${g}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Niveau</label>
+          <select class="input" id="gen-level">
+            ${['Begynder','Let øvet','Øvet','Avanceret'].map(l=>`<option${l===levelDefault?' selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;grid-column:1/-1">
+          <label class="label">Udstyr</label>
+          <select class="input" id="gen-equipment">
+            ${['Fitnesscenter','Hjemmetræning','Begge'].map(e=>`<option${e===eqDefault?' selected':''}>${e}</option>`).join('')}
           </select>
         </div>
       </div>
+
       <div class="form-group" style="margin-bottom:12px">
-        <label class="label">Din instruks til AI'en (valgfrit)</label>
-        <textarea class="input" id="gen-coach-note" rows="3" placeholder="Eks: Undgå mælkeprodukter. Fokus på compound øvelser. Klienten foretrækker hurtige måltider..." style="resize:vertical;font-size:.85rem"></textarea>
+        <label class="label">Instruks til AI (valgfrit)</label>
+        <textarea class="input" id="gen-coach-note" rows="2" placeholder="fx undgå squat, fokus på compound..." style="resize:none;font-size:.82rem"></textarea>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button class="btn btn-gold btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">🥗 AI Kostplan</button>
-        <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">💪 AI Træningsplan</button>
+
+      <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">Generér træningsplan</button>
+    </div>
+
+    <div id="gen-workout-preview" style="display:none;border:1px solid var(--bdr-g);border-radius:var(--r2);padding:16px;margin-bottom:12px">
+      <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:10px" id="gen-preview-title">—</div>
+      <div id="gen-preview-days" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-bottom:12px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn btn-gold btn-full" onclick="saveGenPlanDirect()">💾 Gem til klient</button>
+        <button class="btn btn-outline btn-full" onclick="openGenPlanInEditor()">✏️ Åbn i editor</button>
       </div>
     </div>
 
-    <details>
-      <summary style="font-size:.81rem;color:var(--muted);cursor:pointer;user-select:none;padding:4px 0;margin-bottom:8px">Brug skabelon i stedet (ingen API-nøgle)</summary>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
-        <button class="btn btn-outline btn-full" onclick="runDietGenerator()">Skabelon kostplan</button>
-        <button class="btn btn-outline btn-full" onclick="runWorkoutGenerator()">Skabelon træning</button>
+    <div style="border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:12px">
+      <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:10px">🥗 Generér Kostplan</div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="label">Antal måltider</label>
+        <select class="input" id="gen-n-meals">
+          <option value="3">3 måltider</option>
+          <option value="4" selected>4 måltider</option>
+          <option value="5">5 måltider</option>
+        </select>
       </div>
-    </details>
-    <p style="font-size:.78rem;color:var(--dim);margin-top:10px">Planen indlæses i editoren – tilpas og gem når du er tilfreds.</p>`;
+      <button class="btn btn-outline btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">AI Kostplan</button>
+    </div>
 
-  const days = parseInt(d.trainingDays) || 3;
+    <details>
+      <summary style="font-size:.78rem;color:var(--muted);cursor:pointer;padding:3px 0">Skabelon (ingen API-nøgle)</summary>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <button class="btn btn-outline btn-full btn-sm" onclick="runDietGenerator()">Skabelon kostplan</button>
+        <button class="btn btn-outline btn-full btn-sm" onclick="runWorkoutGenerator()">Skabelon træning</button>
+      </div>
+    </details>`;
+
   const splitSel = document.getElementById('gen-split');
-  if (splitSel) {
-    if (days <= 2) splitSel.value = 'fb2';
-    else if (days === 3) splitSel.value = 'fb3';
-    else if (days === 4) splitSel.value = 'ul4';
-    else if (days === 5) splitSel.value = 'ul5';
+  const daysSel  = document.getElementById('gen-days');
+  function autoSplit() {
+    const n = parseInt(daysSel.value);
+    if (n <= 2) splitSel.value = 'fb2';
+    else if (n === 3) splitSel.value = 'brab3';
+    else if (n === 4) splitSel.value = 'ul4';
+    else if (n === 5) splitSel.value = 'ul5';
     else splitSel.value = 'ppl6';
   }
+  daysSel.addEventListener('change', autoSplit);
+  autoSplit();
   document.getElementById('gen-modal').classList.remove('hidden');
 }
 
@@ -2772,8 +2817,10 @@ async function runClaudeWorkoutGenerator() {
     ppl6: 'Push/Pull/Legs 6x/uge — Mandag (Push A) + Tirsdag (Pull A) + Onsdag (Legs A) + Torsdag (Push B) + Fredag (Pull B) + Lørdag (Legs B). Push: bryst, skuldre, triceps. Pull: ryg, biceps. Legs: quadriceps, hamstrings, glutes, læg.',
     custom: 'Custom split — tilpas dagene frit.',
   };
-  const exp = +(d.years_training || 0);
-  const level = exp === 0 ? 'Begynder' : exp <= 2 ? 'Let øvet' : exp <= 5 ? 'Øvet' : 'Avanceret';
+
+  const goal      = document.getElementById('gen-goal')?.value      || d.primary_goal || 'Muskelopbygning';
+  const level     = document.getElementById('gen-level')?.value     || 'Øvet';
+  const equipment = document.getElementById('gen-equipment')?.value || d.equipment    || 'Fitnesscenter';
 
   if (split === 'custom') {
     document.getElementById('gen-modal').classList.add('hidden');
@@ -2787,11 +2834,11 @@ async function runClaudeWorkoutGenerator() {
   const prompt = `Du er en ekspert i evidensbaseret styrketræning og hypertrofi. Generer en personlig træningsplan.
 
 KLIENTPROFIL:
-- Mål: ${d.primary_goal || 'Generel fitness'}
-- Niveau: ${level} (${exp} års erfaring)
+- Mål: ${goal}
+- Niveau: ${level}
 - Split: ${splitDescriptions[split]}
 - Skader / begrænsninger: ${d.injuries || 'Ingen'}
-- Udstyr: ${d.equipment || 'Fuldt gym med frivægte og maskiner'}
+- Udstyr: ${equipment}
 - Bedste løft: ${d.best_lifts || 'Ikke angivet'}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet — følg disse præcist):\n${coachNote}` : ''}
 
 KRAV:
@@ -2857,8 +2904,7 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
     if (!Array.isArray(json.days) || json.days.length === 0) throw new Error('AI returnerede ingen træningsdage');
 
     exCnt = 0;
-    wp.program_name = json.program_name || 'AI Træningsplan';
-    wp.days = json.days.map(day => ({
+    const mappedDays = json.days.map(day => ({
       day: day.day,
       name: day.name,
       exercises: (day.exercises || []).map(ex => {
@@ -2867,10 +2913,22 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
       }).filter(e => e.name),
     })).filter(day => day.exercises.length > 0);
 
-    document.getElementById('gen-modal').classList.add('hidden');
-    switchTab('traening', null);
-    renderWorkoutEditor();
-    toast('✨ AI træningsplan klar! Tilpas og gem.', 'ok');
+    window._genPlan = { program_name: json.program_name || 'AI Træningsplan', days: mappedDays };
+
+    // Vis preview i modal
+    document.getElementById('gen-preview-title').textContent = json.program_name || 'AI Træningsplan';
+    document.getElementById('gen-preview-days').innerHTML = mappedDays.map(day => `
+      <div style="background:var(--surf2);border-radius:var(--r);padding:12px">
+        <div style="font-size:.8rem;font-weight:700;color:var(--gold);margin-bottom:2px">${escHtml(day.day)}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">${escHtml(day.name)}</div>
+        ${day.exercises.map(ex => `
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:4px 0;border-bottom:1px solid var(--bdr)">
+            <span style="font-weight:600">${escHtml(ex.name)}</span>
+            <span style="color:var(--muted)">${ex.sets}×${ex.reps} · ${escHtml(ex.weight)} · ${ex.rest}s</span>
+          </div>`).join('')}
+      </div>`).join('');
+    document.getElementById('gen-workout-preview').style.display = 'block';
+    toast('✨ Plan genereret — godkend eller åbn i editor', 'ok');
 
   } catch (err) {
     toast('AI fejl: ' + err.message, 'err');
@@ -2878,6 +2936,33 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
     btn.disabled = false;
     btn.innerHTML = origText;
   }
+}
+
+async function saveGenPlanDirect() {
+  const p = window._genPlan;
+  if (!p || !currentClient?.id) { toast('Ingen plan eller klient', 'err'); return; }
+  const prog = {};
+  if (currentClientData.diet) prog.diet = currentClientData.diet;
+  prog.workout = { program_name: p.program_name, days: p.days };
+  const { error } = await sb.from('client_data').upsert(
+    { user_id: currentClient.id, program: JSON.stringify(prog), updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  );
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  currentClientData.workout = prog.workout;
+  document.getElementById('gen-modal').classList.add('hidden');
+  toast('✅ Plan gemt — klienten kan se den nu', 'ok');
+}
+
+function openGenPlanInEditor() {
+  const p = window._genPlan;
+  if (!p) return;
+  wp.program_name = p.program_name;
+  wp.days = p.days;
+  document.getElementById('gen-modal').classList.add('hidden');
+  switchTab('traening', null);
+  renderWorkoutEditor();
+  toast('Plan indlæst i editor — tilpas og gem', 'ok');
 }
 
 async function runDiagnostic() {
