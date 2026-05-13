@@ -2292,13 +2292,42 @@ function openGenerator() {
 
     <div style="border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:12px">
       <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:10px">🥗 Generér Kostplan</div>
-      <div class="form-group" style="margin-bottom:10px">
-        <label class="label">Antal måltider</label>
-        <select class="input" id="gen-n-meals">
-          <option value="3">3 måltider</option>
-          <option value="4" selected>4 måltider</option>
-          <option value="5">5 måltider</option>
-        </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div class="form-group" style="margin:0">
+          <label class="label">Antal måltider</label>
+          <select class="input" id="gen-n-meals">
+            <option value="3">3 måltider</option>
+            <option value="4" selected>4 måltider</option>
+            <option value="5">5 måltider</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Kosttype</label>
+          <select class="input" id="gen-diet-type">
+            <option value="klassisk">Klassisk / Balanced</option>
+            <option value="high-protein">High-Protein</option>
+            <option value="low-carb">Low-Carb</option>
+            <option value="if">Intermittent Fasting (16:8)</option>
+            <option value="carb-cycling">Carb-Cycling</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Timing-strategi</label>
+          <select class="input" id="gen-diet-timing">
+            <option value="standard">Standard</option>
+            <option value="peri">Peri-workout fokus</option>
+            <option value="protein-first">Protein-first</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Madlavningsniveau</label>
+          <select class="input" id="gen-cooking">
+            <option value="minimal">Minimal (ingen tilberedning)</option>
+            <option value="let" selected>Let (maks 15 min)</option>
+            <option value="middel">Middel (maks 30 min)</option>
+            <option value="avanceret">Avanceret (meal prep)</option>
+          </select>
+        </div>
       </div>
       <button class="btn btn-outline btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">AI Kostplan</button>
     </div>
@@ -2560,42 +2589,67 @@ async function runClaudeDietGenerator() {
     m.fat  = +document.getElementById('dp-fat')?.value    || m.fat;
   }
   const d = currentClientData.intake || {};
-  const nMeals = +document.getElementById('gen-n-meals').value || 4;
-  const goalLabel = m.goal === 'cut' ? 'Vægttab' : m.goal === 'bulk' ? 'Muskelmasse' : 'Vedligeholdelse';
+  const nMeals     = +document.getElementById('gen-n-meals').value     || 4;
+  const dietType   = document.getElementById('gen-diet-type')?.value   || 'klassisk';
+  const timing     = document.getElementById('gen-diet-timing')?.value || 'standard';
+  const cookingLvl = document.getElementById('gen-cooking')?.value     || d.cooking_level || 'let';
+  const goalLabel  = m.goal === 'cut' ? 'Vægttab' : m.goal === 'bulk' ? 'Muskelmasse' : 'Vedligeholdelse';
 
-  // Frokost & Aftensmad tæller som 2 i den daglige total (spises 2 gange).
-  // Snacks = nMeals - 3 (morgenmad=1 + frokost=1 + aftensmad=1 → F&A slot dækker de to)
+  const dietTypeDesc = {
+    'klassisk':     'Balanced makrofordeling — protein, kulhydrat og fedt i balance tilpasset målet.',
+    'high-protein': 'Høj protein (≥2g/kg) — kulhydrat og fedt justeres ned. Fokus på mæthed og muskelbevaring.',
+    'low-carb':     'Low-Carb — kulhydrat under 100g/dag. Protein og fedt som primære energikilder.',
+    'if':           'Intermittent Fasting 16:8 — alle måltider inden for et 8-timers vindue (12:00–20:00). Ingen morgenmad.',
+    'carb-cycling': 'Carb-Cycling — høj kulhydrat på træningsdage, lav kulhydrat på hviledage. Beregn for træningsdag.',
+  }[dietType];
+
+  const timingDesc = {
+    'standard':      'Jævn fordeling af kalorier og protein over dagen.',
+    'peri':          'Peri-workout: placér kulhydrat og protein i måltiderne før og efter træning for at maksimere glykogenresyntese og MPS.',
+    'protein-first': 'Protein-first: hvert måltid starter med proteinkilden — sikrer leucin-tærsklen (≥3g leucin/måltid) og øger mæthed (Alan Aragon).',
+  }[timing];
+
   const snackCount = Math.max(0, nMeals - 3);
-
   const slotList = [
-    { slot: 'Morgenmad',        time: '07:30', extra: '' },
+    { slot: 'Morgenmad', time: '07:30', extra: dietType === 'if' ? 'SKIP — IF-protokol: ingen morgenmad.' : '' },
     { slot: 'Frokost & Aftensmad', time: '12:30', extra: 'MEALPREP: PRÆCIS SAMME ret spises til BÅDE frokost (12:30) OG aftensmad (18:00). Klienten laver én stor batch søndag. Kalorietallet for dette slot GANGES MED 2 i den daglige total.' },
   ];
   for (let i = 0; i < snackCount; i++) {
-    slotList.push({ slot: snackCount > 1 ? `Snack ${i+1}` : 'Snack', time: i === 0 ? '15:00' : '21:00', extra: 'Kræver NUL tilberedning. Klar til at spise.' });
+    slotList.push({ slot: snackCount > 1 ? `Snack ${i+1}` : 'Snack', time: i === 0 ? '15:00' : '21:00', extra: cookingLvl === 'minimal' ? 'Kræver NUL tilberedning. Klar til at spise.' : 'Hurtig og nem.' });
   }
 
   const coachNote = document.getElementById('gen-coach-note')?.value.trim();
-  const prompt = `Du er en professionel sports-ernæringsekspert. Generer PRÆCIS 3 VALGMULIGHEDER per måltidsslot.
+  const prompt = `Du er en ekspert i evidensbaseret sports-ernæring. Generer PRÆCIS 3 VALGMULIGHEDER per måltidsslot.
 
 KLIENTPROFIL:
 - Mål: ${goalLabel} (${d.primary_goal || ''})
 - Kaloriemål: ${m.cal} kcal/dag | Protein: ${m.pro}g | Kulhydrat: ${m.carb}g | Fedt: ${m.fat}g
+- Kosttype: ${dietTypeDesc}
+- Timing-strategi: ${timingDesc}
 - Allergier: ${d.allergies || 'Ingen'}
 - Undgå / kan ikke lide: ${d.food_dislikes || 'Ingen'}
-- Madlavningsniveau: ${d.cooking_level || 'Middel'}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet — følg disse præcist):\n${coachNote}` : ''}
+- Madlavningsniveau: ${cookingLvl}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet):\n${coachNote}` : ''}
+
+EVIDENSBASEREDE PRINCIPPER (følg disse):
+- Protein-fordeling: mindst 0.4g protein/kg per måltid for at ramme leucin-tærsklen og maksimere MPS (Layne Norton / Alan Aragon)
+- Mindst 3g leucin per måltid — sikres ved at prioritere animalske proteinkilder eller kombinationer (Norton)
+- Fiber: 25–35g total per dag for mæthed, tarmhelse og glukosekontrol (Eric Helms)
+- Kulhydrat placeres primært peri-workout hvis relevant (Mike Israetel / RP Nutrition)
+- Fleksibel tilgang: undgå rigide "clean eating"-regler — prioriter adherence og variation (Eric Helms)
+- Mæthed: kombiner protein + fiber + volumen for at kontrollere sult på cut
 
 REGLER:
-1. Returner præcis ${slotList.length} slots – ét per måltid i listen nedenfor.
+1. Returner præcis ${slotList.filter(s => !s.extra.startsWith('SKIP')).length} slots.
 2. Hvert slot har PRÆCIS 3 options med FORSKELLIGT indhold og FORSKELLIG proteinkilde.
-3. NAVNE: Appetitvækkende og beskrivende – ALDRIG "Kogt kyllingebryst" eller "Hvid ris".
+3. NAVNE: Appetitvækkende og beskrivende — ALDRIG "Kogt kyllingebryst" eller "Hvid ris".
 4. Afrund gram til nærmeste 5.
 5. Undgå ALLE allergener og "undgå"-liste.
-6. note: Korte nummererede tilberednings-trin.
-7. Kalorier per slot skal tilsammen ramme præcis ${m.cal} kcal/dag.
+6. note: Korte nummererede tilberednings-trin tilpasset madlavningsniveau (${cookingLvl}).
+7. Kalorier per slot skal tilsammen ramme ${m.cal} kcal/dag.
+8. Hver option skal have mindst ${Math.round(m.pro / nMeals)}g protein.
 
 SLOTS DER SKAL GENERERES:
-${slotList.map(s => `- "${s.slot}" (${s.time})${s.extra ? ': ' + s.extra : ''}`).join('\n')}
+${slotList.filter(s => !s.extra.startsWith('SKIP')).map(s => `- "${s.slot}" (${s.time})${s.extra ? ': ' + s.extra : ''}`).join('\n')}
 
 Returner KUN valid JSON – ingen forklaring, ingen markdown:
 {
