@@ -398,6 +398,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
         <div class="tab active" onclick="switchTab('profil',this)">👤 Profil</div>
         <div class="tab" onclick="switchTab('kostplan',this)">🥗 Kostplan</div>
         <div class="tab" onclick="switchTab('traening',this)">💪 Træning</div>
+        <div class="tab" onclick="switchTab('checkin',this)">📋 Check-in</div>
         <div class="tab" onclick="switchTab('data',this)">📊 Data</div>
         <div class="tab" onclick="switchTab('beskeder',this)" id="tab-btn-beskeder">💬 Beskeder <span id="coach-msg-badge" class="hidden" style="background:var(--gold);color:#000;border-radius:10px;font-size:.6rem;font-weight:800;padding:1px 6px;margin-left:4px"></span></div>
         <div class="tab" onclick="switchTab('fotos',this)">📸 Fotos</div>
@@ -406,6 +407,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
         <div id="tab-profil"></div>
         <div id="tab-kostplan" class="hidden"></div>
         <div id="tab-traening" class="hidden"></div>
+        <div id="tab-checkin" class="hidden"></div>
         <div id="tab-data" class="hidden"></div>
         <div id="tab-beskeder" class="hidden"></div>
         <div id="tab-fotos" class="hidden"></div>
@@ -471,6 +473,9 @@ DROP POLICY IF EXISTS "checkins_access" ON checkins;
 CREATE POLICY "checkins_access" ON checkins FOR ALL
   USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
   WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+
+-- checkins: tilføj coach svar kolonne
+ALTER TABLE checkins ADD COLUMN IF NOT EXISTS coach_notes TEXT;
 
 -- weight_log: tilføj skridt og søvn kolonner
 ALTER TABLE weight_log ADD COLUMN IF NOT EXISTS steps INTEGER;
@@ -787,6 +792,7 @@ let currentFilter = 'alle';
 let currentClient = null;
 let currentClientData = {};
 let weightChart = null;
+let checkinChart = null;
 
 // Plan editor state
 let dp = { plan_name: 'Personlig kostplan', calories: 2000, protein: 150, carbs: 200, fat: 65, meals: [] };
@@ -1096,20 +1102,22 @@ function showClientList() {
   document.getElementById('pg-clients').classList.remove('hidden');
   document.getElementById('main-title').textContent = 'Klienter';
   if (weightChart) { weightChart.destroy(); weightChart = null; }
+  if (checkinChart) { checkinChart.destroy(); checkinChart = null; }
 }
 
 function switchTab(tab, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   else document.querySelectorAll('.tab').forEach((t, i) => {
-    if (['profil','kostplan','traening','data','beskeder','fotos'][i] === tab) t.classList.add('active');
+    if (['profil','kostplan','traening','checkin','data','beskeder','fotos'][i] === tab) t.classList.add('active');
   });
-  ['profil','kostplan','traening','data','beskeder','fotos'].forEach(t => {
+  ['profil','kostplan','traening','checkin','data','beskeder','fotos'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
   });
   if (tab === 'profil') renderProfilTab();
   if (tab === 'kostplan') renderKostplanTab();
   if (tab === 'traening') renderTræningTab();
+  if (tab === 'checkin') renderCheckinTab();
   if (tab === 'data') renderDataTab();
   if (tab === 'beskeder') renderBeskederTab();
   if (tab === 'fotos') renderFotosTab();
@@ -1772,7 +1780,6 @@ function removeDay(dayName) {
 // ════════════════════════════════════════════════════════════════════════════
 function renderDataTab() {
   const wl = currentClientData.weightLog || [];
-  const ci = currentClientData.checkins || [];
 
   // Gruppér weight_log pr. dato — behold nyeste rækkes id, fyld tomme felter fra ældre rækker
   const wlByDate = {};
@@ -1789,13 +1796,6 @@ function renderDataTab() {
   });
   const wlMerged = Object.values(wlByDate).sort((a,b) => new Date(b.date) - new Date(a.date));
 
-  // Gruppér checkins pr. uge — behold nyeste (allerede sorteret desc)
-  const ciByWeek = {};
-  ci.forEach(c => {
-    const key = `${c.year}-${c.week_number}`;
-    if (!ciByWeek[key]) ciByWeek[key] = c;
-  });
-  const ciMerged = Object.values(ciByWeek).sort((a,b) => b.year - a.year || b.week_number - a.week_number);
   const comps = currentClientData.completions || [];
   const sl = currentClientData.strengthLogs || [];
 
@@ -1956,23 +1956,8 @@ function renderDataTab() {
           </tbody>
         </table>` : '<p style="color:var(--muted);font-size:.87rem">Ingen logs endnu.</p>'}
     </div>
-    <div class="card">
-      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Check-in historik</h3>
-      ${ciMerged.length ? `
-        <table class="ci-table">
-          <thead><tr><th>Uge</th><th>Vægt</th><th>Energi</th><th>Søvn</th><th>Humør</th><th>Bemærkninger</th></tr></thead>
-          <tbody>
-            ${ciMerged.map(c => `
-              <tr>
-                <td>Uge ${c.week_number}, ${c.year}</td>
-                <td><strong>${c.weight||'—'} kg</strong></td>
-                <td><span style="color:var(--gold)">${c.energy_level}/10</span></td>
-                <td><span style="color:var(--gold)">${c.sleep_quality}/10</span></td>
-                <td><span style="color:var(--gold)">${c.mood||'—'}/10</span></td>
-                <td style="color:var(--muted);font-size:.82rem;max-width:200px">${escHtml(c.notes||'—')}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>` : '<p style="color:var(--muted);font-size:.87rem">Ingen check-ins endnu.</p>'}
+    <div class="card" style="background:rgba(201,168,76,.03);border-color:rgba(201,168,76,.2)">
+      <p style="font-size:.83rem;color:var(--muted);text-align:center;padding:4px 0">Check-ins er flyttet til fanen <strong style="color:var(--gold)">📋 Check-in</strong></p>
     </div>`;
 
   const wlWithWeight = wlMerged.filter(w => w.weight);
@@ -2001,6 +1986,110 @@ function renderDataTab() {
       }
     });
   }
+}
+
+// ── CHECK-IN TAB ─────────────────────────────────────────────────────────────
+function renderCheckinTab() {
+  const ci = currentClientData.checkins || [];
+
+  const ciByWeek = {};
+  ci.forEach(c => {
+    const key = `${c.year}-${String(c.week_number).padStart(2,'0')}`;
+    if (!ciByWeek[key]) ciByWeek[key] = c;
+  });
+  const ciMerged = Object.values(ciByWeek).sort((a,b) => b.year - a.year || b.week_number - a.week_number);
+
+  if (!ciMerged.length) {
+    document.getElementById('tab-checkin').innerHTML = '<p style="color:var(--muted);font-size:.87rem;padding:20px 0">Ingen check-ins endnu.</p>';
+    return;
+  }
+
+  const chartData = ciMerged.slice(0, 8).reverse();
+
+  function scoreColor(v) {
+    if (v == null) return 'var(--muted)';
+    if (v < 4) return '#e05252';
+    if (v < 6) return '#c9a84c';
+    return '#4caf7d';
+  }
+
+  function alertLevel(c) {
+    const scores = [c.energy_level, c.sleep_quality, c.mood].filter(v => v != null);
+    if (scores.some(v => v < 4)) return 'red';
+    if (scores.some(v => v < 6)) return 'yellow';
+    return 'ok';
+  }
+
+  document.getElementById('tab-checkin').innerHTML = `
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Trend — seneste ${chartData.length} uger</h3>
+      <canvas id="checkin-trend-chart" height="110"></canvas>
+    </div>
+    ${ciMerged.map(c => {
+      const level = alertLevel(c);
+      const borderCol = level === 'red' ? '#e05252' : level === 'yellow' ? '#c9a84c' : 'var(--bdr)';
+      const bgCol = level === 'red' ? 'rgba(224,82,82,.04)' : level === 'yellow' ? 'rgba(201,168,76,.04)' : 'var(--surf)';
+      return `
+      <div style="border:1px solid ${borderCol};border-radius:var(--r2);padding:18px;margin-bottom:12px;background:${bgCol}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-weight:700;font-size:.95rem">Uge ${c.week_number}, ${c.year}</div>
+          ${level !== 'ok' ? `<span style="background:${borderCol};color:#fff;border-radius:6px;font-size:.7rem;padding:2px 9px;font-weight:700">${level==='red'?'⚠ Lav score':'⚡ Opmærksomhed'}</span>` : '<span style="background:rgba(76,175,125,.15);color:#4caf7d;border-radius:6px;font-size:.7rem;padding:2px 9px;font-weight:700">✓ OK</span>'}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+          ${[['Vægt', c.weight ? c.weight+' kg' : '—', c.weight ? 'var(--fg)' : 'var(--dim)'],
+             ['Energi', c.energy_level != null ? c.energy_level+'/10' : '—', scoreColor(c.energy_level)],
+             ['Søvn',   c.sleep_quality != null ? c.sleep_quality+'/10' : '—', scoreColor(c.sleep_quality)],
+             ['Humør',  c.mood != null ? c.mood+'/10' : '—', scoreColor(c.mood)]
+            ].map(([label, val, col]) => `
+            <div style="text-align:center;background:var(--surf2);border-radius:var(--r);padding:10px 6px">
+              <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.15em;margin-bottom:5px">${label}</div>
+              <div style="font-weight:700;font-size:1.05rem;color:${col}">${val}</div>
+            </div>`).join('')}
+        </div>
+        ${c.notes ? `<div style="font-size:.83rem;color:var(--muted);padding:10px 12px;background:var(--surf2);border-radius:var(--r);border-left:3px solid var(--bdr);margin-bottom:12px">💬 ${escHtml(c.notes)}</div>` : ''}
+        <div>
+          <label style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:6px">Coach svar</label>
+          <textarea id="cn-${c.id}" rows="2" style="width:100%;box-sizing:border-box;background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 10px;color:var(--fg);font-size:.82rem;resize:none;font-family:inherit;outline:none">${escHtml(c.coach_notes||'')}</textarea>
+          <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="saveCoachNote('${c.id}')">💾 Gem svar</button>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+
+  const ctx = document.getElementById('checkin-trend-chart')?.getContext('2d');
+  if (!ctx) return;
+  if (checkinChart) checkinChart.destroy();
+  checkinChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartData.map(c => `Uge ${c.week_number}`),
+      datasets: [
+        { label: 'Energi', data: chartData.map(c => c.energy_level ?? null), borderColor: '#c9a84c', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, tension: 0.4, spanGaps: true },
+        { label: 'Søvn',   data: chartData.map(c => c.sleep_quality ?? null), borderColor: '#5b9bd5', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, tension: 0.4, spanGaps: true },
+        { label: 'Humør',  data: chartData.map(c => c.mood ?? null), borderColor: '#a57fd4', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, tension: 0.4, spanGaps: true },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#888', font: { size: 11 }, boxWidth: 14, padding: 14 } },
+        tooltip: { backgroundColor: '#1a1a1a', borderColor: 'rgba(201,168,76,.3)', borderWidth: 1, titleColor: '#f0f0f0', bodyColor: '#aaa' }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 } } },
+        y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 }, stepSize: 2 } }
+      }
+    }
+  });
+}
+
+async function saveCoachNote(id) {
+  const val = (document.getElementById('cn-' + id)?.value ?? '').trim();
+  const { error } = await sb.from('checkins').update({ coach_notes: val }).eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  const ci = currentClientData.checkins.find(c => c.id == id);
+  if (ci) ci.coach_notes = val;
+  toast('Svar gemt ✓', 'ok');
 }
 
 async function deleteWeightEntry(id) {
@@ -2329,6 +2418,10 @@ function openGenerator() {
           </select>
         </div>
       </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="label">Instruks til AI (valgfrit)</label>
+        <textarea class="input" id="gen-diet-coach-note" rows="2" placeholder="fx undgå mælkeprodukter, inkluder ris til aftensmad..." style="resize:none;font-size:.82rem"></textarea>
+      </div>
       <button class="btn btn-outline btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">AI Kostplan</button>
     </div>
 
@@ -2618,7 +2711,7 @@ async function runClaudeDietGenerator() {
     slotList.push({ slot: snackCount > 1 ? `Snack ${i+1}` : 'Snack', time: i === 0 ? '15:00' : '21:00', extra: cookingLvl === 'minimal' ? 'Kræver NUL tilberedning. Klar til at spise.' : 'Hurtig og nem.' });
   }
 
-  const coachNote = document.getElementById('gen-coach-note')?.value.trim();
+  const coachNote = document.getElementById('gen-diet-coach-note')?.value.trim();
   const prompt = `Du er en ekspert i evidensbaseret sports-ernæring. Generer PRÆCIS 3 VALGMULIGHEDER per måltidsslot.
 
 KLIENTPROFIL:
