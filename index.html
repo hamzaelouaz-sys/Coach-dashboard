@@ -2863,7 +2863,7 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
       name: day.name,
       exercises: (day.exercises || []).map(ex => {
         const bank = EXERCISE_BANK.find(e => e.n === ex.name) || {};
-        return { id: ++exCnt, name: ex.name, sets: ex.sets || bank.sets || 3, reps: ex.reps || bank.reps || '8-12', weight: '', rest: ex.rest || bank.rest || 90 };
+        return { id: ++exCnt, name: ex.name, sets: ex.sets || bank.sets || 3, reps: ex.reps || bank.reps || '8-12', weight: ex.weight || '@2 RIR', rest: ex.rest || bank.rest || 90 };
       }).filter(e => e.name),
     })).filter(day => day.exercises.length > 0);
 
