@@ -2784,7 +2784,7 @@ async function runClaudeWorkoutGenerator() {
   }
 
   const coachNote = document.getElementById('gen-coach-note')?.value.trim();
-  const prompt = `Du er en certificeret styrketræner. Generer en personlig og varieret træningsplan.
+  const prompt = `Du er en ekspert i evidensbaseret styrketræning og hypertrofi. Generer en personlig træningsplan.
 
 KLIENTPROFIL:
 - Mål: ${d.primary_goal || 'Generel fitness'}
@@ -2794,14 +2794,22 @@ KLIENTPROFIL:
 - Udstyr: ${d.equipment || 'Fuldt gym med frivægte og maskiner'}
 - Bedste løft: ${d.best_lifts || 'Ikke angivet'}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet — følg disse præcist):\n${coachNote}` : ''}
 
-REGLER:
+KRAV:
 1. Følg splittet PRÆCIST — antal dage og muskelgrupper per dag som beskrevet ovenfor
-2. Tilpas øvelsesvalg til niveau: begynder = basale compound-øvelser, øvet = variation og isolation
-3. Tag ALTID hensyn til skader — undgå øvelser der belaster skadet område
-4. Sæt/reps passer til målet: styrke (3-5 reps, tung), muskelmasse (6-12), definition (12-20)
-5. A og B (og C) dage i samme muskelgruppe skal have HELT FORSKELLIGE øvelser — ingen gentagelse
-6. Brug NØJAGTIGE øvelsesnavne fra listen nedenfor
-7. Giv hvert træningspas et beskrivende dansk navn
+2. Maks 60 minutter pr. træningssession
+3. Maks 6 øvelser pr. dag
+4. Hver muskelgruppe rammes mindst 2x om ugen (MPS-vinduer)
+5. Tunge compound-dage efterfølges af lettere isolation-dage (CNS-hensyn)
+6. Tag ALTID hensyn til skader — undgå øvelser der belaster skadet område
+7. A og B (og C) dage i samme muskelgruppe skal have HELT FORSKELLIGE øvelser — ingen gentagelse
+8. Brug NØJAGTIGE øvelsesnavne fra listen nedenfor
+
+PRINCIPPER:
+- Øvelsesrækkefølge: Compound → Semi-isolation → Isolation (Jeff Nippard)
+- Volumen: MEV–MAV pr. muskelgruppe (Mike Israetel / Renaissance Periodization)
+- Intensitet: 2–3 RIR på arbejdssæt for hypertrofi (Eric Helms)
+- Sæt/reps tilpasses målet: styrke (3–5 reps), muskelmasse (6–12), definition (12–20)
+- Progressiv overload er bærende princip
 
 Returner KUN valid JSON:
 {
@@ -2811,7 +2819,7 @@ Returner KUN valid JSON:
       "day": "Mandag",
       "name": "Push – Bryst & Triceps",
       "exercises": [
-        {"name": "Nøjagtigt øvelsesnavn", "sets": 4, "reps": "6-8", "rest": 120}
+        {"name": "Nøjagtigt øvelsesnavn", "sets": 4, "reps": "6-8", "weight": "@2 RIR", "rest": 120}
       ]
     }
   ]
