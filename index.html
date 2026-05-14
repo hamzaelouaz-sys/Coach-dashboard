@@ -199,7 +199,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
 .ci-table tr:hover td{background:var(--surf2)}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--surf2);border:1px solid var(--bdr-g);border-radius:var(--r);padding:13px 20px;font-size:.86rem;z-index:300;box-shadow:0 12px 32px rgba(0,0,0,.5);animation:fadeUp .22s ease;max-width:320px;color:var(--txt);display:flex;align-items:center;gap:10px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surf2);border:1px solid var(--bdr-g);border-radius:var(--r);padding:13px 20px;font-size:.86rem;z-index:9999;box-shadow:0 12px 32px rgba(0,0,0,.5);animation:fadeUp .22s ease;max-width:320px;color:var(--txt);display:flex;align-items:center;gap:10px}
 .toast.ok{border-color:rgba(92,178,133,.4);color:var(--green)}
 .toast.ok::before{content:"";width:6px;height:6px;background:var(--green);border-radius:50%;box-shadow:0 0 8px var(--green)}
 .toast.err{border-color:rgba(227,104,104,.4);color:var(--red)}
@@ -2697,6 +2697,8 @@ function openWorkoutGenerator() {
 
     <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">✨ Generér AI Træningsplan</button>
 
+    <div id="gen-workout-error" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5;word-break:break-word"></div>
+
     <div id="gen-workout-preview" style="display:none;border:1px solid var(--bdr-g);border-radius:var(--r2);padding:16px;margin-top:12px">
       <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:10px" id="gen-preview-title">—</div>
       <div id="gen-preview-days" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-bottom:12px"></div>
@@ -3228,6 +3230,8 @@ async function runClaudeWorkoutGenerator() {
   const origText = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '⏳ Genererer professionel plan...';
+  const errEl = document.getElementById('gen-workout-error');
+  if (errEl) errEl.style.display = 'none';
 
   const d = currentClientData.intake || {};
   const split = document.getElementById('gen-split').value;
@@ -3470,6 +3474,8 @@ ${coachNote}` : ''}`;
 
   } catch (err) {
     toast('AI fejl: ' + err.message, 'err');
+    const errEl = document.getElementById('gen-workout-error');
+    if (errEl) { errEl.textContent = '⚠ ' + err.message; errEl.style.display = 'block'; }
   } finally {
     btn.disabled = false;
     btn.innerHTML = origText;
