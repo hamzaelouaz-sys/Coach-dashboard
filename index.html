@@ -3694,18 +3694,26 @@ async function saveGenPlanDirect() {
   };
 
   try {
-    const prog = {};
-    if (currentClientData.diet) prog.diet = currentClientData.diet;
-    prog.workout = { program_name: p.program_name, days: p.days };
-    const progStr = JSON.stringify(prog);
     const now = new Date().toISOString();
 
-    const { data: saveData, error: saveErr } = await sb.from('client_data').upsert(
-      { user_id: currentClient.id, program: progStr, updated_at: now },
-      { onConflict: 'user_id' }
-    );
+    // Hent eksisterende række for at bevare diet-data
+    const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
+    if (selRes.error) { showSaveErr(selRes.error.message); return; }
 
-    if (saveErr) { showSaveErr(saveErr.message); return; }
+    let prog = {};
+    try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
+    prog.workout = { program_name: p.program_name, days: p.days };
+    const progStr = JSON.stringify(prog);
+
+    let saveRes;
+    if (selRes.data?.[0]?.id) {
+      saveRes = await sb.from('client_data').update({ program: progStr, updated_at: now })
+        .eq('user_id', currentClient.id).select('id');
+    } else {
+      saveRes = await sb.from('client_data').insert({ user_id: currentClient.id, program: progStr, updated_at: now });
+    }
+
+    if (saveRes.error) { showSaveErr(saveRes.error.message); return; }
 
     currentClientData.workout = prog.workout;
     document.getElementById('workout-gen-modal').classList.add('hidden');
