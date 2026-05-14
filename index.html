@@ -3700,12 +3700,12 @@ async function saveGenPlanDirect() {
     const progStr = JSON.stringify(prog);
     const now = new Date().toISOString();
 
-    const saveRes = await withTimeout(sb.from('client_data').upsert(
+    const { data: saveData, error: saveErr } = await sb.from('client_data').upsert(
       { user_id: currentClient.id, program: progStr, updated_at: now },
       { onConflict: 'user_id' }
-    ), 30000);
+    );
 
-    if (saveRes.error) { showSaveErr(saveRes.error.message); return; }
+    if (saveErr) { showSaveErr(saveErr.message); return; }
 
     currentClientData.workout = prog.workout;
     document.getElementById('workout-gen-modal').classList.add('hidden');
