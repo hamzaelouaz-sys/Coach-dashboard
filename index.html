@@ -3331,14 +3331,25 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
 async function saveGenPlanDirect() {
   const p = window._genPlan;
   if (!p || !currentClient?.id) { toast('Ingen plan eller klient', 'err'); return; }
+
   const prog = {};
   if (currentClientData.diet) prog.diet = currentClientData.diet;
   prog.workout = { program_name: p.program_name, days: p.days };
-  const { error } = await sb.from('client_data').upsert(
-    { user_id: currentClient.id, program: JSON.stringify(prog), updated_at: new Date().toISOString() },
-    { onConflict: 'user_id' }
-  );
-  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  const progStr = JSON.stringify(prog);
+  const now = new Date().toISOString();
+
+  const selRes = await sb.from('client_data').select('id').eq('user_id', currentClient.id).limit(1);
+  let saveRes;
+  if (selRes.data?.[0]?.id) {
+    saveRes = await sb.from('client_data')
+      .update({ program: progStr, updated_at: now })
+      .eq('user_id', currentClient.id).select('id');
+  } else {
+    saveRes = await sb.from('client_data')
+      .insert({ user_id: currentClient.id, program: progStr, updated_at: now });
+  }
+
+  if (saveRes.error) { toast('Fejl: ' + saveRes.error.message, 'err'); return; }
   currentClientData.workout = prog.workout;
   document.getElementById('gen-modal').classList.add('hidden');
   toast('✅ Plan gemt — klienten kan se den nu', 'ok');
