@@ -498,14 +498,25 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
   </div>
 </div>
 
-<!-- Generator Modal -->
-<div id="gen-modal" class="modal-ov hidden">
+<!-- Diet Generator Modal -->
+<div id="diet-gen-modal" class="modal-ov hidden">
   <div class="modal-box">
     <div class="modal-hdr">
-      <div class="modal-title">✨ Plangenerator</div>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('gen-modal').classList.add('hidden')">✕</button>
+      <div class="modal-title">🥗 Kostplan Generator</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('diet-gen-modal').classList.add('hidden')">✕</button>
     </div>
-    <div id="gen-body"></div>
+    <div id="diet-gen-body"></div>
+  </div>
+</div>
+
+<!-- Workout Generator Modal -->
+<div id="workout-gen-modal" class="modal-ov hidden">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title">💪 Træningsplan Generator</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('workout-gen-modal').classList.add('hidden')">✕</button>
+    </div>
+    <div id="workout-gen-body"></div>
   </div>
 </div>
 
@@ -1573,7 +1584,7 @@ function renderKostplanTab() {
     <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="addMeal()">+ Tilføj måltid</button>
       <button class="btn btn-gold" onclick="saveDietPlan()">💾 Gem kostplan</button>
-      <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
+      <button class="btn btn-outline" onclick="openDietGenerator()" style="margin-left:auto">🥗 Generer kostplan</button>
     </div>
     <div id="diet-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
 
@@ -1866,7 +1877,7 @@ function renderTræningTab() {
     <div id="workout-editor"></div>
     <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="saveWorkoutPlan()">💾 Gem træningsplan</button>
-      <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
+      <button class="btn btn-outline" onclick="openWorkoutGenerator()" style="margin-left:auto">💪 Generer træningsplan</button>
     </div>
     <div id="workout-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
   renderWorkoutEditor();
@@ -2537,7 +2548,71 @@ function calcClientTDEE() {
   return { tdee, cal, pro, carb, fat, goal: goalKey, actMult };
 }
 
-function openGenerator() {
+function openDietGenerator() {
+  const d = currentClientData.intake || {};
+  const savedKey = localStorage.getItem('claude_api_key') || '';
+  const m = calcClientTDEE();
+
+  document.getElementById('diet-gen-body').innerHTML = `
+    <div style="background:var(--surf2);border-radius:var(--r);padding:9px 13px;margin-bottom:12px;font-size:.82rem">
+      <span style="color:var(--muted)">Klient: </span><strong>${escHtml(currentClient?.full_name || '—')}</strong>
+      ${m?.cal ? `<span style="color:var(--muted);margin-left:8px">Mål: </span><strong>${m.cal} kcal</strong>` : ''}
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">API-nøgle (Anthropic)</label>
+      <input class="input" type="password" id="claude-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
+      <div style="font-size:.7rem;color:var(--dim);margin-top:3px">Gemmes lokalt · console.anthropic.com</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label class="label">Antal måltider</label>
+        <select class="input" id="gen-n-meals">
+          <option value="3">3 måltider</option>
+          <option value="4" selected>4 måltider</option>
+          <option value="5">5 måltider</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Kosttype</label>
+        <select class="input" id="gen-diet-type">
+          <option value="klassisk">Klassisk / Balanced</option>
+          <option value="high-protein">High-Protein</option>
+          <option value="low-carb">Low-Carb</option>
+          <option value="if">Intermittent Fasting (16:8)</option>
+          <option value="carb-cycling">Carb-Cycling</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Timing-strategi</label>
+        <select class="input" id="gen-diet-timing">
+          <option value="standard">Standard</option>
+          <option value="peri">Peri-workout fokus</option>
+          <option value="protein-first">Protein-first</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Madlavningsniveau</label>
+        <select class="input" id="gen-cooking">
+          <option value="minimal">Minimal (ingen tilberedning)</option>
+          <option value="let" selected>Let (maks 15 min)</option>
+          <option value="middel">Middel (maks 30 min)</option>
+          <option value="avanceret">Avanceret (meal prep)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">Instruks til AI (valgfrit)</label>
+      <textarea class="input" id="gen-diet-coach-note" rows="2" placeholder="fx undgå mælkeprodukter, inkluder ris til aftensmad..." style="resize:none;font-size:.82rem"></textarea>
+    </div>
+    <button class="btn btn-gold btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">✨ AI Kostplan (3 valgmuligheder)</button>
+    <div style="margin-top:8px">
+      <button class="btn btn-outline btn-full btn-sm" onclick="runDietGenerator()">Skabelon kostplan (ingen API)</button>
+    </div>`;
+
+  document.getElementById('diet-gen-modal').classList.remove('hidden');
+}
+
+function openWorkoutGenerator() {
   const d = currentClientData.intake || {};
   const savedKey = localStorage.getItem('claude_api_key') || '';
 
@@ -2550,70 +2625,79 @@ function openGenerator() {
   const goalDefault = goalRaw.includes('vægt') || goalRaw.includes('cut') ? 'Vægttab'
     : goalRaw.includes('performance') || goalRaw.includes('styrke') ? 'Performance'
     : 'Muskelopbygning';
+  const hasIntake = !!(d.injuries || d.best_lifts || d.equipment || d.years_training);
 
-  document.getElementById('gen-body').innerHTML = `
+  document.getElementById('workout-gen-body').innerHTML = `
     <div style="background:var(--surf2);border-radius:var(--r);padding:9px 13px;margin-bottom:12px;font-size:.82rem">
       <span style="color:var(--muted)">Klient: </span><strong>${escHtml(currentClient?.full_name || '—')}</strong>
+      <span style="color:var(--muted);margin-left:8px">Erfaring: </span><strong>${exp} år</strong>
     </div>
 
-    <div style="border:1px solid var(--bdr-g);border-radius:var(--r2);padding:16px;margin-bottom:12px">
-      <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:12px">💪 Generér Træningsplan</div>
-
-      <div class="form-group" style="margin-bottom:10px">
-        <label class="label">API-nøgle (Anthropic)</label>
-        <input class="input" type="password" id="claude-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
-        <div style="font-size:.7rem;color:var(--dim);margin-top:3px">Gemmes lokalt · console.anthropic.com</div>
+    ${hasIntake ? `
+    <div style="background:rgba(255,200,0,.06);border:1px solid rgba(255,200,0,.25);border-radius:var(--r);padding:10px 13px;margin-bottom:12px;font-size:.78rem">
+      <div style="font-weight:700;color:var(--gold);margin-bottom:6px">📋 Klientdata brugt i generering</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px">
+        <div><span style="color:var(--muted)">Skader:</span> <strong>${escHtml(d.injuries || 'Ingen')}</strong></div>
+        <div><span style="color:var(--muted)">Udstyr:</span> <strong>${escHtml(d.equipment || '?')}</strong></div>
+        <div><span style="color:var(--muted)">Bedste løft:</span> <strong>${escHtml(d.best_lifts || '—')}</strong></div>
+        <div><span style="color:var(--muted)">Mål:</span> <strong>${escHtml(d.primary_goal || '—')}</strong></div>
       </div>
+    </div>` : ''}
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div class="form-group" style="margin:0">
-          <label class="label">Træningsdage/uge</label>
-          <select class="input" id="gen-days">
-            ${[2,3,4,5,6].map(n=>`<option value="${n}"${n===daysDefault?' selected':''}>${n} dage</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="label">Split</label>
-          <select class="input" id="gen-split">
-            <option value="fb2">Fullbody 2x/uge</option>
-            <option value="fb3">Fullbody 3x/uge</option>
-            <option value="brab3">Bryst/Ryg + Arme + Ben 3x</option>
-            <option value="brab5">Bryst/Ryg + Arme + Ben 5x</option>
-            <option value="ul4">Upper/Lower 4x/uge</option>
-            <option value="ul5">Upper/Lower 5x/uge</option>
-            <option value="ppl6">Push/Pull/Legs 6x/uge</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="label">Mål</label>
-          <select class="input" id="gen-goal">
-            ${['Muskelopbygning','Vægttab','Performance','Generel form'].map(g=>`<option${g===goalDefault?' selected':''}>${g}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="label">Niveau</label>
-          <select class="input" id="gen-level">
-            ${['Begynder','Let øvet','Øvet','Avanceret'].map(l=>`<option${l===levelDefault?' selected':''}>${l}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group" style="margin:0;grid-column:1/-1">
-          <label class="label">Udstyr</label>
-          <select class="input" id="gen-equipment">
-            ${['Fitnesscenter','Hjemmetræning','Begge'].map(e=>`<option${e===eqDefault?' selected':''}>${e}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="label">Instruks til AI (valgfrit)</label>
-        <textarea class="input" id="gen-coach-note" rows="2" placeholder="fx undgå squat, fokus på compound..." style="resize:none;font-size:.82rem"></textarea>
-      </div>
-
-      <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">Generér træningsplan</button>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">API-nøgle (Anthropic)</label>
+      <input class="input" type="password" id="workout-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
+      <div style="font-size:.7rem;color:var(--dim);margin-top:3px">Gemmes lokalt · console.anthropic.com</div>
     </div>
 
-    <div id="gen-workout-preview" style="display:none;border:1px solid var(--bdr-g);border-radius:var(--r2);padding:16px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label class="label">Træningsdage/uge</label>
+        <select class="input" id="gen-days">
+          ${[2,3,4,5,6].map(n=>`<option value="${n}"${n===daysDefault?' selected':''}>${n} dage</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Split (auto-valgt)</label>
+        <select class="input" id="gen-split">
+          <option value="fb2">Fullbody 2x/uge</option>
+          <option value="fb3">Fullbody 3x/uge</option>
+          <option value="brab3">Bryst/Ryg + Arme + Ben 3x</option>
+          <option value="brab5">Bryst/Ryg + Arme + Ben 5x</option>
+          <option value="ul4">Upper/Lower 4x/uge</option>
+          <option value="ul5">Upper/Lower 5x/uge</option>
+          <option value="ppl6">Push/Pull/Legs 6x/uge</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Mål</label>
+        <select class="input" id="gen-goal">
+          ${['Muskelopbygning','Vægttab','Performance','Generel form'].map(g=>`<option${g===goalDefault?' selected':''}>${g}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Niveau</label>
+        <select class="input" id="gen-level">
+          ${['Begynder','Let øvet','Øvet','Avanceret'].map(l=>`<option${l===levelDefault?' selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;grid-column:1/-1">
+        <label class="label">Udstyr</label>
+        <select class="input" id="gen-equipment">
+          ${['Fitnesscenter','Hjemmetræning','Begge'].map(e=>`<option${e===eqDefault?' selected':''}>${e}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="label">Coach-instruks (valgfrit)</label>
+      <textarea class="input" id="gen-coach-note" rows="2" placeholder="fx undgå squat, fokus på compound, 5×5 progression..." style="resize:none;font-size:.82rem"></textarea>
+    </div>
+
+    <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">✨ Generér AI Træningsplan</button>
+
+    <div id="gen-workout-preview" style="display:none;border:1px solid var(--bdr-g);border-radius:var(--r2);padding:16px;margin-top:12px">
       <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:10px" id="gen-preview-title">—</div>
       <div id="gen-preview-days" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-bottom:12px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -2622,59 +2706,9 @@ function openGenerator() {
       </div>
     </div>
 
-    <div style="border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:12px">
-      <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:10px">🥗 Generér Kostplan</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div class="form-group" style="margin:0">
-          <label class="label">Antal måltider</label>
-          <select class="input" id="gen-n-meals">
-            <option value="3">3 måltider</option>
-            <option value="4" selected>4 måltider</option>
-            <option value="5">5 måltider</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="label">Kosttype</label>
-          <select class="input" id="gen-diet-type">
-            <option value="klassisk">Klassisk / Balanced</option>
-            <option value="high-protein">High-Protein</option>
-            <option value="low-carb">Low-Carb</option>
-            <option value="if">Intermittent Fasting (16:8)</option>
-            <option value="carb-cycling">Carb-Cycling</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="label">Timing-strategi</label>
-          <select class="input" id="gen-diet-timing">
-            <option value="standard">Standard</option>
-            <option value="peri">Peri-workout fokus</option>
-            <option value="protein-first">Protein-first</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="label">Madlavningsniveau</label>
-          <select class="input" id="gen-cooking">
-            <option value="minimal">Minimal (ingen tilberedning)</option>
-            <option value="let" selected>Let (maks 15 min)</option>
-            <option value="middel">Middel (maks 30 min)</option>
-            <option value="avanceret">Avanceret (meal prep)</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" style="margin-bottom:10px">
-        <label class="label">Instruks til AI (valgfrit)</label>
-        <textarea class="input" id="gen-diet-coach-note" rows="2" placeholder="fx undgå mælkeprodukter, inkluder ris til aftensmad..." style="resize:none;font-size:.82rem"></textarea>
-      </div>
-      <button class="btn btn-outline btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">AI Kostplan</button>
-    </div>
-
-    <details>
-      <summary style="font-size:.78rem;color:var(--muted);cursor:pointer;padding:3px 0">Skabelon (ingen API-nøgle)</summary>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-        <button class="btn btn-outline btn-full btn-sm" onclick="runDietGenerator()">Skabelon kostplan</button>
-        <button class="btn btn-outline btn-full btn-sm" onclick="runWorkoutGenerator()">Skabelon træning</button>
-      </div>
-    </details>`;
+    <div style="margin-top:8px">
+      <button class="btn btn-outline btn-full btn-sm" onclick="runWorkoutGenerator()">Skabelon træning (ingen API)</button>
+    </div>`;
 
   const splitSel = document.getElementById('gen-split');
   const daysSel  = document.getElementById('gen-days');
@@ -2688,7 +2722,7 @@ function openGenerator() {
   }
   daysSel.addEventListener('change', autoSplit);
   autoSplit();
-  document.getElementById('gen-modal').classList.remove('hidden');
+  document.getElementById('workout-gen-modal').classList.remove('hidden');
 }
 
 // Rund til nærmeste 5g (fx 114 → 115, 112 → 110)
@@ -2735,7 +2769,7 @@ function runDietGenerator() {
              calories:Math.round(tot.cal), protein:+tot.pro.toFixed(1), carbs:+tot.carb.toFixed(1), fat:+tot.fat.toFixed(1) };
   });
 
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('diet-gen-modal').classList.add('hidden');
   switchTab('kostplan', null);
   renderDietEditor();
   toast('Kostplan genereret! Gem når du er klar.', 'ok');
@@ -2823,7 +2857,7 @@ function runWorkoutGenerator() {
   };
 
   if (split === 'custom') {
-    document.getElementById('gen-modal').classList.add('hidden');
+    document.getElementById('workout-gen-modal').classList.add('hidden');
     switchTab('traening', null);
     toast('Custom: vælg dage manuelt og tilføj øvelser 💪', 'ok');
     return;
@@ -2895,7 +2929,7 @@ function runWorkoutGenerator() {
   wp.days = chosen.days;
   exCnt = chosen.days.reduce((m, d) => Math.max(m, ...d.exercises.map(e => e.id)), exCnt);
 
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('workout-gen-modal').classList.add('hidden');
   switchTab('traening', null);
   renderWorkoutEditor();
   toast('Træningsplan genereret! Gem når du er klar.', 'ok');
@@ -3179,91 +3213,195 @@ function buildDietPlan() {
   dp.calories = m.cal; dp.protein = m.pro; dp.carbs = m.carb; dp.fat = m.fat;
   dp.plan_name = 'AI Kostplan';
   dp.meals = scaledMeals;
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('diet-gen-modal').classList.add('hidden');
   switchTab('kostplan', null);
   renderDietEditor();
   toast('✨ Kostplan indlæst! Kontrollér og gem.', 'ok');
 }
 
 async function runClaudeWorkoutGenerator() {
-  const apiKey = document.getElementById('claude-api-key')?.value.trim();
+  const apiKey = document.getElementById('workout-api-key')?.value.trim();
   if (!apiKey) { toast('Indtast Claude API-nøgle', 'err'); return; }
   localStorage.setItem('claude_api_key', apiKey);
 
   const btn = document.getElementById('claude-workout-btn');
   const origText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '⏳ Genererer...';
+  btn.innerHTML = '⏳ Genererer professionel plan...';
 
   const d = currentClientData.intake || {};
   const split = document.getElementById('gen-split').value;
-  const splitDescriptions = {
-    fb2: 'Fullbody 2x/uge — Mandag + Torsdag. Hvert pas træner hele kroppen. A og B varianter med forskellige øvelser.',
-    fb3: 'Fullbody 3x/uge — Mandag + Onsdag + Fredag. Hvert pas træner hele kroppen. A, B og C varianter med forskellige øvelser.',
-    brab3: 'Bryst/Ryg + Arme/Skuldre + Ben 3x/uge — Mandag (Bryst & Ryg: bryst-compound, bryst-isolation, ryg-compound, ryg-isolation, rear delt) + Onsdag (Arme & Skuldre: skuldre-compound, lateral raises, biceps, triceps, face pull) + Fredag (Ben & Core: squat, hamstring, glutes, quad-isolation, læg, core).',
-    brab5: 'Bryst/Ryg + Arme/Skuldre + Ben 5x/uge — Mandag (Bryst & Ryg A: bench, incline, flyes, row, lat pulldown, rear delt) + Tirsdag (Arme & Skuldre A: OHP, lateral raises, face pull, curl, hammer curl, triceps) + Onsdag (Ben: squat, RDL, leg press, leg curl, calf, core) + Torsdag (Bryst & Ryg B: andre øvelser end A, variation) + Fredag (Arme & Skuldre B: variation af A med andre øvelser).',
-    ul4: 'Upper/Lower 4x/uge — Mandag (Upper A) + Tirsdag (Lower A) + Torsdag (Upper B) + Fredag (Lower B). Upper: bryst, ryg, skuldre, arme. Lower: ben, glutes, core.',
-    ul5: 'Upper/Lower 5x/uge — Mandag (Upper A) + Tirsdag (Lower A) + Onsdag (Upper B) + Torsdag (Lower B) + Fredag (Upper C). Upper: bryst, ryg, skuldre, arme. Lower: ben, glutes, core.',
-    ppl6: 'Push/Pull/Legs 6x/uge — Mandag (Push A) + Tirsdag (Pull A) + Onsdag (Legs A) + Torsdag (Push B) + Fredag (Pull B) + Lørdag (Legs B). Push: bryst, skuldre, triceps. Pull: ryg, biceps. Legs: quadriceps, hamstrings, glutes, læg.',
-    custom: 'Custom split — tilpas dagene frit.',
-  };
-
-  const goal      = document.getElementById('gen-goal')?.value      || d.primary_goal || 'Muskelopbygning';
-  const level     = document.getElementById('gen-level')?.value     || 'Øvet';
-  const equipment = document.getElementById('gen-equipment')?.value || d.equipment    || 'Fitnesscenter';
 
   if (split === 'custom') {
-    document.getElementById('gen-modal').classList.add('hidden');
+    document.getElementById('workout-gen-modal').classList.add('hidden');
     switchTab('traening', null);
     toast('Custom: vælg dage manuelt og tilføj øvelser 💪', 'ok');
     btn.disabled = false; btn.innerHTML = origText;
     return;
   }
 
+  const goal      = document.getElementById('gen-goal')?.value      || d.primary_goal || 'Muskelopbygning';
+  const level     = document.getElementById('gen-level')?.value     || 'Øvet';
+  const equipment = document.getElementById('gen-equipment')?.value || d.equipment    || 'Fitnesscenter';
   const coachNote = document.getElementById('gen-coach-note')?.value.trim();
-  const prompt = `Du er en ekspert i evidensbaseret styrketræning og hypertrofi. Generer en personlig træningsplan.
 
-KLIENTPROFIL:
-- Mål: ${goal}
-- Niveau: ${level}
-- Split: ${splitDescriptions[split]}
-- Skader / begrænsninger: ${d.injuries || 'Ingen'}
-- Udstyr: ${equipment}
-- Bedste løft: ${d.best_lifts || 'Ikke angivet'}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet — følg disse præcist):\n${coachNote}` : ''}
+  // Detaljerede split-strukturer med nøjagtige krav per dag
+  const splitStructures = {
+    fb2: `FULLBODY 2x/UGE — 2 sessioner, 48+ timers hvile imellem
+Dag 1 (Mandag): Fullbody A — 1 quad-compound + 1 hip-hinge + 1 upper push + 1 upper pull + 1 skulder isolation + 1 biceps eller triceps
+Dag 2 (Torsdag): Fullbody B — ALLE øvelser FORSKELLIG fra dag 1, samme muskelgruppe-dækning
+REGEL: Ingen øvelse gentages på tværs af A og B.`,
+    fb3: `FULLBODY 3x/UGE — 3 sessioner med en hviledag imellem
+Dag 1 (Mandag): Fullbody A — 1 quad-compound + 1 hip-hinge + 1 bryst + 1 ryg + 1 skulder + 1 arm
+Dag 2 (Onsdag): Fullbody B — ALLE øvelser FORSKELLIG fra dag 1
+Dag 3 (Fredag): Fullbody C — ALLE øvelser FORSKELLIG fra dag 1 og 2
+REGEL: Nul overlap på tværs af A, B og C.`,
+    brab3: `BRYST/RYG + ARME/SKULDRE + BEN — 3 dage
+Dag 1 (Mandag) – Bryst & Ryg: 1 bryst-compound (bench/incline) + 1 ryg-compound (row/deadlift) + 1 ryg-isolation (lat pulldown/cable row) + 1 bryst-isolation + 1 rear delt + valgfrit 1 core
+Dag 2 (Onsdag) – Arme & Skuldre: 1 skuldre-compound (OHP) + 1 lateral raise + 1 rear delt/face pull + 1 biceps compound + 1 triceps + valgfrit 1 biceps isolation
+Dag 3 (Fredag) – Ben & Core: 1 quad-compound (squat/leg press) + 1 hip-hinge (RDL/Romanian) + 1 glute isolation + 1 quad isolation (leg extension) + 1 hamstring isolation + 1 calf + 1 core`,
+    brab5: `BRYST/RYG + ARME/SKULDRE + BEN — 5 dage
+Dag 1 (Mandag) – Bryst & Ryg A: bench press + incline press + 1 bryst isolation + barbell/T-bar row + lat pulldown + rear delt
+Dag 2 (Tirsdag) – Arme & Skuldre A: barbell OHP + lateral raises + face pull + barbell curl + skull crushers + valgfrit
+Dag 3 (Onsdag) – Ben: barbell squat + Romanian deadlift + leg press + leg curl + calf raises + core
+Dag 4 (Torsdag) – Bryst & Ryg B: INGEN overlap med dag 1 (brug: decline/cable flyes/pec deck + seated cable row/one-arm row/pull-ups + cable lateral raise/arnold press)
+Dag 5 (Fredag) – Arme & Skuldre B: INGEN overlap med dag 2 (brug: dumbbell press variation + cable lateral raise + different curl/extension)`,
+    ul4: `UPPER/LOWER 4x/UGE — alternerende upper og lower
+Dag 1 (Mandag) – Upper A: 1 bryst-compound (bench) + 1 ryg-compound (row) + 1 skuldre (OHP/lateral) + 1 biceps + 1 triceps + valgfrit
+Dag 2 (Tirsdag) – Lower A: 1 quad-compound (squat) + 1 hip-hinge (RDL) + 1 glute isolation + 1 quad isolation + 1 hamstring isolation + 1 calf
+Dag 3 (Torsdag) – Upper B: ALLE øvelser FORSKELLIG fra Upper A — brug: incline/cable for bryst, pull-ups/lat pulldown for ryg, dumbbell press for skuldre
+Dag 4 (Fredag) – Lower B: ALLE øvelser FORSKELLIG fra Lower A — brug: front squat/Bulgarian/leg press, good morning/hip thrust, seated calf`,
+    ul5: `UPPER/LOWER 5x/UGE
+Dag 1 (Mandag) – Upper A: bench + barbell row + OHP + barbell curl + skull crushers
+Dag 2 (Tirsdag) – Lower A: barbell squat + RDL + hip thrust + leg extension + leg curl + calf
+Dag 3 (Onsdag) – Upper B: incline dumbbell press + lat pulldown + dumbbell shoulder press + hammer curl + cable pushdown — INTET overlap med Upper A
+Dag 4 (Torsdag) – Lower B: leg press + Bulgarian split squat + cable glute kickback + seated leg curl + seated calf raises — INTET overlap med Lower A
+Dag 5 (Fredag) – Upper C: lavere volumen, fokus på svage punkter — pec deck + seated cable row + lateral raises + concentration curl + overhead extension`,
+    ppl6: `PUSH/PULL/LEGS 6x/UGE — 2 rotationer
+Dag 1 (Mandag) – Push A: barbell bench press + incline press + dumbbell shoulder press + lateral raises + skull crushers + cable pushdown
+Dag 2 (Tirsdag) – Pull A: deadlift + barbell row + lat pulldown + face pull + barbell curl + hammer curl
+Dag 3 (Onsdag) – Legs A: barbell squat + Romanian deadlift + leg press + leg extension + lying leg curl + standing calf raises
+Dag 4 (Torsdag) – Push B: INGEN overlap med Push A (decline press / pec deck / Arnold press / cable lateral raise / dips / overhead extension)
+Dag 5 (Fredag) – Pull B: INGEN overlap med Pull A (T-bar row / one-arm row / pull-ups / rear delt fly / incline dumbbell curl / cable curl)
+Dag 6 (Lørdag) – Legs B: INGEN overlap med Legs A (front squat/Bulgarian / hip thrust / cable glute kickback / seated leg curl / seated calf raises + core)`,
+  };
 
-KRAV:
-1. Følg splittet PRÆCIST — antal dage og muskelgrupper per dag som beskrevet ovenfor
-2. Maks 60 minutter pr. træningssession
-3. Maks 6 øvelser pr. dag
-4. Hver muskelgruppe rammes mindst 2x om ugen (MPS-vinduer)
-5. Tunge compound-dage efterfølges af lettere isolation-dage (CNS-hensyn)
-6. Tag ALTID hensyn til skader — undgå øvelser der belaster skadet område
-7. A og B (og C) dage i samme muskelgruppe skal have HELT FORSKELLIGE øvelser — ingen gentagelse
-8. Brug NØJAGTIGE øvelsesnavne fra listen nedenfor
+  // Volumen og intensitet efter niveau
+  const levelStandards = {
+    'Begynder':  { setsEx: 3, compReps: '10-15', isoReps: '12-15', rir: '3-4', restComp: 120, restIso: 60,  weeklyVol: '10-12 sæt/uge/muskelgruppe', note: 'FOKUS PÅ TEKNIK. Samme compound-øvelser uge for uge for motorisk læring. Simpel lineær progression (+2.5 kg pr. session).' },
+    'Let øvet':  { setsEx: 3, compReps: '8-12',  isoReps: '10-15', rir: '2-3', restComp: 120, restIso: 60,  weeklyVol: '12-14 sæt/uge/muskelgruppe', note: 'Linear progression på compound. Double progression på isolation (reps → vægt).' },
+    'Øvet':      { setsEx: 4, compReps: '6-10',  isoReps: '10-12', rir: '2-3', restComp: 150, restIso: 75,  weeklyVol: '14-16 sæt/uge/muskelgruppe', note: 'Double progression. Deload hver 4. uge. Variation i rep-ranges (wave loading).' },
+    'Avanceret': { setsEx: 4, compReps: '4-8',   isoReps: '8-12',  rir: '1-2', restComp: 180, restIso: 90,  weeklyVol: '16-20 sæt/uge/muskelgruppe', note: 'Periodisering. Bølger i volumen og intensitet. Arbejdssæt nær failure.' },
+  };
 
-PRINCIPPER:
-- Øvelsesrækkefølge: Compound → Semi-isolation → Isolation (Jeff Nippard)
-- Volumen: MEV–MAV pr. muskelgruppe (Mike Israetel / Renaissance Periodization)
-- Intensitet: 2–3 RIR på arbejdssæt for hypertrofi (Eric Helms)
-- Sæt/reps tilpasses målet: styrke (3–5 reps), muskelmasse (6–12), definition (12–20)
-- Progressiv overload er bærende princip
+  // Rep-scheme og fokus efter mål
+  const goalSchemes = {
+    'Muskelopbygning': { compReps: '6-10', isoReps: '10-15', rir: '2-3', focus: 'Hypertrofi: maks mekanisk spænding + metabolisk stress. Kontrolleret excentrik fase (2-3 sek).' },
+    'Vægttab':         { compReps: '10-15', isoReps: '15-20', rir: '1-2', focus: 'Kalorieforbrænding + muskelbevarelse. Kortere pauser. Fokus på volumen frem for intensitet.' },
+    'Performance':     { compReps: '3-6',  isoReps: '8-12',  rir: '1-2', focus: 'Maksimal kraft og eksplosivitet. Tunge compound-løft er prioritet. Isolation er supplement.' },
+    'Generel form':    { compReps: '8-15', isoReps: '12-20', rir: '2-3', focus: 'Funktionel styrke og kondition. Varieret rep-range. Bevægelseskvalitet over belastning.' },
+  };
 
-Returner KUN valid JSON:
+  const ls  = levelStandards[level] || levelStandards['Øvet'];
+  const gs  = goalSchemes[goal] || goalSchemes['Muskelopbygning'];
+
+  // Override reps baseret på mål hvis mere specifikt end level default
+  const compReps = gs.compReps;
+  const isoReps  = gs.isoReps;
+  const workRIR  = gs.rir;
+
+  const injurySection = (d.injuries && d.injuries.toLowerCase() !== 'ingen' && d.injuries.trim())
+    ? `
+═══ SKADE-HENSYN (KRITISK — OVERHOLD ALTID) ═══
+Klienten har følgende skader/begrænsninger: "${d.injuries}"
+KRAV: Undgå ENHVER øvelse der belaster dette område direkte eller indirekte.
+Angiv i "notes"-feltet for HVER erstatningsøvelse: hvad du har undgået og hvorfor.
+Find smertefrie alternativer der rammer SAMME primære muskelgruppe.`
+    : '';
+
+  const prompt = `Du er verdens bedste styrketræningscoach — på niveau med Jeff Nippard, Mike Israetel og Eric Helms. Generer en PROFESSIONEL, evidensbaseret træningsplan der er skræddersyet præcist til denne klient.
+
+═══════════════════════════════════════
+FULDSTÆNDIG KLIENTPROFIL
+═══════════════════════════════════════
+Alder: ${d.age || '?'} år | Køn: ${d.gender || '?'}
+Træningstid: ${d.years_training || 0} år → Niveau: ${level}
+Primært mål: ${goal}
+Udstyr: ${equipment}
+Skader/begrænsninger: ${d.injuries || 'INGEN'}
+Bedste løft (reference): ${d.best_lifts || 'Ikke angivet'}
+Aktivitetsniveau dagligt: ${d.activity_level || 'Moderat aktiv'}
+Nuværende program: ${d.current_program || 'Intet'}
+Træner: ${d.trainingDays || '?'} dage/uge | Session maks: ${d.session_duration || '60'} min
+
+═══════════════════════════════════════
+SPLIT STRUKTUR — FØLG PRÆCIST
+═══════════════════════════════════════
+${splitStructures[split]}
+
+═══════════════════════════════════════
+PROGRAMMERINGSSTANDARDER
+═══════════════════════════════════════
+NIVEAU "${level}":
+• Ugentlig volumen: ${ls.weeklyVol}
+• Sæt pr. øvelse: ${ls.setsEx}
+• Pausetid compound: ${ls.restComp} sek | Isolation: ${ls.restIso} sek
+• Coachens note til niveau: ${ls.note}
+
+MÅL "${goal}":
+• Compound reps: ${compReps} | Isolation reps: ${isoReps}
+• RIR på arbejdssæt: @${workRIR} RIR
+• Fokus: ${gs.focus}
+
+ØVELSESRÆKKEFØLGE PR. SESSION (OBLIGATORISK):
+1. Primær compound (squat/DL/bench/row/OHP) — ${ls.setsEx} sæt, ${compReps} reps, tyngst
+2. Sekundær compound eller semi-compound — ${ls.setsEx} sæt
+3. Isolation A — 3 sæt
+4. Isolation B — 3 sæt
+5. Isolation C (valgfrit) — 3 sæt
+6. Core/finisher (valgfrit) — 2-3 sæt
+MAKS 6 øvelser pr. session, 45-65 min total${injurySection}
+
+═══════════════════════════════════════
+VARIATIONSKRAV (STRENGT OVERHOLDES)
+═══════════════════════════════════════
+• A og B sessioner med SAMME muskelgrupper: NULPROCENT overlap i øvelsesvalg
+• Ingen øvelse gentages inden for samme uge for SAMME primære muskelgruppe
+• Begynder: max 4-5 unikke compound-løft på tværs af ugen (motorisk indlæring)
+• Øvet/Avanceret: bredt øvelsesudvalg for komplet muskeldækning fra alle vinkler
+
+═══════════════════════════════════════
+OUTPUT — KUN VALID JSON (INGEN MARKDOWN, INGEN KOMMENTARER)
+═══════════════════════════════════════
 {
-  "program_name": "Programnavn",
+  "program_name": "Professionelt navn der afspejler split + niveau",
   "days": [
     {
       "day": "Mandag",
-      "name": "Push – Bryst & Triceps",
+      "name": "Sessionens navn (fx Upper A – Bryst & Ryg)",
       "exercises": [
-        {"name": "Nøjagtigt øvelsesnavn", "sets": 4, "reps": "6-8", "weight": "@2 RIR", "rest": 120}
+        {
+          "name": "NØJAGTIGT øvelsesnavn fra listen nedenfor",
+          "sets": 4,
+          "reps": "6-10",
+          "weight": "@2 RIR",
+          "rest": 150,
+          "notes": "Progressionsmodel: dobbelt progression — øg reps til 10, derefter +2.5 kg"
+        }
       ]
     }
   ]
 }
 
-TILGÆNGELIGE ØVELSER (brug NØJAGTIGE navne):
-${EXERCISE_BANK.map(e => e.n).join(', ')}`;
+═══════════════════════════════════════
+TILGÆNGELIGE ØVELSER — BRUG KUN DISSE NAVNE NØJAGTIGT
+═══════════════════════════════════════
+${EXERCISE_BANK.map(e => `${e.n} [${e.g}]`).join(' | ')}
+
+${coachNote ? `═══════════════════════════════════════
+COACH INSTRUKTIONER — ABSOLUT HØJESTE PRIORITET
+═══════════════════════════════════════
+${coachNote}` : ''}`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -3276,7 +3414,7 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+        max_tokens: 3500,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -3299,26 +3437,36 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
       name: day.name,
       exercises: (day.exercises || []).map(ex => {
         const bank = EXERCISE_BANK.find(e => e.n === ex.name) || {};
-        return { id: ++exCnt, name: ex.name, sets: ex.sets || bank.sets || 3, reps: ex.reps || bank.reps || '8-12', weight: ex.weight || '@2 RIR', rest: ex.rest || bank.rest || 90 };
+        return {
+          id: ++exCnt,
+          name: ex.name,
+          sets: ex.sets || bank.sets || 3,
+          reps: ex.reps || bank.reps || '8-12',
+          weight: ex.weight || '@2 RIR',
+          rest: ex.rest || bank.rest || 90,
+          notes: ex.notes || '',
+        };
       }).filter(e => e.name),
     })).filter(day => day.exercises.length > 0);
 
     window._genPlan = { program_name: json.program_name || 'AI Træningsplan', days: mappedDays };
 
-    // Vis preview i modal
     document.getElementById('gen-preview-title').textContent = json.program_name || 'AI Træningsplan';
     document.getElementById('gen-preview-days').innerHTML = mappedDays.map(day => `
       <div style="background:var(--surf2);border-radius:var(--r);padding:12px">
         <div style="font-size:.8rem;font-weight:700;color:var(--gold);margin-bottom:2px">${escHtml(day.day)}</div>
         <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">${escHtml(day.name)}</div>
         ${day.exercises.map(ex => `
-          <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:4px 0;border-bottom:1px solid var(--bdr)">
-            <span style="font-weight:600">${escHtml(ex.name)}</span>
-            <span style="color:var(--muted)">${ex.sets}×${ex.reps} · ${escHtml(ex.weight)} · ${ex.rest}s</span>
+          <div style="padding:4px 0;border-bottom:1px solid var(--bdr)">
+            <div style="display:flex;justify-content:space-between;font-size:.78rem">
+              <span style="font-weight:600">${escHtml(ex.name)}</span>
+              <span style="color:var(--muted)">${ex.sets}×${ex.reps} · ${escHtml(ex.weight)} · ${ex.rest}s</span>
+            </div>
+            ${ex.notes ? `<div style="font-size:.71rem;color:var(--dim);margin-top:1px">${escHtml(ex.notes)}</div>` : ''}
           </div>`).join('')}
       </div>`).join('');
     document.getElementById('gen-workout-preview').style.display = 'block';
-    toast('✨ Plan genereret — godkend eller åbn i editor', 'ok');
+    toast('✨ Professionel plan genereret — godkend eller åbn i editor', 'ok');
 
   } catch (err) {
     toast('AI fejl: ' + err.message, 'err');
@@ -3351,7 +3499,7 @@ async function saveGenPlanDirect() {
 
   if (saveRes.error) { toast('Fejl: ' + saveRes.error.message, 'err'); return; }
   currentClientData.workout = prog.workout;
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('workout-gen-modal').classList.add('hidden');
   toast('✅ Plan gemt — klienten kan se den nu', 'ok');
 }
 
@@ -3360,7 +3508,7 @@ function openGenPlanInEditor() {
   if (!p) return;
   wp.program_name = p.program_name;
   wp.days = p.days;
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('workout-gen-modal').classList.add('hidden');
   switchTab('traening', null);
   renderWorkoutEditor();
   toast('Plan indlæst i editor — tilpas og gem', 'ok');
