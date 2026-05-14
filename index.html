@@ -838,6 +838,32 @@ const EXERCISE_BANK = [
   {n:'Rowing Machine',g:'Cardio',sets:3,reps:'500m',rest:120},
 ];
 
+// ─── Day type definitions for workout generator ─────────────────────────────
+const DAY_TYPES = {
+  chest_back:     { label: 'Bryst & Ryg',                  desc: 'Bryst-compound (bench/incline) + Ryg-compound (row/DL) + Ryg-isolation (lat pulldown/cable row) + Bryst-isolation + Rear delt + Core (valgfrit)' },
+  shoulders_arms: { label: 'Skuldre & Arme',               desc: 'Skulder-compound (OHP) + Lateral raise + Rear delt/Face pull + Biceps compound + Triceps compound + Biceps isolation (valgfrit)' },
+  legs:           { label: 'Ben & Core',                   desc: 'Quad-compound (squat/leg press) + Hip-hinge (RDL) + Glute isolation + Quad isolation (leg extension) + Hamstring isolation (leg curl) + Calf + Core' },
+  push:           { label: 'Push (Bryst/Skuldre/Triceps)', desc: 'Bryst-compound (bench/incline) + Skulder-compound (OHP) + Lateral raise + Triceps compound + Triceps isolation + valgfrit isolation' },
+  pull:           { label: 'Pull (Ryg/Biceps)',            desc: 'Ryg-compound (deadlift/row) + Lat pulldown + Seated cable row + Face pull + Biceps compound + Biceps isolation' },
+  upper:          { label: 'Upper (Overkrop)',             desc: 'Bryst-compound + Ryg-compound + Skulder (OHP eller lateral) + Biceps + Triceps + valgfrit' },
+  lower:          { label: 'Lower (Ben & Core)',           desc: 'Quad-compound + Hip-hinge + Glute isolation + Quad isolation + Hamstring isolation + Calf' },
+  fullbody:       { label: 'Fullbody',                     desc: '1 quad-compound + 1 hip-hinge + 1 upper push compound + 1 upper pull compound + 1 skulder isolation + 1 arm (biceps eller triceps)' },
+};
+const DAY_NAMES_FOR_N = {
+  2: ['Mandag','Torsdag'],
+  3: ['Mandag','Onsdag','Fredag'],
+  4: ['Mandag','Tirsdag','Torsdag','Fredag'],
+  5: ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'],
+  6: ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'],
+};
+const DAY_DEFAULTS_BY_N = {
+  2: ['fullbody','fullbody'],
+  3: ['chest_back','shoulders_arms','legs'],
+  4: ['upper','lower','upper','lower'],
+  5: ['push','pull','legs','push','pull'],
+  6: ['push','pull','legs','push','pull','legs'],
+};
+
 // ─── Meal Pools (3 varianter pr. mål – vælges ud fra klient-hash) ──────────
 const MEAL_POOLS = {
   bulk: [
@@ -2652,25 +2678,6 @@ function openWorkoutGenerator() {
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div class="form-group" style="margin:0">
-        <label class="label">Træningsdage/uge</label>
-        <select class="input" id="gen-days">
-          ${[2,3,4,5,6].map(n=>`<option value="${n}"${n===daysDefault?' selected':''}>${n} dage</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="label">Split (auto-valgt)</label>
-        <select class="input" id="gen-split">
-          <option value="fb2">Fullbody 2x/uge</option>
-          <option value="fb3">Fullbody 3x/uge</option>
-          <option value="brab3">Bryst/Ryg + Arme + Ben 3x</option>
-          <option value="brab5">Bryst/Ryg + Arme + Ben 5x</option>
-          <option value="ul4">Upper/Lower 4x/uge</option>
-          <option value="ul5">Upper/Lower 5x/uge</option>
-          <option value="ppl6">Push/Pull/Legs 6x/uge</option>
-          <option value="custom">Custom</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin:0">
         <label class="label">Mål</label>
         <select class="input" id="gen-goal">
           ${['Muskelopbygning','Vægttab','Performance','Generel form'].map(g=>`<option${g===goalDefault?' selected':''}>${g}</option>`).join('')}
@@ -2688,6 +2695,20 @@ function openWorkoutGenerator() {
           ${['Fitnesscenter','Hjemmetræning','Begge'].map(e=>`<option${e===eqDefault?' selected':''}>${e}</option>`).join('')}
         </select>
       </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">Antal træningsdage</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+        ${[2,3,4,5,6].map(n=>`<button type="button" class="btn btn-sm${n===daysDefault?' btn-gold':' btn-outline'}" onclick="setGenDays(${n})" id="gen-day-btn-${n}">${n}</button>`).join('')}
+      </div>
+      <input type="hidden" id="gen-days" value="${daysDefault}">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="label">Dag-struktur — vælg fokus for hver dag</label>
+      <div id="day-structure-builder" style="display:flex;flex-direction:column;gap:5px;margin-top:4px"></div>
+      <div style="font-size:.71rem;color:var(--dim);margin-top:5px">Gentag muskelgrupper for A/B-rotation — fx Push · Pull · Ben · Push · Pull = 5 dage med automatisk øvelsesvariation</div>
     </div>
 
     <div class="form-group" style="margin-bottom:12px">
@@ -2712,19 +2733,30 @@ function openWorkoutGenerator() {
       <button class="btn btn-outline btn-full btn-sm" onclick="runWorkoutGenerator()">Skabelon træning (ingen API)</button>
     </div>`;
 
-  const splitSel = document.getElementById('gen-split');
-  const daysSel  = document.getElementById('gen-days');
-  function autoSplit() {
-    const n = parseInt(daysSel.value);
-    if (n <= 2) splitSel.value = 'fb2';
-    else if (n === 3) splitSel.value = 'brab3';
-    else if (n === 4) splitSel.value = 'ul4';
-    else if (n === 5) splitSel.value = 'ul5';
-    else splitSel.value = 'ppl6';
-  }
-  daysSel.addEventListener('change', autoSplit);
-  autoSplit();
+  renderDayBuilder(daysDefault);
   document.getElementById('workout-gen-modal').classList.remove('hidden');
+}
+
+function setGenDays(n) {
+  document.getElementById('gen-days').value = n;
+  [2,3,4,5,6].forEach(i => {
+    const b = document.getElementById('gen-day-btn-'+i);
+    if (b) b.className = 'btn btn-sm ' + (i===n ? 'btn-gold' : 'btn-outline');
+  });
+  renderDayBuilder(n);
+}
+
+function renderDayBuilder(n) {
+  const dayNames = DAY_NAMES_FOR_N[n] || ALL_DAYS.slice(0, n);
+  const defaults = DAY_DEFAULTS_BY_N[n] || Array(n).fill('fullbody');
+  const existing = [...document.querySelectorAll('.gen-day-type')].map(s => s.value);
+  document.getElementById('day-structure-builder').innerHTML = dayNames.map((day, i) => `
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--gold);font-weight:700;min-width:108px;flex-shrink:0">Dag ${i+1} · ${day}</span>
+      <select class="input gen-day-type" style="flex:1;font-size:.79rem;padding:5px 8px" data-day="${day}">
+        ${Object.entries(DAY_TYPES).map(([k,t])=>`<option value="${k}"${(existing[i]||defaults[i])===k?' selected':''}>${t.label}</option>`).join('')}
+      </select>
+    </div>`).join('');
 }
 
 // Rund til nærmeste 5g (fx 114 → 115, 112 → 110)
@@ -2777,8 +2809,19 @@ function runDietGenerator() {
   toast('Kostplan genereret! Gem når du er klar.', 'ok');
 }
 
+function inferSplitKey(daySelects) {
+  const keys = daySelects.map(s => s.value);
+  const n = keys.length;
+  if (keys.every(k => k === 'fullbody'))                                           return n <= 2 ? 'fb2' : 'fb3';
+  if (keys.every(k => k === 'push' || k === 'pull' || k === 'legs'))               return n <= 3 ? 'ppl3' : n <= 5 ? 'ppl5' : 'ppl6';
+  if (keys.every(k => k === 'upper' || k === 'lower'))                             return n <= 4 ? 'ul4' : 'ul5';
+  if (keys.every(k => k === 'chest_back' || k === 'shoulders_arms' || k === 'legs')) return n <= 3 ? 'brab3' : 'brab5';
+  return n <= 2 ? 'fb2' : n <= 3 ? 'ppl3' : n <= 4 ? 'ul4' : n <= 5 ? 'ppl5' : 'ppl6';
+}
+
 function runWorkoutGenerator() {
-  const split = document.getElementById('gen-split').value;
+  const daySelects = [...document.querySelectorAll('.gen-day-type')];
+  const split = inferSplitKey(daySelects);
   exCnt = 0;
   const ex = (name) => {
     const b = EXERCISE_BANK.find(e => e.n === name) || {sets:3,reps:'8-12',rest:90};
@@ -2857,13 +2900,6 @@ function runWorkoutGenerator() {
       ]},
     ],
   };
-
-  if (split === 'custom') {
-    document.getElementById('workout-gen-modal').classList.add('hidden');
-    switchTab('traening', null);
-    toast('Custom: vælg dage manuelt og tilføj øvelser 💪', 'ok');
-    return;
-  }
 
   const EXTRA_POOLS = {
     brab5: [
@@ -3234,61 +3270,29 @@ async function runClaudeWorkoutGenerator() {
   if (errEl) errEl.style.display = 'none';
 
   const d = currentClientData.intake || {};
-  const split = document.getElementById('gen-split').value;
-
-  if (split === 'custom') {
-    document.getElementById('workout-gen-modal').classList.add('hidden');
-    switchTab('traening', null);
-    toast('Custom: vælg dage manuelt og tilføj øvelser 💪', 'ok');
-    btn.disabled = false; btn.innerHTML = origText;
-    return;
-  }
-
   const goal      = document.getElementById('gen-goal')?.value      || d.primary_goal || 'Muskelopbygning';
   const level     = document.getElementById('gen-level')?.value     || 'Øvet';
   const equipment = document.getElementById('gen-equipment')?.value || d.equipment    || 'Fitnesscenter';
   const coachNote = document.getElementById('gen-coach-note')?.value.trim();
 
-  // Detaljerede split-strukturer med nøjagtige krav per dag
-  const splitStructures = {
-    fb2: `FULLBODY 2x/UGE — 2 sessioner, 48+ timers hvile imellem
-Dag 1 (Mandag): Fullbody A — 1 quad-compound + 1 hip-hinge + 1 upper push + 1 upper pull + 1 skulder isolation + 1 biceps eller triceps
-Dag 2 (Torsdag): Fullbody B — ALLE øvelser FORSKELLIG fra dag 1, samme muskelgruppe-dækning
-REGEL: Ingen øvelse gentages på tværs af A og B.`,
-    fb3: `FULLBODY 3x/UGE — 3 sessioner med en hviledag imellem
-Dag 1 (Mandag): Fullbody A — 1 quad-compound + 1 hip-hinge + 1 bryst + 1 ryg + 1 skulder + 1 arm
-Dag 2 (Onsdag): Fullbody B — ALLE øvelser FORSKELLIG fra dag 1
-Dag 3 (Fredag): Fullbody C — ALLE øvelser FORSKELLIG fra dag 1 og 2
-REGEL: Nul overlap på tværs af A, B og C.`,
-    brab3: `BRYST/RYG + ARME/SKULDRE + BEN — 3 dage
-Dag 1 (Mandag) – Bryst & Ryg: 1 bryst-compound (bench/incline) + 1 ryg-compound (row/deadlift) + 1 ryg-isolation (lat pulldown/cable row) + 1 bryst-isolation + 1 rear delt + valgfrit 1 core
-Dag 2 (Onsdag) – Arme & Skuldre: 1 skuldre-compound (OHP) + 1 lateral raise + 1 rear delt/face pull + 1 biceps compound + 1 triceps + valgfrit 1 biceps isolation
-Dag 3 (Fredag) – Ben & Core: 1 quad-compound (squat/leg press) + 1 hip-hinge (RDL/Romanian) + 1 glute isolation + 1 quad isolation (leg extension) + 1 hamstring isolation + 1 calf + 1 core`,
-    brab5: `BRYST/RYG + ARME/SKULDRE + BEN — 5 dage
-Dag 1 (Mandag) – Bryst & Ryg A: bench press + incline press + 1 bryst isolation + barbell/T-bar row + lat pulldown + rear delt
-Dag 2 (Tirsdag) – Arme & Skuldre A: barbell OHP + lateral raises + face pull + barbell curl + skull crushers + valgfrit
-Dag 3 (Onsdag) – Ben: barbell squat + Romanian deadlift + leg press + leg curl + calf raises + core
-Dag 4 (Torsdag) – Bryst & Ryg B: INGEN overlap med dag 1 (brug: decline/cable flyes/pec deck + seated cable row/one-arm row/pull-ups + cable lateral raise/arnold press)
-Dag 5 (Fredag) – Arme & Skuldre B: INGEN overlap med dag 2 (brug: dumbbell press variation + cable lateral raise + different curl/extension)`,
-    ul4: `UPPER/LOWER 4x/UGE — alternerende upper og lower
-Dag 1 (Mandag) – Upper A: 1 bryst-compound (bench) + 1 ryg-compound (row) + 1 skuldre (OHP/lateral) + 1 biceps + 1 triceps + valgfrit
-Dag 2 (Tirsdag) – Lower A: 1 quad-compound (squat) + 1 hip-hinge (RDL) + 1 glute isolation + 1 quad isolation + 1 hamstring isolation + 1 calf
-Dag 3 (Torsdag) – Upper B: ALLE øvelser FORSKELLIG fra Upper A — brug: incline/cable for bryst, pull-ups/lat pulldown for ryg, dumbbell press for skuldre
-Dag 4 (Fredag) – Lower B: ALLE øvelser FORSKELLIG fra Lower A — brug: front squat/Bulgarian/leg press, good morning/hip thrust, seated calf`,
-    ul5: `UPPER/LOWER 5x/UGE
-Dag 1 (Mandag) – Upper A: bench + barbell row + OHP + barbell curl + skull crushers
-Dag 2 (Tirsdag) – Lower A: barbell squat + RDL + hip thrust + leg extension + leg curl + calf
-Dag 3 (Onsdag) – Upper B: incline dumbbell press + lat pulldown + dumbbell shoulder press + hammer curl + cable pushdown — INTET overlap med Upper A
-Dag 4 (Torsdag) – Lower B: leg press + Bulgarian split squat + cable glute kickback + seated leg curl + seated calf raises — INTET overlap med Lower A
-Dag 5 (Fredag) – Upper C: lavere volumen, fokus på svage punkter — pec deck + seated cable row + lateral raises + concentration curl + overhead extension`,
-    ppl6: `PUSH/PULL/LEGS 6x/UGE — 2 rotationer
-Dag 1 (Mandag) – Push A: barbell bench press + incline press + dumbbell shoulder press + lateral raises + skull crushers + cable pushdown
-Dag 2 (Tirsdag) – Pull A: deadlift + barbell row + lat pulldown + face pull + barbell curl + hammer curl
-Dag 3 (Onsdag) – Legs A: barbell squat + Romanian deadlift + leg press + leg extension + lying leg curl + standing calf raises
-Dag 4 (Torsdag) – Push B: INGEN overlap med Push A (decline press / pec deck / Arnold press / cable lateral raise / dips / overhead extension)
-Dag 5 (Fredag) – Pull B: INGEN overlap med Pull A (T-bar row / one-arm row / pull-ups / rear delt fly / incline dumbbell curl / cable curl)
-Dag 6 (Lørdag) – Legs B: INGEN overlap med Legs A (front squat/Bulgarian / hip thrust / cable glute kickback / seated leg curl / seated calf raises + core)`,
-  };
+  // Build split description dynamically from day-structure builder
+  const daySelects = [...document.querySelectorAll('.gen-day-type')];
+  if (daySelects.length === 0) {
+    toast('Vælg dag-struktur', 'err'); btn.disabled = false; btn.innerHTML = origText; return;
+  }
+  const nDays = parseInt(document.getElementById('gen-days').value) || daySelects.length;
+  const dayNames = DAY_NAMES_FOR_N[nDays] || ALL_DAYS.slice(0, daySelects.length);
+  const groupCount = {};
+  daySelects.forEach(s => { groupCount[s.value] = (groupCount[s.value] || 0) + 1; });
+  const groupSession = {};
+  const splitDesc = daySelects.map((s, i) => {
+    const key = s.value;
+    const dt  = DAY_TYPES[key] || { label: key, desc: key };
+    groupSession[key] = (groupSession[key] || 0) + 1;
+    const sess      = groupCount[key] > 1 ? ` Session ${String.fromCharCode(64 + groupSession[key])}` : '';
+    const noOverlap = groupCount[key] > 1 ? ` — INGEN overlap med andre ${dt.label} sessioner. Brug HELT ANDRE øvelser og vinkler.` : '';
+    return `Dag ${i+1} (${dayNames[i] || 'Dag '+(i+1)}) –${sess} ${dt.label}: ${dt.desc}${noOverlap}`;
+  }).join('\n');
 
   // Volumen og intensitet efter niveau
   const levelStandards = {
@@ -3341,7 +3345,7 @@ Træner: ${d.trainingDays || '?'} dage/uge | Session maks: ${d.session_duration 
 ═══════════════════════════════════════
 SPLIT STRUKTUR — FØLG PRÆCIST
 ═══════════════════════════════════════
-${splitStructures[split]}
+${splitDesc}
 
 ═══════════════════════════════════════
 PROGRAMMERINGSSTANDARDER
