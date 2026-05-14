@@ -3488,29 +3488,46 @@ ${coachNote}` : ''}`;
 
 async function saveGenPlanDirect() {
   const p = window._genPlan;
-  if (!p || !currentClient?.id) { toast('Ingen plan eller klient', 'err'); return; }
+  if (!p || !currentClient?.id) { toast('Ingen plan eller klient valgt', 'err'); return; }
 
-  const prog = {};
-  if (currentClientData.diet) prog.diet = currentClientData.diet;
-  prog.workout = { program_name: p.program_name, days: p.days };
-  const progStr = JSON.stringify(prog);
-  const now = new Date().toISOString();
+  const saveBtn = document.querySelector('#gen-workout-preview .btn-gold');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Gemmer...'; }
 
-  const selRes = await sb.from('client_data').select('id').eq('user_id', currentClient.id).limit(1);
-  let saveRes;
-  if (selRes.data?.[0]?.id) {
-    saveRes = await sb.from('client_data')
-      .update({ program: progStr, updated_at: now })
-      .eq('user_id', currentClient.id).select('id');
-  } else {
-    saveRes = await sb.from('client_data')
-      .insert({ user_id: currentClient.id, program: progStr, updated_at: now });
+  const showSaveErr = (msg) => {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Gem til klient'; }
+    const errEl = document.getElementById('gen-workout-error');
+    if (errEl) { errEl.textContent = '⚠ Gem fejl: ' + msg; errEl.style.display = 'block'; }
+    toast('Gem fejl: ' + msg, 'err');
+  };
+
+  try {
+    const prog = {};
+    if (currentClientData.diet) prog.diet = currentClientData.diet;
+    prog.workout = { program_name: p.program_name, days: p.days };
+    const progStr = JSON.stringify(prog);
+    const now = new Date().toISOString();
+
+    const selRes = await sb.from('client_data').select('id').eq('user_id', currentClient.id).limit(1);
+    if (selRes.error) { showSaveErr(selRes.error.message); return; }
+
+    let saveRes;
+    if (selRes.data?.[0]?.id) {
+      saveRes = await sb.from('client_data')
+        .update({ program: progStr, updated_at: now })
+        .eq('user_id', currentClient.id).select('id');
+    } else {
+      saveRes = await sb.from('client_data')
+        .insert({ user_id: currentClient.id, program: progStr, updated_at: now });
+    }
+
+    if (saveRes.error) { showSaveErr(saveRes.error.message); return; }
+
+    currentClientData.workout = prog.workout;
+    document.getElementById('workout-gen-modal').classList.add('hidden');
+    toast('✅ Plan gemt — klienten kan se den nu', 'ok');
+  } catch (e) {
+    showSaveErr(e.message);
   }
-
-  if (saveRes.error) { toast('Fejl: ' + saveRes.error.message, 'err'); return; }
-  currentClientData.workout = prog.workout;
-  document.getElementById('workout-gen-modal').classList.add('hidden');
-  toast('✅ Plan gemt — klienten kan se den nu', 'ok');
 }
 
 function openGenPlanInEditor() {
