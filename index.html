@@ -669,6 +669,10 @@ const SUPA_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+function withTimeout(promise, ms = 10000) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout — tjek din forbindelse')), ms))]);
+}
+
 // ─── EmailJS ────────────────────────────────────────────────────────────────
 const EJS_PUBLIC_KEY       = 'a4KL2nPc1RL_GwdeM';
 const EJS_SERVICE_ID       = 'service_q707r9z';
@@ -3507,17 +3511,17 @@ async function saveGenPlanDirect() {
     const progStr = JSON.stringify(prog);
     const now = new Date().toISOString();
 
-    const selRes = await sb.from('client_data').select('id').eq('user_id', currentClient.id).limit(1);
+    const selRes = await withTimeout(sb.from('client_data').select('id').eq('user_id', currentClient.id).limit(1));
     if (selRes.error) { showSaveErr(selRes.error.message); return; }
 
     let saveRes;
     if (selRes.data?.[0]?.id) {
-      saveRes = await sb.from('client_data')
+      saveRes = await withTimeout(sb.from('client_data')
         .update({ program: progStr, updated_at: now })
-        .eq('user_id', currentClient.id).select('id');
+        .eq('user_id', currentClient.id).select('id'));
     } else {
-      saveRes = await sb.from('client_data')
-        .insert({ user_id: currentClient.id, program: progStr, updated_at: now });
+      saveRes = await withTimeout(sb.from('client_data')
+        .insert({ user_id: currentClient.id, program: progStr, updated_at: now }));
     }
 
     if (saveRes.error) { showSaveErr(saveRes.error.message); return; }
@@ -3544,10 +3548,6 @@ function openGenPlanInEditor() {
 async function runDiagnostic() {
   const out = document.getElementById('diag-result');
   out.innerHTML = 'Tester...';
-
-  function withTimeout(promise, ms = 8000) {
-    return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), ms))]);
-  }
 
   async function testTable(name, queryFn) {
     try {
