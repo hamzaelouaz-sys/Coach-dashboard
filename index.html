@@ -2715,9 +2715,30 @@ function openWorkoutGenerator() {
       <div style="font-size:.71rem;color:var(--dim);margin-top:5px">Gentag muskelgrupper for A/B-rotation — fx Push · Pull · Ben · Push · Pull = 5 dage med automatisk øvelsesvariation</div>
     </div>
 
-    <div class="form-group" style="margin-bottom:12px">
-      <label class="label">Coach-instruks (valgfrit)</label>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">Coach-instruks til denne klient (valgfrit)</label>
       <textarea class="input" id="gen-coach-note" rows="2" placeholder="fx undgå squat, fokus på compound, 5×5 progression..." style="resize:none;font-size:.82rem"></textarea>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <button type="button" class="btn btn-outline btn-sm btn-full" onclick="toggleKnowledgeBase()" id="kb-toggle-btn" style="justify-content:space-between">
+        <span>📚 Coachens vidensbase ${localStorage.getItem('coach_knowledge_base') ? '<span style="color:var(--green);font-size:.7rem">● Aktiv</span>' : '<span style="color:var(--dim);font-size:.7rem">Tom</span>'}</span>
+        <span id="kb-arrow">▼</span>
+      </button>
+      <div id="kb-panel" style="display:none;margin-top:6px">
+        <textarea class="input" id="gen-knowledge-base" rows="8" placeholder="Skriv dine træningsteoretiske principper her — de inkluderes i ALLE genereringer fremover.
+
+Eksempel:
+- SRA-princippet: stimulus → restitution → adaptation. Mindst 48t mellem samme muskelgruppe.
+- MEV (Minimum Effective Volume): begynder 10 sæt/uge, øvet 14 sæt/uge pr. muskelgruppe.
+- Compound first: altid tunge compound-løft når CNS er frisk, isolation til sidst.
+- Progressive overload: dobbelt-progression (reps → vægt) på isolationsøvelser..." style="font-size:.79rem;line-height:1.5">${escHtml(localStorage.getItem('coach_knowledge_base') || '')}</textarea>
+        <div style="display:flex;gap:6px;margin-top:5px">
+          <button type="button" class="btn btn-gold btn-sm" onclick="saveKnowledgeBase()" style="flex:1">💾 Gem vidensbase</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearKnowledgeBase()" style="color:var(--red)">Ryd</button>
+        </div>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:4px">Gemmes lokalt i browseren · bruges i alle fremtidige genereringer</div>
+      </div>
     </div>
 
     <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">✨ Generér AI Træningsplan</button>
@@ -2761,6 +2782,30 @@ function renderDayBuilder(n) {
         ${Object.entries(DAY_TYPES).map(([k,t])=>`<option value="${k}"${(existing[i]||defaults[i])===k?' selected':''}>${t.label}</option>`).join('')}
       </select>
     </div>`).join('');
+}
+
+function toggleKnowledgeBase() {
+  const panel = document.getElementById('kb-panel');
+  const arrow = document.getElementById('kb-arrow');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▲' : '▼';
+}
+function saveKnowledgeBase() {
+  const val = document.getElementById('gen-knowledge-base')?.value.trim() || '';
+  localStorage.setItem('coach_knowledge_base', val);
+  toast('Vidensbase gemt ✓', 'ok');
+  const btn = document.getElementById('kb-toggle-btn');
+  if (btn) btn.querySelector('span span').outerHTML = val
+    ? '<span style="color:var(--green);font-size:.7rem">● Aktiv</span>'
+    : '<span style="color:var(--dim);font-size:.7rem">Tom</span>';
+}
+function clearKnowledgeBase() {
+  if (!confirm('Ryd hele vidensbasen?')) return;
+  localStorage.removeItem('coach_knowledge_base');
+  const el = document.getElementById('gen-knowledge-base');
+  if (el) el.value = '';
+  toast('Vidensbase ryddet', 'ok');
 }
 
 // Rund til nærmeste 5g (fx 114 → 115, 112 → 110)
@@ -3277,7 +3322,8 @@ async function runClaudeWorkoutGenerator() {
   const goal      = document.getElementById('gen-goal')?.value      || d.primary_goal || 'Muskelopbygning';
   const level     = document.getElementById('gen-level')?.value     || 'Øvet';
   const equipment = document.getElementById('gen-equipment')?.value || d.equipment    || 'Fitnesscenter';
-  const coachNote = document.getElementById('gen-coach-note')?.value.trim();
+  const coachNote      = document.getElementById('gen-coach-note')?.value.trim();
+  const knowledgeBase  = localStorage.getItem('coach_knowledge_base')?.trim() || '';
 
   // Build split description dynamically from day-structure builder
   const daySelects = [...document.querySelectorAll('.gen-day-type')];
@@ -3412,8 +3458,13 @@ TILGÆNGELIGE ØVELSER — BRUG KUN DISSE NAVNE NØJAGTIGT
 ═══════════════════════════════════════
 ${EXERCISE_BANK.map(e => `${e.n} [${e.g}]`).join(' | ')}
 
+${knowledgeBase ? `═══════════════════════════════════════
+COACHENS TRÆNINGSTEORETISKE PRINCIPPER — BRUG SOM FUNDAMENT
+═══════════════════════════════════════
+${knowledgeBase}` : ''}
+
 ${coachNote ? `═══════════════════════════════════════
-COACH INSTRUKTIONER — ABSOLUT HØJESTE PRIORITET
+COACH INSTRUKTIONER TIL DENNE KLIENT — ABSOLUT HØJESTE PRIORITET
 ═══════════════════════════════════════
 ${coachNote}` : ''}`;
 
