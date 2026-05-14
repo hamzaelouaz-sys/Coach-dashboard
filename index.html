@@ -320,9 +320,13 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
       </div>
     </div>
     <nav class="sb-nav">
-      <div class="nav-item active" onclick="showClientList()">
+      <div class="nav-item active" id="nav-klienter" onclick="showClientList()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Klienter
+      </div>
+      <div class="nav-item" id="nav-leads" onclick="showLeads()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Leads
       </div>
     </nav>
     <div class="sb-footer">
@@ -355,6 +359,27 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span style="font-size:.8rem;color:var(--gold);font-weight:600;letter-spacing:.2px" id="top-date"></span>
         </div>
+      </div>
+    </div>
+
+    <!-- LEADS -->
+    <div id="pg-leads" class="page-wrap hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:600;letter-spacing:-.01em">Leads</h2>
+          <p style="color:var(--muted);font-size:.88rem;margin-top:4px">Potentielle klienter – spor din pipeline</p>
+        </div>
+        <button class="btn btn-gold" onclick="openLeadModal()">+ Tilføj lead</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+        <button class="filter-tab active" data-lf="alle" onclick="setLeadFilter('alle',this)">Alle</button>
+        <button class="filter-tab" data-lf="ny" onclick="setLeadFilter('ny',this)">Ny</button>
+        <button class="filter-tab" data-lf="kontaktet" onclick="setLeadFilter('kontaktet',this)">Kontaktet</button>
+        <button class="filter-tab" data-lf="konverteret" onclick="setLeadFilter('konverteret',this)">Konverteret</button>
+        <button class="filter-tab" data-lf="afvist" onclick="setLeadFilter('afvist',this)">Afvist</button>
+      </div>
+      <div id="leads-grid" class="clients-grid">
+        <div class="empty-state"><div class="icon">🎯</div><p>Ingen leads endnu</p></div>
       </div>
     </div>
 
@@ -402,6 +427,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
         <div class="tab" onclick="switchTab('data',this)">📊 Data</div>
         <div class="tab" onclick="switchTab('beskeder',this)" id="tab-btn-beskeder">💬 Beskeder <span id="coach-msg-badge" class="hidden" style="background:var(--gold);color:#000;border-radius:10px;font-size:.6rem;font-weight:800;padding:1px 6px;margin-left:4px"></span></div>
         <div class="tab" onclick="switchTab('fotos',this)">📸 Fotos</div>
+        <div class="tab" onclick="switchTab('mål',this)">📐 Mål</div>
       </div>
       <div class="tab-content">
         <div id="tab-profil"></div>
@@ -411,6 +437,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
         <div id="tab-data" class="hidden"></div>
         <div id="tab-beskeder" class="hidden"></div>
         <div id="tab-fotos" class="hidden"></div>
+        <div id="tab-mål" class="hidden"></div>
       </div>
     </div>
   </div>
@@ -418,6 +445,58 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inhe
 
 <!-- Shared autocomplete dropdown -->
 <div id="ac-drop"></div>
+
+<!-- Lead Modal -->
+<div id="lead-modal" class="modal-ov hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="lead-modal-title">Tilføj lead</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeLeadModal()">✕</button>
+    </div>
+    <input type="hidden" id="lead-edit-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group" style="margin:0">
+        <label class="label">Navn *</label>
+        <input class="input" id="lead-name" placeholder="Fulde navn">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Email</label>
+        <input class="input" type="email" id="lead-email" placeholder="email@eksempel.dk">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Telefon</label>
+        <input class="input" id="lead-phone" placeholder="+45 xx xx xx xx">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Kilde</label>
+        <select class="input" id="lead-source">
+          <option value="andet">Andet</option>
+          <option value="instagram">Instagram</option>
+          <option value="anbefaling">Anbefaling</option>
+          <option value="hjemmeside">Hjemmeside</option>
+          <option value="tiktok">TikTok</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Status</label>
+        <select class="input" id="lead-status">
+          <option value="ny">Ny</option>
+          <option value="kontaktet">Kontaktet</option>
+          <option value="konverteret">Konverteret ✓</option>
+          <option value="afvist">Afvist</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label class="label">Noter</label>
+      <textarea class="input" id="lead-notes" placeholder="Mål, ønsker, observationer..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeLeadModal()">Annuller</button>
+      <button class="btn btn-gold" onclick="saveLead()">Gem lead</button>
+    </div>
+  </div>
+</div>
 
 <!-- Generator Modal -->
 <div id="gen-modal" class="modal-ov hidden">
@@ -524,7 +603,46 @@ CREATE POLICY "photo_upload" ON storage.objects FOR INSERT
 DROP POLICY IF EXISTS "photo_view" ON storage.objects;
 CREATE POLICY "photo_view" ON storage.objects FOR SELECT
   USING (bucket_id = 'progress-photos' AND
-    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));</pre>
+    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));
+
+-- body_measurements: klienters kropsomfang over tid (cm)
+CREATE TABLE IF NOT EXISTS body_measurements (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  chest NUMERIC(5,1),
+  waist NUMERIC(5,1),
+  hips NUMERIC(5,1),
+  left_arm NUMERIC(5,1),
+  right_arm NUMERIC(5,1),
+  left_thigh NUMERIC(5,1),
+  right_thigh NUMERIC(5,1),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE body_measurements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "bm_access" ON body_measurements;
+CREATE POLICY "bm_access" ON body_measurements FOR ALL
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+
+-- leads: potentielle klienter
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  coach_id UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+  name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  notes TEXT,
+  status TEXT DEFAULT 'ny',
+  source TEXT DEFAULT 'andet',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "leads_access" ON leads;
+CREATE POLICY "leads_access" ON leads FOR ALL
+  USING (auth.uid() = coach_id)
+  WITH CHECK (auth.uid() = coach_id);</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
@@ -1029,13 +1147,14 @@ async function openClient(id) {
   document.getElementById('btn-deactivate').classList.toggle('hidden', !isActive);
 
   // Load all client data — use limit(1) to avoid maybeSingle() failing on duplicate rows
-  const [intakeRes, cdRes, { data: weightLog }, { data: checkins }, { data: completions }, { data: strengthLogs }] = await Promise.all([
+  const [intakeRes, cdRes, { data: weightLog }, { data: checkins }, { data: completions }, { data: strengthLogs }, { data: bodyMeasurements }] = await Promise.all([
     sb.from('intake_forms').select('*').eq('user_id', id).order('submitted_at', { ascending: false }).limit(1),
     sb.from('client_data').select('*').eq('user_id', id).order('updated_at', { ascending: false }).limit(1),
     sb.from('weight_log').select('*').eq('user_id', id).order('date', { ascending: false }).limit(60),
     sb.from('checkins').select('*').eq('user_id', id).order('created_at', { ascending: false }),
     sb.from('workout_completions').select('week_number,year,day_name').eq('user_id', id).order('created_at', { ascending: false }).limit(60),
-    sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500)
+    sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500),
+    sb.from('body_measurements').select('*').eq('user_id', id).order('date', { ascending: false }).limit(30).catch(() => ({ data: [] }))
   ]);
 
   const intake = intakeRes.data?.[0] || null;
@@ -1053,7 +1172,8 @@ async function openClient(id) {
     weightLog: weightLog || [],
     checkins: checkins || [],
     completions: completions || [],
-    strengthLogs: strengthLogs || []
+    strengthLogs: strengthLogs || [],
+    bodyMeasurements: bodyMeasurements || []
   };
 
   // Initialize diet plan editor
@@ -1100,18 +1220,134 @@ async function openClient(id) {
 function showClientList() {
   document.getElementById('pg-client').classList.add('hidden');
   document.getElementById('pg-clients').classList.remove('hidden');
+  document.getElementById('pg-leads').classList.add('hidden');
   document.getElementById('main-title').textContent = 'Klienter';
+  document.getElementById('nav-klienter').classList.add('active');
+  document.getElementById('nav-leads').classList.remove('active');
   if (weightChart) { weightChart.destroy(); weightChart = null; }
   if (checkinChart) { checkinChart.destroy(); checkinChart = null; }
+  if (målChart) { målChart.destroy(); målChart = null; }
+}
+
+// ── LEADS ─────────────────────────────────────────────────────────────────────
+let allLeads = [];
+let leadFilter = 'alle';
+
+async function showLeads() {
+  document.getElementById('pg-client').classList.add('hidden');
+  document.getElementById('pg-clients').classList.add('hidden');
+  document.getElementById('pg-leads').classList.remove('hidden');
+  document.getElementById('main-title').textContent = 'Leads';
+  document.getElementById('nav-klienter').classList.remove('active');
+  document.getElementById('nav-leads').classList.add('active');
+  await loadLeads();
+}
+
+async function loadLeads() {
+  const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false });
+  if (error) { toast('Kunne ikke hente leads: ' + error.message, 'err'); return; }
+  allLeads = data || [];
+  renderLeads();
+}
+
+function setLeadFilter(f, el) {
+  leadFilter = f;
+  document.querySelectorAll('[data-lf]').forEach(b => b.classList.toggle('active', b.dataset.lf === f));
+  renderLeads();
+}
+
+function renderLeads() {
+  const grid = document.getElementById('leads-grid');
+  const filtered = leadFilter === 'alle' ? allLeads : allLeads.filter(l => l.status === leadFilter);
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">🎯</div><p>Ingen leads i denne kategori</p></div>';
+    return;
+  }
+  const statusColor = { ny: 'var(--blue)', kontaktet: 'var(--gold)', konverteret: 'var(--green)', afvist: 'var(--red)' };
+  const statusLabel = { ny: 'Ny', kontaktet: 'Kontaktet', konverteret: 'Konverteret ✓', afvist: 'Afvist' };
+  const sourceLabel = { instagram: 'Instagram', anbefaling: 'Anbefaling', hjemmeside: 'Hjemmeside', tiktok: 'TikTok', andet: 'Andet' };
+  grid.innerHTML = filtered.map(l => `
+    <div class="client-card">
+      <div class="cc-top">
+        <div class="cc-avatar" style="font-size:.85rem">${(l.name||'?').charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div class="cc-name">${escHtml(l.name)}</div>
+          <div class="cc-email">${escHtml(l.email||l.phone||'—')}</div>
+        </div>
+        <span style="background:rgba(0,0,0,.2);border:1px solid ${statusColor[l.status]||'var(--bdr)'};color:${statusColor[l.status]||'var(--muted)'};border-radius:20px;padding:3px 10px;font-size:.68rem;font-weight:700;letter-spacing:.06em;white-space:nowrap">${statusLabel[l.status]||l.status}</span>
+      </div>
+      ${l.notes ? `<div style="font-size:.82rem;color:var(--muted);margin-bottom:10px;font-family:var(--serif);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">"${escHtml(l.notes)}"</div>` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--bdr);padding-top:12px;margin-top:4px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:.72rem;color:var(--dim)">${sourceLabel[l.source]||l.source||'—'} · ${new Date(l.created_at).toLocaleDateString('da-DK',{day:'numeric',month:'short'})}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="editLead('${l.id}')">Rediger</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLead('${l.id}')">Slet</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openLeadModal(lead) {
+  document.getElementById('lead-modal-title').textContent = lead ? 'Rediger lead' : 'Tilføj lead';
+  document.getElementById('lead-edit-id').value = lead?.id || '';
+  document.getElementById('lead-name').value = lead?.name || '';
+  document.getElementById('lead-email').value = lead?.email || '';
+  document.getElementById('lead-phone').value = lead?.phone || '';
+  document.getElementById('lead-source').value = lead?.source || 'andet';
+  document.getElementById('lead-status').value = lead?.status || 'ny';
+  document.getElementById('lead-notes').value = lead?.notes || '';
+  document.getElementById('lead-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('lead-name').focus(), 60);
+}
+
+function closeLeadModal() {
+  document.getElementById('lead-modal').classList.add('hidden');
+}
+
+function editLead(id) {
+  const lead = allLeads.find(l => l.id === id);
+  if (lead) openLeadModal(lead);
+}
+
+async function saveLead() {
+  const name = document.getElementById('lead-name').value.trim();
+  if (!name) { toast('Navn er påkrævet', 'err'); return; }
+  const payload = {
+    name,
+    email: document.getElementById('lead-email').value.trim() || null,
+    phone: document.getElementById('lead-phone').value.trim() || null,
+    source: document.getElementById('lead-source').value,
+    status: document.getElementById('lead-status').value,
+    notes: document.getElementById('lead-notes').value.trim() || null,
+  };
+  const editId = document.getElementById('lead-edit-id').value;
+  let error;
+  if (editId) {
+    ({ error } = await sb.from('leads').update(payload).eq('id', editId));
+  } else {
+    ({ error } = await sb.from('leads').insert(payload));
+  }
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  closeLeadModal();
+  toast(editId ? 'Lead opdateret' : 'Lead tilføjet ✓', 'ok');
+  await loadLeads();
+}
+
+async function deleteLead(id) {
+  if (!confirm('Slet dette lead?')) return;
+  const { error } = await sb.from('leads').delete().eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  toast('Lead slettet', 'ok');
+  await loadLeads();
 }
 
 function switchTab(tab, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   else document.querySelectorAll('.tab').forEach((t, i) => {
-    if (['profil','kostplan','traening','checkin','data','beskeder','fotos'][i] === tab) t.classList.add('active');
+    if (['profil','kostplan','traening','checkin','data','beskeder','fotos','mål'][i] === tab) t.classList.add('active');
   });
-  ['profil','kostplan','traening','checkin','data','beskeder','fotos'].forEach(t => {
+  ['profil','kostplan','traening','checkin','data','beskeder','fotos','mål'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
   });
   if (tab === 'profil') renderProfilTab();
@@ -1121,6 +1357,7 @@ function switchTab(tab, el) {
   if (tab === 'data') renderDataTab();
   if (tab === 'beskeder') renderBeskederTab();
   if (tab === 'fotos') renderFotosTab();
+  if (tab === 'mål') renderMålTab();
 }
 
 // ── APPROVE / DEACTIVATE ───────────────────────────────────────────────────
@@ -1166,6 +1403,7 @@ async function deleteClient() {
       sb.from('weight_log').delete().eq('user_id', uid),
       sb.from('checkins').delete().eq('user_id', uid),
       sb.from('messages').delete().eq('user_id', uid),
+      sb.from('body_measurements').delete().eq('user_id', uid),
     ]);
     await sb.from('profiles').delete().eq('id', uid);
 
@@ -3321,6 +3559,103 @@ async function renderFotosTab() {
       <span style="color:var(--muted)">Sørg for at oprette en Supabase Storage bucket kaldet <strong>progress-photos</strong> og sæt den til public.</span>
     </div>`;
   }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MÅL TAB – kropsomfang per klient
+// ════════════════════════════════════════════════════════════════════════════
+let målChart = null;
+
+function renderMålTab() {
+  const bm = [...(currentClientData.bodyMeasurements || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const el = document.getElementById('tab-mål');
+
+  const fields = [
+    { key: 'waist',       label: 'Talje',      color: '#c9a84c' },
+    { key: 'hips',        label: 'Hofter',     color: '#7aa4f0' },
+    { key: 'chest',       label: 'Bryst',      color: '#5cb285' },
+    { key: 'left_arm',    label: 'V. Arm',     color: '#e36868' },
+    { key: 'right_arm',   label: 'H. Arm',     color: '#e39868' },
+    { key: 'left_thigh',  label: 'V. Lår',     color: '#a078d4' },
+    { key: 'right_thigh', label: 'H. Lår',     color: '#d478b4' },
+  ];
+
+  if (!bm.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📐</div><p>Klienten har ikke logget kropsomfang endnu.</p></div>';
+    return;
+  }
+
+  const labels = bm.map(r => new Date(r.date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }));
+
+  const activeFields = fields.filter(f => bm.some(r => r[f.key] != null));
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:18px">Kropsomfang over tid (cm)</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        ${activeFields.map(f => `<div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)"><div style="width:12px;height:3px;background:${f.color};border-radius:2px"></div>${f.label}</div>`).join('')}
+      </div>
+      <canvas id="mål-chart" height="110"></canvas>
+    </div>
+    <div class="card">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Historik</h3>
+      <div style="overflow-x:auto">
+        <table class="ci-table">
+          <thead><tr>
+            <th>Dato</th>
+            ${activeFields.map(f => `<th style="text-align:center">${f.label}</th>`).join('')}
+            <th>Note</th>
+          </tr></thead>
+          <tbody>
+            ${[...bm].reverse().map(r => `<tr>
+              <td>${new Date(r.date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' })}</td>
+              ${activeFields.map(f => `<td style="text-align:center;font-weight:${r[f.key]!=null?'600':'400'};color:${r[f.key]!=null?'var(--txt)':'var(--dim)'}">${r[f.key] != null ? r[f.key] + ' cm' : '—'}</td>`).join('')}
+              <td style="color:var(--muted);font-size:.82rem">${escHtml(r.notes || '—')}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  if (målChart) { målChart.destroy(); målChart = null; }
+  const ctx = document.getElementById('mål-chart')?.getContext('2d');
+  if (!ctx) return;
+  målChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: activeFields.map(f => ({
+        label: f.label,
+        data: bm.map(r => r[f.key]),
+        borderColor: f.color,
+        backgroundColor: f.color + '18',
+        borderWidth: 2,
+        pointBackgroundColor: f.color,
+        pointRadius: 4,
+        tension: 0.35,
+        spanGaps: true
+      }))
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          borderColor: 'rgba(201,168,76,.3)',
+          borderWidth: 1,
+          titleColor: '#f0f0f0',
+          bodyColor: '#aaa',
+          callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y} cm` }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 }, callback: v => v + ' cm' } }
+      }
+    }
+  });
 }
 
 function toast(msg, type = 'ok') {
