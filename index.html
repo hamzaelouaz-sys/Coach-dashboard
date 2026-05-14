@@ -960,6 +960,142 @@ let mealCnt = 0, itemCnt = 0, exCnt = 0;
 const ALL_DAYS = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
 
 // ════════════════════════════════════════════════════════════════════════════
+// KNOWLEDGE BASE DEFAULT
+// ════════════════════════════════════════════════════════════════════════════
+(function initKnowledgeBase() {
+  const KB_VERSION = 'v3-2026-05-14';
+  if (localStorage.getItem('coach_kb_version') === KB_VERSION) return;
+  const kb = `=== FUNDAMENTALE PRINCIPPER ===
+SRA: 48–72t restitution pr. muskelgruppe for superkompensation.
+Specificitet: styrke kræver >80% 1RM; hypertrofi fungerer i 30–80% 1RM.
+Overload: fremgang kræver progressivt stigende stimulus (volumen ELLER intensitet).
+Variation: skift øvelser/rep-zoner periodisk for at undgå adaptationsplateau.
+
+=== VOLUMEN & FREKVENS ===
+Ugentlig volumen (Helms/Schoenfeld): 10–20 arbejdssæt/muskelgruppe/uge.
+Begyndere: start med 10–12 sæt/uge; øvede kan tolerere 16–20 sæt/uge.
+Frekvens: mindst 2x/uge pr. muskelgruppe for optimal hypertrofi.
+Fordel volumen jævnt over ugen — én mega-session er ringere end 2–3 sessioner.
+
+=== INTENSITET & UDFØRELSE ===
+Rep-zoner: primært 6–12 reps (hypertrofi), 1–5 reps (styrke), 12–20+ (udholdenhed).
+Hypertrofi sker på tværs af rep-zoner (6–30+) hvis sæt tages tæt på failure.
+RPE-styring: de fleste sæt ved RPE 7–9 (1–3 reps fra failure). Kun sidst sæt til failure.
+Failure hæver stimulus marginalt men uforholdsmæssigt mere træthed — undgå som fast praksis.
+Minimumsintensiteter: hypertrofi ≥ 60% 1RM, styrke ≥ 75% 1RM.
+
+=== PROGRESSION & STRUKTUR ===
+Compound first: tunge flerledsøvelser når CNS er frisk, isolation til sidst.
+Dobbelt progression: øg reps inden du øger vægten.
+Deload: reducér volumen 40–50% hver 3–5 uge for restitution og re-sensitisering.
+Periodisering: lineær og undulerende er begge effektive — begge bedre end ingen periodisering.
+
+=== MUSKELBALANCE ===
+Push/pull-ratio: tilstræb 1:1 eller 1:1.2 for skulder/rygsundhed.
+Posterior chain: prioritér baglår, sæde og rygstrækker — ofte underudviklede.
+Unilaterale øvelser: inkludér til at udjævne sideforskelle og forbedre stabilitet.
+
+=== SCHOENFELD: SCIENCE AND DEVELOPMENT OF MUSCLE HYPERTROPHY ===
+
+PRIMÆR HYPERTROFI-DRIVER
+Mekanisk tension er den vigtigste stimulus — ikke metabolisk stress eller muskelskade alene.
+Muskelskade kan bidrage akut, men er ikke nødvendig for hypertrofi og bør ikke maksimeres.
+Metabolisk stress (pump, laktat) har additiv effekt, men rang under mekanisk tension.
+
+INTENSITET & FAILURE
+Hypertrofi opnås på tværs af rep-zoner (6–30+ reps) — hvis sæt tages tæt på failure.
+De fleste sæt: RIR 1–2 (1–2 reps fra failure). Kun det sidste sæt pr. øvelse til faktisk failure.
+Lav belastning (<30% 1RM) giver signifikant mindre hypertrofi end moderat/høj belastning.
+Styrke kræver tung belastning (>80% 1RM) — hypertrofi er mere belastningsfleksibel.
+
+VOLUMEN
+Dose-respons: mere volumen = mere hypertrofi, op til et individuelt maximum.
+Minimum effektiv volumen: ~5–10 sæt/muskelgruppe/uge (begyndere lavere).
+Optimalt for de fleste: 10–20 sæt/muskelgruppe/uge.
+Høj volumen (20+ sæt) kan gavne avancerede, men kræver periodisering for at undgå overtræning.
+Fordel volumen over ugen — 1 mega-session er ringere end 2–3 sessioner.
+
+FREKVENS
+2x/uge pr. muskelgruppe er minimum for optimal hypertrofi.
+3x/uge kan give marginal gevinst ved høj total volumen.
+Frekvens er primært et redskab til at fordele volumen — ikke en selvstændig driver.
+
+ØVELSESVALG & ROM
+Kombiner multi-joint (compound) og single-joint (isolation) øvelser.
+Fuld bevægeudslag (full ROM) er overlegent ift. delvis ROM for de fleste muskler.
+Stretch-betonte øvelser (fx dybe squats, RDL, incline curl) kan give ekstra hypertrofi i stretchet position.
+Variér vinkler og grip for at ramme alle fiberbundter i en muskel.
+
+ØVELSESRÆKKEFØLGE
+Prioritetsmuskulatur trænes først i sessionen — træthed reducerer stimulus på seneste øvelser.
+
+HVILE MELLEM SÆT
+Compound øvelser: ≥2 minutter hvile for at opretholde ydelse i næste sæt.
+Isolation øvelser: 60–90 sekunder er tilstrækkeligt.
+Kortere hvile (<60s) kompromitterer volumen og dermed hypertrofi-stimulus.
+
+TEMPOTRÆNING
+Tempo på 0,5–6 sek. pr. fase er ligeværdigt mht. hypertrofi.
+Undgå superslow (>10 sek. per rep) — reducerer mekanisk tension og volumenkapacitet.
+Kontrolleret excentrisk fase (2–3 sek.) anbefales for teknik og skadesforebyggelse.
+
+PERIODISERING
+Lineær og undulerende periodisering er begge effektive — begge overgår ingen periodisering.
+Deload hver 3–8 uge afhængigt af volumen og erfaring. Reducer volumen med 40–50%.
+
+KONDITIONSTRÆNING
+Aerob træning hæmmer ikke hypertrofi signifikant, hvis ikke samme dag som tung styrketræning, varighed < 30–40 min og lav impact (cykel > løb).
+
+ERNÆRING
+Protein: 1,6–2,2 g/kg/dag. Op til 3,1 g/kg ved kalorieunderskud.
+Fordel protein: 3–5 måltider à 0,4–0,55 g/kg pr. måltid.
+Post-workout protein: 20–40 g inden for 2 timer.
+Kalorier: let overskud (200–300 kcal) for ren muskelopbygning.
+
+=== ISRAETEL: SCIENTIFIC PRINCIPLES OF STRENGTH TRAINING ===
+
+DE 7 PRINCIPPER (rangordnet efter vigtighed)
+
+1. SPECIFICITET
+Træning skal belaste de systemer, der skal forbedres.
+Alle øvelsesvalg skal kunne begrundes i: størrelse, styrke, teknik, restitution eller skadesforebyggelse.
+Konditionstræning er skadeligt for styrke i høj dosis (fibertype-konvertering, NS-ændringer, muskelkatabolisme).
+
+2. OVERLOAD
+Kroppen tilpasser sig kun ved forstyrrelse af homeostase over minimalgrænsen.
+Minimumsintensiteter: hypertrofi ≥ 60% 1RM, styrke ≥ 75% 1RM.
+Volumen er den primære drivkraft for hypertrofi; intensitet for styrke.
+Træning til failure: marginalt mere stimulerende, men uforholdsmæssigt mere trættende — undgå som fast praksis.
+
+3. FATIGUE MANAGEMENT
+MRV (Maximum Recoverable Volume): højeste ugentlige volumen man kan restituere fra og progrediere.
+Fatigue-hierarki: fridag → let session (50% vol) → deload (1 uge, 3:1 eller 4:1 ratio) → aktiv hvile (2 uger).
+MRV-signaler: faldende reps, manglende pump, dårlig søvn, manglende sult, flad motivation.
+Failure-træning sænker MRV — bruges kun i den SIDSTE session inden deload.
+
+4. SRA (STIMULUS-RESTITUTION-ADAPTATION)
+SRA-kurvers varighed: teknik (timer–1 dag), hypertrofi (1–3 dage), neural kraftproduktion (~1 uge), bindevæv (uger–måneder).
+For tidlig træning blokerer igangværende adaptationer. For sen træning mister man adaptationerne (involution).
+Optimal hypertrofi-frekvens: 2–4x/uge pr. muskelgruppe. Styrke: 1–2x/uge tungt.
+
+5. VARIATION
+Gentagen stimulus → adaptationsresistens. Skift øvelsesvalg ca. hver mesocyklus.
+For hyppig variation (<3 uger pr. øvelse) overtræder directed adaptation — adaptationer sætter sig ikke.
+
+6. FASE-POTENTIERING
+Faser i logisk rækkefølge: Hypertrofi (2–3 mdr.) → Styrke (2–3 mdr.) → Peak (1–2 mdr.) → Aktiv hvile → gentag.
+Hypertrofi-fase: 6–10 reps, 60–75% 1RM, 15–30 sæt/muskel/uge.
+Styrke-fase: 3–6 reps, 75–90% 1RM, 10–20 sæt/muskel/uge.
+Muskelmasse bevares under styrketræning. Styrke bevares 1–3 måneder under peaking.
+
+7. INDIVIDUELLE FORSKELLE
+Alle principper gælder alle — men i forskellig grad.
+Begyndere: mere hypertrofi, bred øvelsesvariation. Øvede: udbyg stærke punkter. Avancerede: adresser begrænsende faktorer.
+MRV, restitutionshastighed og øvelsesrespons varierer — tilpas volumen individuelt, kopier ikke andres program blindt.`;
+  localStorage.setItem('coach_knowledge_base', kb);
+  localStorage.setItem('coach_kb_version', KB_VERSION);
+})();
+
 // INIT
 // ════════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
