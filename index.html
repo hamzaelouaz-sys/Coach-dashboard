@@ -1147,15 +1147,20 @@ async function openClient(id) {
   document.getElementById('btn-deactivate').classList.toggle('hidden', !isActive);
 
   // Load all client data — use limit(1) to avoid maybeSingle() failing on duplicate rows
-  const [intakeRes, cdRes, { data: weightLog }, { data: checkins }, { data: completions }, { data: strengthLogs }, { data: bodyMeasurements }] = await Promise.all([
+  const [intakeRes, cdRes, { data: weightLog }, { data: checkins }, { data: completions }, { data: strengthLogs }] = await Promise.all([
     sb.from('intake_forms').select('*').eq('user_id', id).order('submitted_at', { ascending: false }).limit(1),
     sb.from('client_data').select('*').eq('user_id', id).order('updated_at', { ascending: false }).limit(1),
     sb.from('weight_log').select('*').eq('user_id', id).order('date', { ascending: false }).limit(60),
     sb.from('checkins').select('*').eq('user_id', id).order('created_at', { ascending: false }),
     sb.from('workout_completions').select('week_number,year,day_name').eq('user_id', id).order('created_at', { ascending: false }).limit(60),
-    sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500),
-    sb.from('body_measurements').select('*').eq('user_id', id).order('date', { ascending: false }).limit(30).catch(() => ({ data: [] }))
+    sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500)
   ]);
+  // body_measurements er separat for at undgå at bryde data-loading hvis tabellen ikke er oprettet endnu
+  let bodyMeasurements = [];
+  try {
+    const bmRes = await sb.from('body_measurements').select('*').eq('user_id', id).order('date', { ascending: false }).limit(30);
+    bodyMeasurements = bmRes.data || [];
+  } catch { bodyMeasurements = []; }
 
   const intake = intakeRes.data?.[0] || null;
   const clientRow = cdRes.data?.[0] || null;
