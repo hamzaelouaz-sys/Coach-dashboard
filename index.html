@@ -844,14 +844,14 @@ const EXERCISE_BANK = [
 
 // ─── Day type definitions for workout generator ─────────────────────────────
 const DAY_TYPES = {
-  chest_back:     { label: 'Bryst & Ryg',                  desc: 'Bryst-compound (bench/incline) + Ryg-compound (row/DL) + Ryg-isolation (lat pulldown/cable row) + Bryst-isolation + Rear delt + Core (valgfrit)' },
-  shoulders_arms: { label: 'Skuldre & Arme',               desc: 'Skulder-compound (OHP) + Lateral raise + Rear delt/Face pull + Biceps compound + Triceps compound + Biceps isolation (valgfrit)' },
-  legs:           { label: 'Ben & Core',                   desc: 'Quad-compound (squat/leg press) + Hip-hinge (RDL) + Glute isolation + Quad isolation (leg extension) + Hamstring isolation (leg curl) + Calf + Core' },
-  push:           { label: 'Push (Bryst/Skuldre/Triceps)', desc: 'Bryst-compound (bench/incline) + Skulder-compound (OHP) + Lateral raise + Triceps compound + Triceps isolation + valgfrit isolation' },
-  pull:           { label: 'Pull (Ryg/Biceps)',            desc: 'Ryg-compound (deadlift/row) + Lat pulldown + Seated cable row + Face pull + Biceps compound + Biceps isolation' },
-  upper:          { label: 'Upper (Overkrop)',             desc: 'Bryst-compound + Ryg-compound + Skulder (OHP eller lateral) + Biceps + Triceps + valgfrit' },
-  lower:          { label: 'Lower (Ben & Core)',           desc: 'Quad-compound + Hip-hinge + Glute isolation + Quad isolation + Hamstring isolation + Calf' },
-  fullbody:       { label: 'Fullbody',                     desc: '1 quad-compound + 1 hip-hinge + 1 upper push compound + 1 upper pull compound + 1 skulder isolation + 1 arm (biceps eller triceps)' },
+  chest_back:     { label: 'Bryst & Ryg',                  desc: 'OBLIGATORISK: 1 horisontal bryst-compound (bench press/incline press) + 1 vertikal eller horisontal ryg-compound (barbell row/T-bar row/one-arm row) + 1 vertikal ryg-pull (lat pulldown/pull-ups) + 1 bryst-isolation (cable flyes/pec deck) + 1 rear delt (face pull/rear delt fly) + valgfrit core' },
+  shoulders_arms: { label: 'Skuldre & Arme',               desc: 'OBLIGATORISK: 1 skulder-compound (OHP/Arnold press) + 1 lateral raise + 1 rear delt/face pull + 1 biceps compound (barbell curl/hammer curl) + 1 triceps compound (skull crushers/dips) + 1 biceps eller triceps isolation' },
+  legs:           { label: 'Ben & Core',                   desc: 'OBLIGATORISK: 1 quad-compound (squat/leg press/front squat) + 1 hip-hinge (RDL/Romanian deadlift) + 1 glute isolation (hip thrust/cable kickback) + 1 quad isolation (leg extension) + 1 hamstring isolation (leg curl) + 1 calf + 1 core' },
+  push:           { label: 'Push (Bryst/Skuldre/Triceps)', desc: 'OBLIGATORISK: 1 horisontal bryst-compound (bench press/incline press) + 1 skulder-compound (OHP/dumbbell press) + 1 lateral raise + 1 bryst-isolation (cable flyes/pec deck) + 1 triceps compound (skull crushers/dips) + 1 triceps isolation (pushdown/overhead ext)' },
+  pull:           { label: 'Pull (Ryg/Biceps)',            desc: 'OBLIGATORISK: 1 horisontal ryg-compound (barbell row/T-bar row/one-arm row — SKAL INKLUDERES, INGEN undtagelser) + 1 vertikal pull (lat pulldown/pull-ups) + 1 ryg-isolation (seated cable row/back extension) + 1 rear delt (face pull/rear delt fly) + 1 biceps compound (barbell curl/hammer curl) + 1 biceps isolation' },
+  upper:          { label: 'Upper (Overkrop)',             desc: 'OBLIGATORISK: 1 bryst-compound + 1 horisontal ryg-compound (row — MUST INCLUDE) + 1 vertikal pull (lat pulldown/pull-ups) + 1 skulder (OHP eller lateral raise) + 1 biceps + 1 triceps' },
+  lower:          { label: 'Lower (Ben & Core)',           desc: 'OBLIGATORISK: 1 quad-compound (squat/leg press) + 1 hip-hinge (RDL) + 1 glute isolation (hip thrust) + 1 quad isolation (leg extension) + 1 hamstring isolation (leg curl) + 1 calf' },
+  fullbody:       { label: 'Fullbody',                     desc: 'OBLIGATORISK: 1 quad-compound (squat) + 1 hip-hinge (RDL/deadlift) + 1 bryst-compound (bench/incline) + 1 horisontal ryg-compound (row — SKAL INKLUDERES) + 1 skulder isolation + 1 arm (biceps eller triceps)' },
 };
 const DAY_NAMES_FOR_N = {
   2: ['Mandag','Torsdag'],
@@ -3324,11 +3324,11 @@ async function runClaudeWorkoutGenerator() {
 
   const injurySection = (d.injuries && d.injuries.toLowerCase() !== 'ingen' && d.injuries.trim())
     ? `
-═══ SKADE-HENSYN (KRITISK — OVERHOLD ALTID) ═══
-Klienten har følgende skader/begrænsninger: "${d.injuries}"
-KRAV: Undgå ENHVER øvelse der belaster dette område direkte eller indirekte.
-Angiv i "notes"-feltet for HVER erstatningsøvelse: hvad du har undgået og hvorfor.
-Find smertefrie alternativer der rammer SAMME primære muskelgruppe.`
+═══ SKADE-HENSYN ═══
+Klienten har: "${d.injuries}"
+REGEL 1: Udskift KUN øvelser der DIREKTE og primært belaster det skadede område. Eksempel: knæskade → udskift squat, lunges, leg extension — IKKE bench press, rows, curls.
+REGEL 2: Øvelser der ikke involverer det skadede område gennemføres UÆNDRET. Tilføj INGEN skade-note til disse.
+REGEL 3: Brug "notes"-feltet KUN på de øvelser du faktisk har udskiftet — skriv kort: "Erstattet [original] pga. [skade]: undgår [belastning]".`
     : '';
 
   const prompt = `Du er verdens bedste styrketræningscoach — på niveau med Jeff Nippard, Mike Israetel og Eric Helms. Generer en PROFESSIONEL, evidensbaseret træningsplan der er skræddersyet præcist til denne klient.
@@ -3375,12 +3375,14 @@ MÅL "${goal}":
 MAKS 6 øvelser pr. session, 45-65 min total${injurySection}
 
 ═══════════════════════════════════════
-VARIATIONSKRAV (STRENGT OVERHOLDES)
+KVALITETSKRAV — UBRYDELIGE REGLER
 ═══════════════════════════════════════
+• Pull-dag SKAL altid indeholde mindst 1 horisontal row (Barbell Row / T-Bar Row / One-Arm Dumbbell Row). Lat pulldown ERSTATTER IKKE en row.
 • A og B sessioner med SAMME muskelgrupper: NULPROCENT overlap i øvelsesvalg
 • Ingen øvelse gentages inden for samme uge for SAMME primære muskelgruppe
 • Begynder: max 4-5 unikke compound-løft på tværs af ugen (motorisk indlæring)
 • Øvet/Avanceret: bredt øvelsesudvalg for komplet muskeldækning fra alle vinkler
+• "notes"-feltet bruges KUN til progressionsmodel og evt. skade-erstatning — ALDRIG til generelle anatomiske forklaringer
 
 ═══════════════════════════════════════
 OUTPUT — KUN VALID JSON (INGEN MARKDOWN, INGEN KOMMENTARER)
@@ -3511,18 +3513,10 @@ async function saveGenPlanDirect() {
     const progStr = JSON.stringify(prog);
     const now = new Date().toISOString();
 
-    const selRes = await withTimeout(sb.from('client_data').select('id').eq('user_id', currentClient.id).limit(1));
-    if (selRes.error) { showSaveErr(selRes.error.message); return; }
-
-    let saveRes;
-    if (selRes.data?.[0]?.id) {
-      saveRes = await withTimeout(sb.from('client_data')
-        .update({ program: progStr, updated_at: now })
-        .eq('user_id', currentClient.id).select('id'));
-    } else {
-      saveRes = await withTimeout(sb.from('client_data')
-        .insert({ user_id: currentClient.id, program: progStr, updated_at: now }));
-    }
+    const saveRes = await withTimeout(sb.from('client_data').upsert(
+      { user_id: currentClient.id, program: progStr, updated_at: now },
+      { onConflict: 'user_id' }
+    ));
 
     if (saveRes.error) { showSaveErr(saveRes.error.message); return; }
 
