@@ -3695,28 +3695,22 @@ async function saveGenPlanDirect() {
 
   try {
     const now = new Date().toISOString();
-    console.log('[saveGenPlan] START — client:', currentClient.id);
 
     const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
-    console.log('[saveGenPlan] SELECT done:', selRes);
     if (selRes.error) { showSaveErr(selRes.error.message); return; }
 
     let prog = {};
     try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
     prog.workout = { program_name: p.program_name, days: p.days };
     const progStr = JSON.stringify(prog);
-    console.log('[saveGenPlan] progStr length:', progStr.length, '| existing id:', selRes.data?.[0]?.id);
 
     let saveRes;
     if (selRes.data?.[0]?.id) {
-      console.log('[saveGenPlan] UPDATE...');
       saveRes = await sb.from('client_data').update({ program: progStr, updated_at: now })
         .eq('user_id', currentClient.id).select('id');
     } else {
-      console.log('[saveGenPlan] INSERT...');
       saveRes = await sb.from('client_data').insert({ user_id: currentClient.id, program: progStr, updated_at: now });
     }
-    console.log('[saveGenPlan] save result:', saveRes);
 
     if (saveRes.error) { showSaveErr(saveRes.error.message); return; }
 
@@ -3724,7 +3718,6 @@ async function saveGenPlanDirect() {
     document.getElementById('workout-gen-modal').classList.add('hidden');
     toast('✅ Plan gemt — klienten kan se den nu', 'ok');
   } catch (e) {
-    console.error('[saveGenPlan] EXCEPTION:', e);
     showSaveErr(e.message);
   }
 }
