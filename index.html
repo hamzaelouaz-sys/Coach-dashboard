@@ -1636,26 +1636,35 @@ async function saveWorkoutPlan() {
       }))
     };
 
-    // Byg program-JSON fra in-memory state for at undgå race conditions og JSON-parse fejl
-    const prog = {};
-    if (currentClientData.diet) prog.diet = currentClientData.diet;
+    const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
+    console.log('[saveWorkoutPlan] select result:', selRes);
+
+    let prog = {};
+    try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
     prog.workout = plan;
 
-    console.log('[saveWorkoutPlan] client id:', currentClient.id, '| days:', plan.days.length);
+    let saveRes;
+    if (selRes.data?.[0]?.id) {
+      saveRes = await sb.from('client_data').update({
+        program: JSON.stringify(prog),
+        updated_at: new Date().toISOString()
+      }).eq('user_id', currentClient.id).select('id');
 
-    // Upsert: insert hvis ingen række, ellers update – undgår SELECT + branch-logik
-    const saveRes = await sb.from('client_data').upsert({
-      user_id: currentClient.id,
-      program: JSON.stringify(prog),
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
+      if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
+        showSaveError('workout', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Kør SQL fra 🔧-knappen øverst.');
+        return;
+      }
+    } else {
+      saveRes = await sb.from('client_data').insert({
+        user_id: currentClient.id,
+        program: JSON.stringify(prog),
+        updated_at: new Date().toISOString()
+      });
+    }
 
-    console.log('[saveWorkoutPlan] upsert result:', saveRes);
-
+    console.log('[saveWorkoutPlan] save result:', saveRes);
     if (saveRes.error) {
-      const msg = saveRes.error.message || JSON.stringify(saveRes.error);
-      console.error('[saveWorkoutPlan] error:', saveRes.error);
-      showSaveError('workout', msg);
+      showSaveError('workout', saveRes.error.message || JSON.stringify(saveRes.error));
       return;
     }
     currentClientData.workout = plan;
