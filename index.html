@@ -2103,7 +2103,7 @@ function syncWorkoutDOM() {
         reps: row.querySelector('.ex-reps')?.value || '8-12',
         weight: row.querySelector('.ex-weight')?.value || '',
         rest: +row.querySelector('.ex-rest')?.value || 90,
-        video_url: row.querySelector('.ex-video')?.value.trim() || '',
+        video_url: row.querySelector('.ex-video')?.value?.trim() || '',
       });
     });
   });
@@ -2159,20 +2159,15 @@ async function saveWorkoutPlan() {
       saveRes = await sb.from('client_data').update({
         program: JSON.stringify(prog),
         updated_at: new Date().toISOString()
-      }).eq('user_id', currentClient.id).select('id');
-      console.log('[saveWorkoutPlan] UPDATE result:', saveRes?.data, saveRes?.error);
-      // UPDATE rammer 0 rækker = RLS blokerer
-      if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
-        showSaveError('workout', 'UPDATE ramte 0 rækker — RLS blokerer. Kør SQL fra 🔧-knappen øverst.');
-        return;
-      }
+      }).eq('user_id', currentClient.id);
+      console.log('[saveWorkoutPlan] UPDATE result:', saveRes?.error);
     } else {
       saveRes = await sb.from('client_data').insert({
         user_id: currentClient.id,
         program: JSON.stringify(prog),
         updated_at: new Date().toISOString()
       });
-      console.log('[saveWorkoutPlan] INSERT result:', saveRes?.data, saveRes?.error);
+      console.log('[saveWorkoutPlan] INSERT result:', saveRes?.error);
     }
 
     if (saveRes.error) {
