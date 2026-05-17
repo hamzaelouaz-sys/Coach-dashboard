@@ -2144,30 +2144,14 @@ async function saveWorkoutPlan() {
       }))
     };
 
-    const selRes = await withTimeout(
-      sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1)
+    const { error: saveErr } = await withTimeout(
+      sb.rpc('save_client_program', {
+        p_user_id: currentClient.id,
+        p_field: 'workout',
+        p_data: plan
+      })
     );
-    if (selRes.error) { showSaveError('workout', selRes.error.message); return; }
-
-    let prog = {};
-    try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
-    prog.workout = plan;
-    const progJson = JSON.stringify(prog);
-    const now = new Date().toISOString();
-
-    let saveRes;
-    if (selRes.data?.[0]?.id) {
-      saveRes = await withTimeout(
-        sb.from('client_data').update({ program: progJson, updated_at: now })
-          .eq('user_id', currentClient.id).select('id')
-      );
-    } else {
-      saveRes = await withTimeout(
-        sb.from('client_data').insert({ user_id: currentClient.id, program: progJson, updated_at: now })
-      );
-    }
-
-    if (saveRes.error) { showSaveError('workout', saveRes.error.message); return; }
+    if (saveErr) { showSaveError('workout', saveErr.message); return; }
     currentClientData.workout = plan;
     clearSaveError('workout');
     toast('Træningsplan gemt! ✓', 'ok');
