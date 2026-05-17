@@ -7,179 +7,259 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080808;--surf:#111;--surf2:#1a1a1a;--surf3:#222;--surf4:#2a2a2a;
-  --gold:#c9a84c;--gold-l:#e8cc7a;--gold-d:#8a6f2e;--gold-xs:rgba(201,168,76,.08);
-  --txt:#f0f0f0;--muted:#888;--dim:#444;
-  --bdr:rgba(255,255,255,.07);--bdr-g:rgba(201,168,76,.2);
-  --green:#4caf7d;--red:#e05252;--blue:#5b8dee;
-  --r:10px;--r2:16px;--trans:.2s ease;
+  --bg:#070707;--surf:#0f0f0f;--surf2:#171717;--surf3:#1f1d18;--surf4:#262320;
+  --gold:#c9a961;--gold-l:#e4c97e;--gold-d:#8c7438;--gold-xs:rgba(201,169,97,.08);
+  --txt:#f2ebdc;--muted:#a39a87;--dim:#6a6356;
+  --bdr:rgba(255,255,255,.06);--bdr-g:rgba(201,169,97,.18);--bdr-strong:rgba(201,169,97,.32);
+  --green:#5cb285;--red:#e36868;--blue:#7aa4f0;
+  --r:10px;--r2:14px;--r3:18px;--trans:.2s ease;
+  --sh-card:0 1px 0 rgba(255,255,255,.02) inset, 0 12px 32px rgba(0,0,0,.35);
+  --sans:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'Cormorant Garamond','Times New Roman',serif;
 }
-body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.6;min-height:100vh}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--surf)}::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:3px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--gold-d)}
+::selection{background:var(--gold);color:#0a0a0a}
 .hidden{display:none!important}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 18px;border:none;border-radius:var(--r);font-size:.88rem;font-weight:600;cursor:pointer;transition:all var(--trans);font-family:inherit;white-space:nowrap}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#000}
-.btn-gold:not(:disabled):hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.3)}
-.btn-outline{background:transparent;border:1px solid var(--bdr);color:var(--txt)}
-.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
-.btn-ghost{background:transparent;border:none;color:var(--muted)}
-.btn-ghost:hover{color:var(--txt)}
-.btn-danger{background:rgba(224,82,82,.15);border:1px solid rgba(224,82,82,.3);color:var(--red)}
-.btn-danger:hover{background:rgba(224,82,82,.25)}
-.btn-success{background:rgba(76,175,125,.15);border:1px solid rgba(76,175,125,.3);color:var(--green)}
-.btn-success:hover{background:rgba(76,175,125,.25)}
-.btn-sm{padding:6px 13px;font-size:.8rem}
-.btn-lg{padding:13px 26px;font-size:.95rem}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border:1px solid transparent;border-radius:var(--r);font-size:.83rem;font-weight:600;cursor:pointer;transition:all var(--trans);font-family:inherit;white-space:nowrap;letter-spacing:.01em;line-height:1}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:#0a0a0a;border-color:var(--gold)}
+.btn-gold:not(:disabled):hover{background:var(--gold-l);border-color:var(--gold-l);box-shadow:0 6px 18px rgba(201,169,97,.25)}
+.btn-outline{background:transparent;border-color:var(--bdr);color:var(--txt)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,169,97,.04)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--txt);background:var(--surf2)}
+.btn-danger{background:rgba(227,104,104,.10);border-color:rgba(227,104,104,.3);color:var(--red)}
+.btn-danger:hover{background:rgba(227,104,104,.18);border-color:rgba(227,104,104,.5)}
+.btn-success{background:rgba(92,178,133,.10);border-color:rgba(92,178,133,.3);color:var(--green)}
+.btn-success:hover{background:rgba(92,178,133,.18);border-color:rgba(92,178,133,.5)}
+.btn-sm{padding:7px 13px;font-size:.76rem}
+.btn-lg{padding:13px 24px;font-size:.92rem;letter-spacing:.04em}
 .btn-full{width:100%}
-.input{width:100%;background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;color:var(--txt);font-size:.88rem;outline:none;transition:border-color var(--trans);font-family:inherit}
-.input:focus{border-color:var(--gold)}
+
+/* ── FORMS ── */
+.input{width:100%;background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:11px 14px;color:var(--txt);font-size:.88rem;outline:none;transition:border-color var(--trans),box-shadow var(--trans),background var(--trans);font-family:inherit}
+.input:hover{border-color:rgba(255,255,255,.12)}
+.input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,169,97,.12);background:var(--surf3)}
 .input::placeholder{color:var(--dim)}
-select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-.label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23a39a87' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+textarea.input{resize:vertical;min-height:80px;line-height:1.55;font-family:inherit}
+.label{display:block;font-size:.68rem;color:var(--muted);margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:.16em}
 .form-group{margin-bottom:14px}
-.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
+
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:22px}
 .card-g{border-color:var(--bdr-g)}
-.badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 11px;font-size:.75rem;font-weight:600}
-.badge-pending{background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:var(--blue)}
-.badge-active{background:rgba(76,175,125,.12);border:1px solid rgba(76,175,125,.3);color:var(--green)}
-.badge-gold{background:rgba(201,168,76,.12);border:1px solid var(--bdr-g);color:var(--gold)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:4px 12px;font-size:.72rem;font-weight:700;letter-spacing:.04em}
+.badge-pending{background:rgba(122,164,240,.10);border:1px solid rgba(122,164,240,.28);color:var(--blue)}
+.badge-active{background:rgba(92,178,133,.10);border:1px solid rgba(92,178,133,.28);color:var(--green)}
+.badge-gold{background:rgba(201,169,97,.10);border:1px solid var(--bdr-g);color:var(--gold)}
+
 /* ── AUTH ── */
-#auth-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 50% 25%,rgba(201,168,76,.07) 0%,transparent 65%)}
-.auth-card{background:var(--surf);border:1px solid var(--bdr-g);border-radius:22px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+#auth-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:
+  radial-gradient(ellipse at 50% 0%,rgba(201,169,97,.08) 0%,transparent 55%),
+  var(--bg)}
+.auth-card{background:var(--surf);border:1px solid var(--bdr-g);border-radius:20px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 32px 80px rgba(0,0,0,.65),0 1px 0 rgba(255,255,255,.03) inset}
 .auth-logo{text-align:center;margin-bottom:36px}
-.auth-logo .mark{width:64px;height:64px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;color:#000}
-.auth-logo h1{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.auth-logo p{color:var(--muted);font-size:.85rem;margin-top:4px}
-.msg-err{background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);border-radius:var(--r);padding:10px 14px;color:var(--red);font-size:.84rem;margin-bottom:14px;display:none}
+.auth-logo .mark{width:64px;height:64px;background:linear-gradient(180deg,#1a1612,#0e0c08);border:1px solid var(--gold);color:var(--gold);border-radius:14px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:1.6rem;font-weight:600;letter-spacing:-.5px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.auth-logo h1{font-family:var(--serif);font-size:1.8rem;font-weight:600;color:var(--txt);letter-spacing:-.01em}
+.auth-logo p{color:var(--muted);font-size:.74rem;margin-top:6px;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+.msg-err{background:rgba(227,104,104,.08);border:1px solid rgba(227,104,104,.28);border-radius:var(--r);padding:11px 14px;color:var(--red);font-size:.84rem;margin-bottom:14px;display:none}
+
 /* ── LAYOUT ── */
 #coach-app{display:flex;min-height:100vh}
-#sidebar{width:260px;background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto}
-.sb-logo{padding:20px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:11px}
-.sb-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#000;font-size:1rem;flex-shrink:0}
-.sb-title{font-size:.95rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block}
-.sb-sub{font-size:.7rem;color:var(--muted)}
-.sb-stats{padding:14px 18px;border-bottom:1px solid var(--bdr);display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.sb-stat{background:var(--surf2);border-radius:var(--r);padding:10px 12px}
-.sb-stat-v{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
-.sb-stat-l{font-size:.7rem;color:var(--muted);margin-top:2px}
-.sb-nav{flex:1;padding:12px}
-.nav-item{display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:var(--r);cursor:pointer;color:var(--muted);font-size:.87rem;font-weight:500;transition:all var(--trans);margin-bottom:2px;user-select:none}
+#sidebar{width:260px;background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;transition:transform var(--trans)}
+.sb-logo{padding:22px 20px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px}
+.sb-mark{width:38px;height:38px;background:linear-gradient(180deg,#1a1612,#0e0c08);border:1px solid var(--gold);color:var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-weight:600;font-size:.95rem;flex-shrink:0;letter-spacing:-.5px}
+.sb-title{font-family:var(--serif);font-size:1.1rem;font-weight:600;color:var(--txt);display:block;letter-spacing:-.01em;line-height:1.1}
+.sb-sub{font-size:.62rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;font-weight:600;margin-top:3px;display:block}
+
+.sb-stats{padding:18px 16px;border-bottom:1px solid var(--bdr);display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sb-stat{background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;transition:border-color var(--trans)}
+.sb-stat:hover{border-color:var(--bdr-g)}
+.sb-stat-v{font-family:var(--serif);font-size:1.6rem;font-weight:600;color:var(--gold);line-height:1;letter-spacing:-.015em}
+.sb-stat-l{font-size:.62rem;color:var(--muted);margin-top:5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+
+.sb-nav{flex:1;padding:14px 12px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:.88rem;font-weight:500;transition:all var(--trans);margin-bottom:2px;user-select:none;position:relative}
 .nav-item:hover{background:var(--surf2);color:var(--txt)}
-.nav-item.active{background:rgba(201,168,76,.12);color:var(--gold);font-weight:600}
-.nav-item svg{width:17px;height:17px;opacity:.7;flex-shrink:0}
+.nav-item.active{background:rgba(201,169,97,.10);color:var(--gold);font-weight:600}
+.nav-item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--gold);border-radius:0 2px 2px 0}
+.nav-item svg{width:18px;height:18px;opacity:.7;flex-shrink:0}
 .nav-item.active svg{opacity:1}
+
 .sb-footer{padding:12px;border-top:1px solid var(--bdr)}
-.coach-chip{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf2);border-radius:var(--r)}
-.coach-av{width:36px;height:36px;background:linear-gradient(135deg,var(--gold-d),var(--gold));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.88rem;color:#fff;flex-shrink:0}
-.coach-nm{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.coach-role{font-size:.7rem;color:var(--gold)}
+.coach-chip{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:10px}
+.coach-av{width:36px;height:36px;background:linear-gradient(180deg,var(--gold-d),var(--gold));border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-weight:600;font-size:.95rem;color:#0a0a0a;flex-shrink:0}
+.coach-nm{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
+.coach-role{font-size:.62rem;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-top:2px}
+
 #main{margin-left:260px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--bdr);background:rgba(17,17,17,.95);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50}
-.top-bar h2{font-size:1.05rem;font-weight:700}
-.page-wrap{padding:26px 28px;flex:1}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 30px;border-bottom:1px solid var(--bdr);background:rgba(15,15,15,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;gap:12px;flex-wrap:wrap}
+.top-bar h2{font-family:var(--serif);font-size:1.35rem;font-weight:600;letter-spacing:-.01em}
+.page-wrap{padding:28px 30px;flex:1;max-width:1500px;width:100%}
+
 /* ── CLIENT LIST ── */
-.client-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
-.filter-tab{padding:7px 16px;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-size:.83rem;font-weight:600;cursor:pointer;transition:all var(--trans)}
-.filter-tab.active{background:rgba(201,168,76,.12);border-color:var(--bdr-g);color:var(--gold)}
-.search-input{background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 14px;color:var(--txt);font-size:.87rem;outline:none;width:220px;transition:border-color var(--trans);font-family:inherit}
-.search-input:focus{border-color:var(--gold)}
+.client-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+.filter-tab{padding:8px 16px;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-size:.8rem;font-weight:600;cursor:pointer;transition:all var(--trans);letter-spacing:.02em}
+.filter-tab:hover{color:var(--txt);border-color:rgba(255,255,255,.14)}
+.filter-tab.active{background:rgba(201,169,97,.12);border-color:var(--gold);color:var(--gold)}
+.search-input{background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 14px 9px 36px;color:var(--txt);font-size:.86rem;outline:none;width:240px;transition:all var(--trans);font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a39a87' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center}
+.search-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,169,97,.12)}
 .search-input::placeholder{color:var(--dim)}
+
 .clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.client-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px 20px;cursor:pointer;transition:all var(--trans)}
-.client-card:hover{border-color:var(--bdr-g);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.cc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.cc-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0}
-.cc-name{font-weight:700;font-size:.95rem;margin-bottom:2px}
-.cc-email{font-size:.78rem;color:var(--muted)}
-.cc-stats{display:flex;gap:12px;border-top:1px solid var(--bdr);padding-top:12px}
+.client-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;cursor:pointer;transition:all var(--trans);position:relative;overflow:hidden}
+.client-card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,97,.2),transparent);opacity:0;transition:opacity var(--trans)}
+.client-card:hover{border-color:var(--bdr-g);transform:translateY(-2px);box-shadow:0 16px 32px rgba(0,0,0,.35)}
+.client-card:hover::before{opacity:1}
+.cc-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cc-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-weight:600;font-size:1.05rem;color:#0a0a0a;flex-shrink:0}
+.cc-name{font-weight:700;font-size:.96rem;margin-bottom:3px;letter-spacing:-.005em;color:var(--txt)}
+.cc-email{font-size:.76rem;color:var(--muted)}
+.cc-stats{display:flex;gap:12px;border-top:1px solid var(--bdr);padding-top:14px;margin-top:14px}
 .cc-stat{flex:1;text-align:center}
-.cc-stat-v{font-size:.95rem;font-weight:700;color:var(--gold)}
-.cc-stat-l{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.cc-stat-v{font-family:var(--serif);font-size:1.1rem;font-weight:600;color:var(--gold);line-height:1}
+.cc-stat-l{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;margin-top:4px;font-weight:600}
+
 /* ── CLIENT DETAIL ── */
-.detail-header{background:var(--surf);border-bottom:1px solid var(--bdr);padding:20px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.detail-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;color:#fff;flex-shrink:0}
+.detail-header{background:var(--surf);border-bottom:1px solid var(--bdr);padding:22px 30px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.detail-av{width:54px;height:54px;border-radius:50%;background:linear-gradient(180deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-weight:600;font-size:1.3rem;color:#0a0a0a;flex-shrink:0}
 .detail-info{flex:1;min-width:0}
-.detail-name{font-size:1.3rem;font-weight:800;margin-bottom:4px}
-.detail-email{font-size:.85rem;color:var(--muted)}
+.detail-name{font-family:var(--serif);font-size:1.55rem;font-weight:600;margin-bottom:4px;letter-spacing:-.01em;line-height:1.1}
+.detail-email{font-size:.86rem;color:var(--muted)}
 .detail-actions{display:flex;gap:8px;flex-wrap:wrap}
-.tabs{display:flex;gap:4px;padding:14px 28px;border-bottom:1px solid var(--bdr);background:var(--surf);overflow-x:auto}
-.tab{padding:8px 18px;border-radius:var(--r);font-size:.87rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all var(--trans);white-space:nowrap}
+
+.tabs{display:flex;gap:2px;padding:0 30px;border-bottom:1px solid var(--bdr);background:var(--surf);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:14px 18px;font-size:.86rem;font-weight:600;cursor:pointer;color:var(--muted);transition:color var(--trans);white-space:nowrap;position:relative;letter-spacing:.005em}
 .tab:hover{color:var(--txt)}
-.tab.active{background:rgba(201,168,76,.12);color:var(--gold)}
-.tab-content{padding:24px 28px}
+.tab.active{color:var(--gold)}
+.tab.active::after{content:"";position:absolute;left:14px;right:14px;bottom:-1px;height:2px;background:var(--gold);border-radius:2px 2px 0 0}
+.tab-content{padding:28px 30px}
+
 /* ── PROFIL TAB ── */
 .profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.pf-item{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px}
-.pf-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.pf-value{font-size:.9rem;font-weight:600}
+.pf-item{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:13px 16px;transition:border-color var(--trans)}
+.pf-item:hover{border-color:var(--bdr-g)}
+.pf-label{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;margin-bottom:6px;font-weight:700}
+.pf-value{font-size:.92rem;font-weight:600;color:var(--txt);letter-spacing:-.005em}
+
 /* ── PLAN EDITORS ── */
-.calc-panel{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(201,168,76,.02));border:1px solid var(--bdr-g);border-radius:var(--r2);padding:20px;margin-bottom:20px}
-.calc-panel h3{font-size:.88rem;font-weight:700;color:var(--gold);margin-bottom:14px;text-transform:uppercase;letter-spacing:.6px}
+.calc-panel{background:linear-gradient(135deg,rgba(201,169,97,.06),rgba(201,169,97,.02));border:1px solid var(--bdr-g);border-radius:var(--r2);padding:22px;margin-bottom:20px;position:relative;overflow:hidden}
+.calc-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+.calc-panel h3{font-size:.72rem;font-weight:700;color:var(--gold);margin-bottom:16px;text-transform:uppercase;letter-spacing:.2em}
 .calc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:14px}
-.calc-result{background:var(--surf2);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px}
+.calc-result{background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:14px}
 .calc-val{text-align:center}
-.calc-val .v{font-size:1.1rem;font-weight:800;color:var(--gold)}
-.calc-val .l{font-size:.68rem;color:var(--muted);text-transform:uppercase}
-.plan-targets{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px;margin-bottom:20px}
+.calc-val .v{font-family:var(--serif);font-size:1.35rem;font-weight:600;color:var(--gold);line-height:1;letter-spacing:-.015em}
+.calc-val .l{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;margin-top:4px;font-weight:600}
+
+.plan-targets{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;margin-bottom:20px}
 .plan-targets-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:12px;align-items:end}
-.meal-ed-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
-.meal-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;gap:8px}
-.meal-ed-totals{font-size:.78rem;color:var(--muted);flex:1;text-align:right}
-.item-table{width:100%;border-collapse:collapse;font-size:.83rem}
-.item-table th{text-align:left;padding:8px 10px;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bdr);background:var(--surf2)}
-.item-table td{padding:6px 8px;border-bottom:1px solid var(--bdr)}
+
+.meal-ed-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);margin-bottom:14px;overflow:hidden;transition:border-color var(--trans)}
+.meal-ed-card:hover{border-color:var(--bdr-g)}
+.meal-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;background:var(--surf2)}
+.meal-ed-totals{font-size:.76rem;color:var(--muted);flex:1;text-align:right;font-family:var(--serif);font-style:italic}
+
+.item-table{width:100%;border-collapse:collapse;font-size:.84rem}
+.item-table th{text-align:left;padding:10px 12px;color:var(--muted);font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;border-bottom:1px solid var(--bdr);background:var(--surf2)}
+.item-table td{padding:8px 10px;border-bottom:1px solid var(--bdr);color:var(--txt)}
 .item-table tr:last-child td{border-bottom:none}
-.item-table .input{padding:6px 10px;font-size:.83rem}
-.add-meal-row{display:flex;gap:10px;align-items:center;padding:14px 16px}
+.item-table tr:hover td{background:rgba(255,255,255,.02)}
+.item-table .input{padding:7px 10px;font-size:.82rem}
+
+.add-meal-row{display:flex;gap:10px;align-items:center;padding:14px 18px;background:var(--surf2);border-top:1px solid var(--bdr)}
+
 .day-editor{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
-.day-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
-.day-toggle-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.day-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;background:var(--surf2)}
+.day-toggle-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+
 /* ── DATA TAB ── */
-.data-chart-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;margin-bottom:18px}
-.data-chart-card h3{font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px}
+.data-chart-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:22px;margin-bottom:18px}
+.data-chart-card h3{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;margin-bottom:18px}
+
 .ci-table{width:100%;border-collapse:collapse;font-size:.84rem}
-.ci-table th{text-align:left;padding:9px 12px;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
-.ci-table td{padding:11px 12px;border-bottom:1px solid var(--bdr)}
+.ci-table th{text-align:left;padding:11px 14px;color:var(--muted);font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;border-bottom:1px solid var(--bdr)}
+.ci-table td{padding:13px 14px;border-bottom:1px solid var(--bdr);color:var(--txt)}
 .ci-table tr:last-child td{border-bottom:none}
+.ci-table tr:hover td{background:var(--surf2)}
+
 /* ── TOAST ── */
-.toast{position:fixed;bottom:22px;right:22px;background:var(--surf2);border:1px solid var(--bdr-g);border-radius:var(--r);padding:12px 18px;font-size:.85rem;z-index:300;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:fadeUp .22s ease;max-width:300px}
-.toast.ok{border-color:rgba(76,175,125,.4);color:var(--green)}
-.toast.err{border-color:rgba(224,82,82,.4);color:var(--red)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surf2);border:1px solid var(--bdr-g);border-radius:var(--r);padding:13px 20px;font-size:.86rem;z-index:9999;box-shadow:0 12px 32px rgba(0,0,0,.5);animation:fadeUp .22s ease;max-width:320px;color:var(--txt);display:flex;align-items:center;gap:10px}
+.toast.ok{border-color:rgba(92,178,133,.4);color:var(--green)}
+.toast.ok::before{content:"";width:6px;height:6px;background:var(--green);border-radius:50%;box-shadow:0 0 8px var(--green)}
+.toast.err{border-color:rgba(227,104,104,.4);color:var(--red)}
+.toast.err::before{content:"";width:6px;height:6px;background:var(--red);border-radius:50%;box-shadow:0 0 8px var(--red)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeUp .28s ease}
-.empty-state{text-align:center;padding:44px 20px;color:var(--muted)}
-.empty-state .icon{font-size:2.4rem;margin-bottom:10px}
-.divider{height:1px;background:var(--bdr);margin:18px 0}
-.hamburger{display:none;background:none;border:none;color:var(--txt);cursor:pointer;padding:6px;margin-right:6px}
-.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99;backdrop-filter:blur(2px)}
+
+.empty-state{text-align:center;padding:52px 20px;color:var(--muted)}
+.empty-state .icon{font-size:2.4rem;margin-bottom:14px;opacity:.55}
+
+.divider{height:1px;background:var(--bdr);margin:22px 0}
+
+.hamburger{display:none;background:none;border:none;color:var(--txt);cursor:pointer;padding:6px;margin-right:6px;border-radius:6px}
+.hamburger:hover{background:var(--surf2)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;backdrop-filter:blur(3px)}
+
+@media(max-width:900px){
+  .page-wrap{padding:22px}
+  .top-bar{padding:14px 20px}
+  .tabs{padding:0 20px}
+  .tab-content{padding:22px 20px}
+  .detail-header{padding:18px 20px}
+}
 @media(max-width:768px){
-  #sidebar{transform:translateX(-100%);transition:transform var(--trans)}
+  #sidebar{transform:translateX(-100%);width:280px;box-shadow:24px 0 60px rgba(0,0,0,.5)}
   #sidebar.open{transform:translateX(0)}
   .sb-overlay.open{display:block}
   #main{margin-left:0}
   .hamburger{display:flex}
-  .page-wrap{padding:16px}
-  .top-bar{padding:12px 16px}
+  .page-wrap{padding:18px 16px}
+  .top-bar{padding:12px 14px}
+  .top-bar h2{font-size:1.15rem}
   .plan-targets-grid{grid-template-columns:1fr 1fr}
-  .detail-header{padding:16px}
+  .detail-header{padding:16px;gap:12px}
+  .detail-name{font-size:1.3rem}
+  .auth-card{padding:36px 26px}
+  .search-input{width:100%;max-width:none}
+  .client-filters{flex-direction:column;align-items:stretch}
+  .calc-grid{grid-template-columns:1fr 1fr}
 }
+@media(max-width:480px){
+  .clients-grid{grid-template-columns:1fr}
+  .plan-targets-grid{grid-template-columns:1fr}
+  .calc-grid{grid-template-columns:1fr}
+}
+
 /* ── AUTOCOMPLETE ── */
-#ac-drop{position:fixed;z-index:9999;background:var(--surf3);border:1px solid var(--bdr-g);border-radius:var(--r);max-height:240px;overflow-y:auto;box-shadow:0 8px 28px rgba(0,0,0,.7);display:none;min-width:220px}
-.ac-item{padding:8px 12px;cursor:pointer;font-size:.82rem;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;gap:8px}
+#ac-drop{position:fixed;z-index:9999;background:var(--surf3);border:1px solid var(--bdr-g);border-radius:var(--r);max-height:260px;overflow-y:auto;box-shadow:0 16px 40px rgba(0,0,0,.7);display:none;min-width:240px}
+.ac-item{padding:9px 14px;cursor:pointer;font-size:.83rem;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;gap:8px;transition:background var(--trans)}
 .ac-item:last-child{border-bottom:none}
-.ac-item:hover{background:rgba(201,168,76,.12);color:var(--gold)}
-.ac-meta{font-size:.72rem;color:var(--muted);flex-shrink:0}
+.ac-item:hover{background:rgba(201,169,97,.12);color:var(--gold)}
+.ac-meta{font-size:.72rem;color:var(--muted);flex-shrink:0;font-family:var(--serif);font-style:italic}
+
 /* ── MODAL ── */
-.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:var(--surf);border:1px solid var(--bdr-g);border-radius:var(--r2);padding:28px;width:100%;max-width:660px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.7)}
-.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.modal-title{font-size:1rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.gen-card{border:1px solid var(--bdr-g);border-radius:var(--r2);padding:18px;background:rgba(201,168,76,.03)}
-.gen-card h4{font-size:.85rem;font-weight:700;margin-bottom:12px;color:var(--gold-l)}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal-box{background:var(--surf);border:1px solid var(--bdr-g);border-radius:18px;padding:30px;width:100%;max-width:660px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:12px}
+.modal-title{font-family:var(--serif);font-size:1.35rem;font-weight:600;color:var(--gold);letter-spacing:-.01em}
+.gen-card{border:1px solid var(--bdr-g);border-radius:var(--r2);padding:20px;background:rgba(201,169,97,.03)}
+.gen-card h4{font-family:var(--serif);font-size:1.1rem;font-weight:600;margin-bottom:14px;color:var(--gold-l);letter-spacing:-.005em}
 </style>
 </head>
 <body>
@@ -240,9 +320,13 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
       </div>
     </div>
     <nav class="sb-nav">
-      <div class="nav-item active" onclick="showClientList()">
+      <div class="nav-item active" id="nav-klienter" onclick="showClientList()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Klienter
+      </div>
+      <div class="nav-item" id="nav-leads" onclick="showLeads()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Leads
       </div>
     </nav>
     <div class="sb-footer">
@@ -275,6 +359,27 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span style="font-size:.8rem;color:var(--gold);font-weight:600;letter-spacing:.2px" id="top-date"></span>
         </div>
+      </div>
+    </div>
+
+    <!-- LEADS -->
+    <div id="pg-leads" class="page-wrap hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-family:var(--serif);font-size:1.6rem;font-weight:600;letter-spacing:-.01em">Leads</h2>
+          <p style="color:var(--muted);font-size:.88rem;margin-top:4px">Potentielle klienter – spor din pipeline</p>
+        </div>
+        <button class="btn btn-gold" onclick="openLeadModal()">+ Tilføj lead</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+        <button class="filter-tab active" data-lf="alle" onclick="setLeadFilter('alle',this)">Alle</button>
+        <button class="filter-tab" data-lf="ny" onclick="setLeadFilter('ny',this)">Ny</button>
+        <button class="filter-tab" data-lf="kontaktet" onclick="setLeadFilter('kontaktet',this)">Kontaktet</button>
+        <button class="filter-tab" data-lf="konverteret" onclick="setLeadFilter('konverteret',this)">Konverteret</button>
+        <button class="filter-tab" data-lf="afvist" onclick="setLeadFilter('afvist',this)">Afvist</button>
+      </div>
+      <div id="leads-grid" class="clients-grid">
+        <div class="empty-state"><div class="icon">🎯</div><p>Ingen leads endnu</p></div>
       </div>
     </div>
 
@@ -318,17 +423,21 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
         <div class="tab active" onclick="switchTab('profil',this)">👤 Profil</div>
         <div class="tab" onclick="switchTab('kostplan',this)">🥗 Kostplan</div>
         <div class="tab" onclick="switchTab('traening',this)">💪 Træning</div>
+        <div class="tab" onclick="switchTab('checkin',this)">📋 Check-in</div>
         <div class="tab" onclick="switchTab('data',this)">📊 Data</div>
         <div class="tab" onclick="switchTab('beskeder',this)" id="tab-btn-beskeder">💬 Beskeder <span id="coach-msg-badge" class="hidden" style="background:var(--gold);color:#000;border-radius:10px;font-size:.6rem;font-weight:800;padding:1px 6px;margin-left:4px"></span></div>
         <div class="tab" onclick="switchTab('fotos',this)">📸 Fotos</div>
+        <div class="tab" onclick="switchTab('mål',this)">📐 Mål</div>
       </div>
       <div class="tab-content">
         <div id="tab-profil"></div>
         <div id="tab-kostplan" class="hidden"></div>
         <div id="tab-traening" class="hidden"></div>
+        <div id="tab-checkin" class="hidden"></div>
         <div id="tab-data" class="hidden"></div>
         <div id="tab-beskeder" class="hidden"></div>
         <div id="tab-fotos" class="hidden"></div>
+        <div id="tab-mål" class="hidden"></div>
       </div>
     </div>
   </div>
@@ -337,14 +446,77 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
 <!-- Shared autocomplete dropdown -->
 <div id="ac-drop"></div>
 
-<!-- Generator Modal -->
-<div id="gen-modal" class="modal-ov hidden">
+<!-- Lead Modal -->
+<div id="lead-modal" class="modal-ov hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="lead-modal-title">Tilføj lead</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeLeadModal()">✕</button>
+    </div>
+    <input type="hidden" id="lead-edit-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group" style="margin:0">
+        <label class="label">Navn *</label>
+        <input class="input" id="lead-name" placeholder="Fulde navn">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Email</label>
+        <input class="input" type="email" id="lead-email" placeholder="email@eksempel.dk">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Telefon</label>
+        <input class="input" id="lead-phone" placeholder="+45 xx xx xx xx">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Kilde</label>
+        <select class="input" id="lead-source">
+          <option value="andet">Andet</option>
+          <option value="instagram">Instagram</option>
+          <option value="anbefaling">Anbefaling</option>
+          <option value="hjemmeside">Hjemmeside</option>
+          <option value="tiktok">TikTok</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Status</label>
+        <select class="input" id="lead-status">
+          <option value="ny">Ny</option>
+          <option value="kontaktet">Kontaktet</option>
+          <option value="konverteret">Konverteret ✓</option>
+          <option value="afvist">Afvist</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label class="label">Noter</label>
+      <textarea class="input" id="lead-notes" placeholder="Mål, ønsker, observationer..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeLeadModal()">Annuller</button>
+      <button class="btn btn-gold" onclick="saveLead()">Gem lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diet Generator Modal -->
+<div id="diet-gen-modal" class="modal-ov hidden">
   <div class="modal-box">
     <div class="modal-hdr">
-      <div class="modal-title">✨ Plangenerator</div>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('gen-modal').classList.add('hidden')">✕</button>
+      <div class="modal-title">🥗 Kostplan Generator</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('diet-gen-modal').classList.add('hidden')">✕</button>
     </div>
-    <div id="gen-body"></div>
+    <div id="diet-gen-body"></div>
+  </div>
+</div>
+
+<!-- Workout Generator Modal -->
+<div id="workout-gen-modal" class="modal-ov hidden">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title">💪 Træningsplan Generator</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('workout-gen-modal').classList.add('hidden')">✕</button>
+    </div>
+    <div id="workout-gen-body"></div>
   </div>
 </div>
 
@@ -391,6 +563,9 @@ DROP POLICY IF EXISTS "checkins_access" ON checkins;
 CREATE POLICY "checkins_access" ON checkins FOR ALL
   USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
   WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+
+-- checkins: tilføj coach svar kolonne
+ALTER TABLE checkins ADD COLUMN IF NOT EXISTS coach_notes TEXT;
 
 -- weight_log: tilføj skridt og søvn kolonner
 ALTER TABLE weight_log ADD COLUMN IF NOT EXISTS steps INTEGER;
@@ -439,7 +614,46 @@ CREATE POLICY "photo_upload" ON storage.objects FOR INSERT
 DROP POLICY IF EXISTS "photo_view" ON storage.objects;
 CREATE POLICY "photo_view" ON storage.objects FOR SELECT
   USING (bucket_id = 'progress-photos' AND
-    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));</pre>
+    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));
+
+-- body_measurements: klienters kropsomfang over tid (cm)
+CREATE TABLE IF NOT EXISTS body_measurements (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  chest NUMERIC(5,1),
+  waist NUMERIC(5,1),
+  hips NUMERIC(5,1),
+  left_arm NUMERIC(5,1),
+  right_arm NUMERIC(5,1),
+  left_thigh NUMERIC(5,1),
+  right_thigh NUMERIC(5,1),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE body_measurements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "bm_access" ON body_measurements;
+CREATE POLICY "bm_access" ON body_measurements FOR ALL
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+
+-- leads: potentielle klienter
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  coach_id UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+  name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  notes TEXT,
+  status TEXT DEFAULT 'ny',
+  source TEXT DEFAULT 'andet',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "leads_access" ON leads;
+CREATE POLICY "leads_access" ON leads FOR ALL
+  USING (auth.uid() = coach_id)
+  WITH CHECK (auth.uid() = coach_id);</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
@@ -454,6 +668,10 @@ const COACH_EMAIL = 'hamzaelouaz@gmail.com';
 const SUPA_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+function withTimeout(promise, ms = 10000) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout — tjek din forbindelse')), ms))]);
+}
 
 // ─── EmailJS ────────────────────────────────────────────────────────────────
 const EJS_PUBLIC_KEY       = 'a4KL2nPc1RL_GwdeM';
@@ -624,6 +842,32 @@ const EXERCISE_BANK = [
   {n:'Rowing Machine',g:'Cardio',sets:3,reps:'500m',rest:120},
 ];
 
+// ─── Day type definitions for workout generator ─────────────────────────────
+const DAY_TYPES = {
+  chest_back:     { label: 'Bryst & Ryg',                  desc: 'OBLIGATORISK: 1 horisontal bryst-compound (bench press/incline press) + 1 vertikal eller horisontal ryg-compound (barbell row/T-bar row/one-arm row) + 1 vertikal ryg-pull (lat pulldown/pull-ups) + 1 bryst-isolation (cable flyes/pec deck) + 1 rear delt (face pull/rear delt fly) + valgfrit core' },
+  shoulders_arms: { label: 'Skuldre & Arme',               desc: 'OBLIGATORISK: 1 skulder-compound (OHP/Arnold press) + 1 lateral raise + 1 rear delt/face pull + 1 biceps compound (barbell curl/hammer curl) + 1 triceps compound (skull crushers/dips) + 1 biceps eller triceps isolation' },
+  legs:           { label: 'Ben & Core',                   desc: 'OBLIGATORISK: 1 quad-compound (squat/leg press/front squat) + 1 hip-hinge (RDL/Romanian deadlift) + 1 glute isolation (hip thrust/cable kickback) + 1 quad isolation (leg extension) + 1 hamstring isolation (leg curl) + 1 calf + 1 core' },
+  push:           { label: 'Push (Bryst/Skuldre/Triceps)', desc: 'OBLIGATORISK: 1 horisontal bryst-compound (bench press/incline press) + 1 skulder-compound (OHP/dumbbell press) + 1 lateral raise + 1 bryst-isolation (cable flyes/pec deck) + 1 triceps compound (skull crushers/dips) + 1 triceps isolation (pushdown/overhead ext)' },
+  pull:           { label: 'Pull (Ryg/Biceps)',            desc: 'OBLIGATORISK: 1 horisontal ryg-compound (barbell row/T-bar row/one-arm row — SKAL INKLUDERES, INGEN undtagelser) + 1 vertikal pull (lat pulldown/pull-ups) + 1 ryg-isolation (seated cable row/back extension) + 1 rear delt (face pull/rear delt fly) + 1 biceps compound (barbell curl/hammer curl) + 1 biceps isolation' },
+  upper:          { label: 'Upper (Overkrop)',             desc: 'OBLIGATORISK: 1 bryst-compound + 1 horisontal ryg-compound (row — MUST INCLUDE) + 1 vertikal pull (lat pulldown/pull-ups) + 1 skulder (OHP eller lateral raise) + 1 biceps + 1 triceps' },
+  lower:          { label: 'Lower (Ben & Core)',           desc: 'OBLIGATORISK: 1 quad-compound (squat/leg press) + 1 hip-hinge (RDL) + 1 glute isolation (hip thrust) + 1 quad isolation (leg extension) + 1 hamstring isolation (leg curl) + 1 calf' },
+  fullbody:       { label: 'Fullbody',                     desc: 'OBLIGATORISK: 1 quad-compound (squat) + 1 hip-hinge (RDL/deadlift) + 1 bryst-compound (bench/incline) + 1 horisontal ryg-compound (row — SKAL INKLUDERES) + 1 skulder isolation + 1 arm (biceps eller triceps)' },
+};
+const DAY_NAMES_FOR_N = {
+  2: ['Mandag','Torsdag'],
+  3: ['Mandag','Onsdag','Fredag'],
+  4: ['Mandag','Tirsdag','Torsdag','Fredag'],
+  5: ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'],
+  6: ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'],
+};
+const DAY_DEFAULTS_BY_N = {
+  2: ['fullbody','fullbody'],
+  3: ['chest_back','shoulders_arms','legs'],
+  4: ['upper','lower','upper','lower'],
+  5: ['push','pull','legs','push','pull'],
+  6: ['push','pull','legs','push','pull','legs'],
+};
+
 // ─── Meal Pools (3 varianter pr. mål – vælges ud fra klient-hash) ──────────
 const MEAL_POOLS = {
   bulk: [
@@ -707,6 +951,7 @@ let currentFilter = 'alle';
 let currentClient = null;
 let currentClientData = {};
 let weightChart = null;
+let checkinChart = null;
 
 // Plan editor state
 let dp = { plan_name: 'Personlig kostplan', calories: 2000, protein: 150, carbs: 200, fat: 65, meals: [] };
@@ -715,6 +960,142 @@ let mealCnt = 0, itemCnt = 0, exCnt = 0;
 const ALL_DAYS = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
 
 // ════════════════════════════════════════════════════════════════════════════
+// KNOWLEDGE BASE DEFAULT
+// ════════════════════════════════════════════════════════════════════════════
+(function initKnowledgeBase() {
+  const KB_VERSION = 'v3-2026-05-14';
+  if (localStorage.getItem('coach_kb_version') === KB_VERSION) return;
+  const kb = `=== FUNDAMENTALE PRINCIPPER ===
+SRA: 48–72t restitution pr. muskelgruppe for superkompensation.
+Specificitet: styrke kræver >80% 1RM; hypertrofi fungerer i 30–80% 1RM.
+Overload: fremgang kræver progressivt stigende stimulus (volumen ELLER intensitet).
+Variation: skift øvelser/rep-zoner periodisk for at undgå adaptationsplateau.
+
+=== VOLUMEN & FREKVENS ===
+Ugentlig volumen (Helms/Schoenfeld): 10–20 arbejdssæt/muskelgruppe/uge.
+Begyndere: start med 10–12 sæt/uge; øvede kan tolerere 16–20 sæt/uge.
+Frekvens: mindst 2x/uge pr. muskelgruppe for optimal hypertrofi.
+Fordel volumen jævnt over ugen — én mega-session er ringere end 2–3 sessioner.
+
+=== INTENSITET & UDFØRELSE ===
+Rep-zoner: primært 6–12 reps (hypertrofi), 1–5 reps (styrke), 12–20+ (udholdenhed).
+Hypertrofi sker på tværs af rep-zoner (6–30+) hvis sæt tages tæt på failure.
+RPE-styring: de fleste sæt ved RPE 7–9 (1–3 reps fra failure). Kun sidst sæt til failure.
+Failure hæver stimulus marginalt men uforholdsmæssigt mere træthed — undgå som fast praksis.
+Minimumsintensiteter: hypertrofi ≥ 60% 1RM, styrke ≥ 75% 1RM.
+
+=== PROGRESSION & STRUKTUR ===
+Compound first: tunge flerledsøvelser når CNS er frisk, isolation til sidst.
+Dobbelt progression: øg reps inden du øger vægten.
+Deload: reducér volumen 40–50% hver 3–5 uge for restitution og re-sensitisering.
+Periodisering: lineær og undulerende er begge effektive — begge bedre end ingen periodisering.
+
+=== MUSKELBALANCE ===
+Push/pull-ratio: tilstræb 1:1 eller 1:1.2 for skulder/rygsundhed.
+Posterior chain: prioritér baglår, sæde og rygstrækker — ofte underudviklede.
+Unilaterale øvelser: inkludér til at udjævne sideforskelle og forbedre stabilitet.
+
+=== SCHOENFELD: SCIENCE AND DEVELOPMENT OF MUSCLE HYPERTROPHY ===
+
+PRIMÆR HYPERTROFI-DRIVER
+Mekanisk tension er den vigtigste stimulus — ikke metabolisk stress eller muskelskade alene.
+Muskelskade kan bidrage akut, men er ikke nødvendig for hypertrofi og bør ikke maksimeres.
+Metabolisk stress (pump, laktat) har additiv effekt, men rang under mekanisk tension.
+
+INTENSITET & FAILURE
+Hypertrofi opnås på tværs af rep-zoner (6–30+ reps) — hvis sæt tages tæt på failure.
+De fleste sæt: RIR 1–2 (1–2 reps fra failure). Kun det sidste sæt pr. øvelse til faktisk failure.
+Lav belastning (<30% 1RM) giver signifikant mindre hypertrofi end moderat/høj belastning.
+Styrke kræver tung belastning (>80% 1RM) — hypertrofi er mere belastningsfleksibel.
+
+VOLUMEN
+Dose-respons: mere volumen = mere hypertrofi, op til et individuelt maximum.
+Minimum effektiv volumen: ~5–10 sæt/muskelgruppe/uge (begyndere lavere).
+Optimalt for de fleste: 10–20 sæt/muskelgruppe/uge.
+Høj volumen (20+ sæt) kan gavne avancerede, men kræver periodisering for at undgå overtræning.
+Fordel volumen over ugen — 1 mega-session er ringere end 2–3 sessioner.
+
+FREKVENS
+2x/uge pr. muskelgruppe er minimum for optimal hypertrofi.
+3x/uge kan give marginal gevinst ved høj total volumen.
+Frekvens er primært et redskab til at fordele volumen — ikke en selvstændig driver.
+
+ØVELSESVALG & ROM
+Kombiner multi-joint (compound) og single-joint (isolation) øvelser.
+Fuld bevægeudslag (full ROM) er overlegent ift. delvis ROM for de fleste muskler.
+Stretch-betonte øvelser (fx dybe squats, RDL, incline curl) kan give ekstra hypertrofi i stretchet position.
+Variér vinkler og grip for at ramme alle fiberbundter i en muskel.
+
+ØVELSESRÆKKEFØLGE
+Prioritetsmuskulatur trænes først i sessionen — træthed reducerer stimulus på seneste øvelser.
+
+HVILE MELLEM SÆT
+Compound øvelser: ≥2 minutter hvile for at opretholde ydelse i næste sæt.
+Isolation øvelser: 60–90 sekunder er tilstrækkeligt.
+Kortere hvile (<60s) kompromitterer volumen og dermed hypertrofi-stimulus.
+
+TEMPOTRÆNING
+Tempo på 0,5–6 sek. pr. fase er ligeværdigt mht. hypertrofi.
+Undgå superslow (>10 sek. per rep) — reducerer mekanisk tension og volumenkapacitet.
+Kontrolleret excentrisk fase (2–3 sek.) anbefales for teknik og skadesforebyggelse.
+
+PERIODISERING
+Lineær og undulerende periodisering er begge effektive — begge overgår ingen periodisering.
+Deload hver 3–8 uge afhængigt af volumen og erfaring. Reducer volumen med 40–50%.
+
+KONDITIONSTRÆNING
+Aerob træning hæmmer ikke hypertrofi signifikant, hvis ikke samme dag som tung styrketræning, varighed < 30–40 min og lav impact (cykel > løb).
+
+ERNÆRING
+Protein: 1,6–2,2 g/kg/dag. Op til 3,1 g/kg ved kalorieunderskud.
+Fordel protein: 3–5 måltider à 0,4–0,55 g/kg pr. måltid.
+Post-workout protein: 20–40 g inden for 2 timer.
+Kalorier: let overskud (200–300 kcal) for ren muskelopbygning.
+
+=== ISRAETEL: SCIENTIFIC PRINCIPLES OF STRENGTH TRAINING ===
+
+DE 7 PRINCIPPER (rangordnet efter vigtighed)
+
+1. SPECIFICITET
+Træning skal belaste de systemer, der skal forbedres.
+Alle øvelsesvalg skal kunne begrundes i: størrelse, styrke, teknik, restitution eller skadesforebyggelse.
+Konditionstræning er skadeligt for styrke i høj dosis (fibertype-konvertering, NS-ændringer, muskelkatabolisme).
+
+2. OVERLOAD
+Kroppen tilpasser sig kun ved forstyrrelse af homeostase over minimalgrænsen.
+Minimumsintensiteter: hypertrofi ≥ 60% 1RM, styrke ≥ 75% 1RM.
+Volumen er den primære drivkraft for hypertrofi; intensitet for styrke.
+Træning til failure: marginalt mere stimulerende, men uforholdsmæssigt mere trættende — undgå som fast praksis.
+
+3. FATIGUE MANAGEMENT
+MRV (Maximum Recoverable Volume): højeste ugentlige volumen man kan restituere fra og progrediere.
+Fatigue-hierarki: fridag → let session (50% vol) → deload (1 uge, 3:1 eller 4:1 ratio) → aktiv hvile (2 uger).
+MRV-signaler: faldende reps, manglende pump, dårlig søvn, manglende sult, flad motivation.
+Failure-træning sænker MRV — bruges kun i den SIDSTE session inden deload.
+
+4. SRA (STIMULUS-RESTITUTION-ADAPTATION)
+SRA-kurvers varighed: teknik (timer–1 dag), hypertrofi (1–3 dage), neural kraftproduktion (~1 uge), bindevæv (uger–måneder).
+For tidlig træning blokerer igangværende adaptationer. For sen træning mister man adaptationerne (involution).
+Optimal hypertrofi-frekvens: 2–4x/uge pr. muskelgruppe. Styrke: 1–2x/uge tungt.
+
+5. VARIATION
+Gentagen stimulus → adaptationsresistens. Skift øvelsesvalg ca. hver mesocyklus.
+For hyppig variation (<3 uger pr. øvelse) overtræder directed adaptation — adaptationer sætter sig ikke.
+
+6. FASE-POTENTIERING
+Faser i logisk rækkefølge: Hypertrofi (2–3 mdr.) → Styrke (2–3 mdr.) → Peak (1–2 mdr.) → Aktiv hvile → gentag.
+Hypertrofi-fase: 6–10 reps, 60–75% 1RM, 15–30 sæt/muskel/uge.
+Styrke-fase: 3–6 reps, 75–90% 1RM, 10–20 sæt/muskel/uge.
+Muskelmasse bevares under styrketræning. Styrke bevares 1–3 måneder under peaking.
+
+7. INDIVIDUELLE FORSKELLE
+Alle principper gælder alle — men i forskellig grad.
+Begyndere: mere hypertrofi, bred øvelsesvariation. Øvede: udbyg stærke punkter. Avancerede: adresser begrænsende faktorer.
+MRV, restitutionshastighed og øvelsesrespons varierer — tilpas volumen individuelt, kopier ikke andres program blindt.`;
+  localStorage.setItem('coach_knowledge_base', kb);
+  localStorage.setItem('coach_kb_version', KB_VERSION);
+})();
+
 // INIT
 // ════════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
@@ -951,6 +1332,12 @@ async function openClient(id) {
     sb.from('workout_completions').select('week_number,year,day_name').eq('user_id', id).order('created_at', { ascending: false }).limit(60),
     sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500)
   ]);
+  // body_measurements er separat for at undgå at bryde data-loading hvis tabellen ikke er oprettet endnu
+  let bodyMeasurements = [];
+  try {
+    const bmRes = await sb.from('body_measurements').select('*').eq('user_id', id).order('date', { ascending: false }).limit(30);
+    bodyMeasurements = bmRes.data || [];
+  } catch { bodyMeasurements = []; }
 
   const intake = intakeRes.data?.[0] || null;
   const clientRow = cdRes.data?.[0] || null;
@@ -967,7 +1354,8 @@ async function openClient(id) {
     weightLog: weightLog || [],
     checkins: checkins || [],
     completions: completions || [],
-    strengthLogs: strengthLogs || []
+    strengthLogs: strengthLogs || [],
+    bodyMeasurements: bodyMeasurements || []
   };
 
   // Initialize diet plan editor
@@ -1014,28 +1402,146 @@ async function openClient(id) {
 function showClientList() {
   document.getElementById('pg-client').classList.add('hidden');
   document.getElementById('pg-clients').classList.remove('hidden');
+  document.getElementById('pg-leads').classList.add('hidden');
   document.getElementById('main-title').textContent = 'Klienter';
+  document.getElementById('nav-klienter').classList.add('active');
+  document.getElementById('nav-leads').classList.remove('active');
   if (weightChart) { weightChart.destroy(); weightChart = null; }
+  if (checkinChart) { checkinChart.destroy(); checkinChart = null; }
+  if (målChart) { målChart.destroy(); målChart = null; }
+}
+
+// ── LEADS ─────────────────────────────────────────────────────────────────────
+let allLeads = [];
+let leadFilter = 'alle';
+
+async function showLeads() {
+  document.getElementById('pg-client').classList.add('hidden');
+  document.getElementById('pg-clients').classList.add('hidden');
+  document.getElementById('pg-leads').classList.remove('hidden');
+  document.getElementById('main-title').textContent = 'Leads';
+  document.getElementById('nav-klienter').classList.remove('active');
+  document.getElementById('nav-leads').classList.add('active');
+  await loadLeads();
+}
+
+async function loadLeads() {
+  const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false });
+  if (error) { toast('Kunne ikke hente leads: ' + error.message, 'err'); return; }
+  allLeads = data || [];
+  renderLeads();
+}
+
+function setLeadFilter(f, el) {
+  leadFilter = f;
+  document.querySelectorAll('[data-lf]').forEach(b => b.classList.toggle('active', b.dataset.lf === f));
+  renderLeads();
+}
+
+function renderLeads() {
+  const grid = document.getElementById('leads-grid');
+  const filtered = leadFilter === 'alle' ? allLeads : allLeads.filter(l => l.status === leadFilter);
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">🎯</div><p>Ingen leads i denne kategori</p></div>';
+    return;
+  }
+  const statusColor = { ny: 'var(--blue)', kontaktet: 'var(--gold)', konverteret: 'var(--green)', afvist: 'var(--red)' };
+  const statusLabel = { ny: 'Ny', kontaktet: 'Kontaktet', konverteret: 'Konverteret ✓', afvist: 'Afvist' };
+  const sourceLabel = { instagram: 'Instagram', anbefaling: 'Anbefaling', hjemmeside: 'Hjemmeside', tiktok: 'TikTok', andet: 'Andet' };
+  grid.innerHTML = filtered.map(l => `
+    <div class="client-card">
+      <div class="cc-top">
+        <div class="cc-avatar" style="font-size:.85rem">${(l.name||'?').charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div class="cc-name">${escHtml(l.name)}</div>
+          <div class="cc-email">${escHtml(l.email||l.phone||'—')}</div>
+        </div>
+        <span style="background:rgba(0,0,0,.2);border:1px solid ${statusColor[l.status]||'var(--bdr)'};color:${statusColor[l.status]||'var(--muted)'};border-radius:20px;padding:3px 10px;font-size:.68rem;font-weight:700;letter-spacing:.06em;white-space:nowrap">${statusLabel[l.status]||l.status}</span>
+      </div>
+      ${l.notes ? `<div style="font-size:.82rem;color:var(--muted);margin-bottom:10px;font-family:var(--serif);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">"${escHtml(l.notes)}"</div>` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--bdr);padding-top:12px;margin-top:4px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:.72rem;color:var(--dim)">${sourceLabel[l.source]||l.source||'—'} · ${new Date(l.created_at).toLocaleDateString('da-DK',{day:'numeric',month:'short'})}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="editLead('${l.id}')">Rediger</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLead('${l.id}')">Slet</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openLeadModal(lead) {
+  document.getElementById('lead-modal-title').textContent = lead ? 'Rediger lead' : 'Tilføj lead';
+  document.getElementById('lead-edit-id').value = lead?.id || '';
+  document.getElementById('lead-name').value = lead?.name || '';
+  document.getElementById('lead-email').value = lead?.email || '';
+  document.getElementById('lead-phone').value = lead?.phone || '';
+  document.getElementById('lead-source').value = lead?.source || 'andet';
+  document.getElementById('lead-status').value = lead?.status || 'ny';
+  document.getElementById('lead-notes').value = lead?.notes || '';
+  document.getElementById('lead-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('lead-name').focus(), 60);
+}
+
+function closeLeadModal() {
+  document.getElementById('lead-modal').classList.add('hidden');
+}
+
+function editLead(id) {
+  const lead = allLeads.find(l => l.id === id);
+  if (lead) openLeadModal(lead);
+}
+
+async function saveLead() {
+  const name = document.getElementById('lead-name').value.trim();
+  if (!name) { toast('Navn er påkrævet', 'err'); return; }
+  const payload = {
+    name,
+    email: document.getElementById('lead-email').value.trim() || null,
+    phone: document.getElementById('lead-phone').value.trim() || null,
+    source: document.getElementById('lead-source').value,
+    status: document.getElementById('lead-status').value,
+    notes: document.getElementById('lead-notes').value.trim() || null,
+  };
+  const editId = document.getElementById('lead-edit-id').value;
+  let error;
+  if (editId) {
+    ({ error } = await sb.from('leads').update(payload).eq('id', editId));
+  } else {
+    ({ error } = await sb.from('leads').insert(payload));
+  }
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  closeLeadModal();
+  toast(editId ? 'Lead opdateret' : 'Lead tilføjet ✓', 'ok');
+  await loadLeads();
+}
+
+async function deleteLead(id) {
+  if (!confirm('Slet dette lead?')) return;
+  const { error } = await sb.from('leads').delete().eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  toast('Lead slettet', 'ok');
+  await loadLeads();
 }
 
 function switchTab(tab, el) {
-  // Gem workout-inputs inden vi forlader træningsfanen
+  // Gem workout-inputs inden vi skifter væk fra træningsfanen
   if (!document.getElementById('tab-traening')?.classList.contains('hidden')) syncWorkoutDOM();
-
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   else document.querySelectorAll('.tab').forEach((t, i) => {
-    if (['profil','kostplan','traening','data','beskeder','fotos'][i] === tab) t.classList.add('active');
+    if (['profil','kostplan','traening','checkin','data','beskeder','fotos','mål'][i] === tab) t.classList.add('active');
   });
-  ['profil','kostplan','traening','data','beskeder','fotos'].forEach(t => {
+  ['profil','kostplan','traening','checkin','data','beskeder','fotos','mål'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
   });
   if (tab === 'profil') renderProfilTab();
   if (tab === 'kostplan') renderKostplanTab();
   if (tab === 'traening') renderTræningTab();
+  if (tab === 'checkin') renderCheckinTab();
   if (tab === 'data') renderDataTab();
   if (tab === 'beskeder') renderBeskederTab();
   if (tab === 'fotos') renderFotosTab();
+  if (tab === 'mål') renderMålTab();
 }
 
 // ── APPROVE / DEACTIVATE ───────────────────────────────────────────────────
@@ -1081,6 +1587,7 @@ async function deleteClient() {
       sb.from('weight_log').delete().eq('user_id', uid),
       sb.from('checkins').delete().eq('user_id', uid),
       sb.from('messages').delete().eq('user_id', uid),
+      sb.from('body_measurements').delete().eq('user_id', uid),
     ]);
     await sb.from('profiles').delete().eq('id', uid);
 
@@ -1245,7 +1752,7 @@ function renderKostplanTab() {
     <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="addMeal()">+ Tilføj måltid</button>
       <button class="btn btn-gold" onclick="saveDietPlan()">💾 Gem kostplan</button>
-      <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
+      <button class="btn btn-outline" onclick="openDietGenerator()" style="margin-left:auto">🥗 Generer kostplan</button>
     </div>
     <div id="diet-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
 
@@ -1538,7 +2045,7 @@ function renderTræningTab() {
     <div id="workout-editor"></div>
     <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="saveWorkoutPlan()">💾 Gem træningsplan</button>
-      <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
+      <button class="btn btn-outline" onclick="openWorkoutGenerator()" style="margin-left:auto">💪 Generer træningsplan</button>
     </div>
     <div id="workout-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
   renderWorkoutEditor();
@@ -1636,9 +2143,8 @@ async function saveWorkoutPlan() {
       }))
     };
 
+    // Hent eksisterende række for at bevare diet-data og undgå RLS-problemer med upsert
     const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
-    console.log('[saveWorkoutPlan] select result:', selRes);
-
     let prog = {};
     try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
     prog.workout = plan;
@@ -1649,9 +2155,9 @@ async function saveWorkoutPlan() {
         program: JSON.stringify(prog),
         updated_at: new Date().toISOString()
       }).eq('user_id', currentClient.id).select('id');
-
+      // UPDATE rammer 0 rækker = RLS blokerer
       if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
-        showSaveError('workout', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Kør SQL fra 🔧-knappen øverst.');
+        showSaveError('workout', 'UPDATE ramte 0 rækker — RLS blokerer. Kør SQL fra 🔧-knappen øverst.');
         return;
       }
     } else {
@@ -1662,9 +2168,9 @@ async function saveWorkoutPlan() {
       });
     }
 
-    console.log('[saveWorkoutPlan] save result:', saveRes);
     if (saveRes.error) {
-      showSaveError('workout', saveRes.error.message || JSON.stringify(saveRes.error));
+      const msg = saveRes.error.message || JSON.stringify(saveRes.error);
+      showSaveError('workout', msg);
       return;
     }
     currentClientData.workout = plan;
@@ -1704,7 +2210,6 @@ function removeDay(dayName) {
 // ════════════════════════════════════════════════════════════════════════════
 function renderDataTab() {
   const wl = currentClientData.weightLog || [];
-  const ci = currentClientData.checkins || [];
 
   // Gruppér weight_log pr. dato — behold nyeste rækkes id, fyld tomme felter fra ældre rækker
   const wlByDate = {};
@@ -1721,13 +2226,6 @@ function renderDataTab() {
   });
   const wlMerged = Object.values(wlByDate).sort((a,b) => new Date(b.date) - new Date(a.date));
 
-  // Gruppér checkins pr. uge — behold nyeste (allerede sorteret desc)
-  const ciByWeek = {};
-  ci.forEach(c => {
-    const key = `${c.year}-${c.week_number}`;
-    if (!ciByWeek[key]) ciByWeek[key] = c;
-  });
-  const ciMerged = Object.values(ciByWeek).sort((a,b) => b.year - a.year || b.week_number - a.week_number);
   const comps = currentClientData.completions || [];
   const sl = currentClientData.strengthLogs || [];
 
@@ -1888,23 +2386,8 @@ function renderDataTab() {
           </tbody>
         </table>` : '<p style="color:var(--muted);font-size:.87rem">Ingen logs endnu.</p>'}
     </div>
-    <div class="card">
-      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Check-in historik</h3>
-      ${ciMerged.length ? `
-        <table class="ci-table">
-          <thead><tr><th>Uge</th><th>Vægt</th><th>Energi</th><th>Søvn</th><th>Humør</th><th>Bemærkninger</th></tr></thead>
-          <tbody>
-            ${ciMerged.map(c => `
-              <tr>
-                <td>Uge ${c.week_number}, ${c.year}</td>
-                <td><strong>${c.weight||'—'} kg</strong></td>
-                <td><span style="color:var(--gold)">${c.energy_level}/10</span></td>
-                <td><span style="color:var(--gold)">${c.sleep_quality}/10</span></td>
-                <td><span style="color:var(--gold)">${c.mood||'—'}/10</span></td>
-                <td style="color:var(--muted);font-size:.82rem;max-width:200px">${escHtml(c.notes||'—')}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>` : '<p style="color:var(--muted);font-size:.87rem">Ingen check-ins endnu.</p>'}
+    <div class="card" style="background:rgba(201,168,76,.03);border-color:rgba(201,168,76,.2)">
+      <p style="font-size:.83rem;color:var(--muted);text-align:center;padding:4px 0">Check-ins er flyttet til fanen <strong style="color:var(--gold)">📋 Check-in</strong></p>
     </div>`;
 
   const wlWithWeight = wlMerged.filter(w => w.weight);
@@ -1933,6 +2416,110 @@ function renderDataTab() {
       }
     });
   }
+}
+
+// ── CHECK-IN TAB ─────────────────────────────────────────────────────────────
+function renderCheckinTab() {
+  const ci = currentClientData.checkins || [];
+
+  const ciByWeek = {};
+  ci.forEach(c => {
+    const key = `${c.year}-${String(c.week_number).padStart(2,'0')}`;
+    if (!ciByWeek[key]) ciByWeek[key] = c;
+  });
+  const ciMerged = Object.values(ciByWeek).sort((a,b) => b.year - a.year || b.week_number - a.week_number);
+
+  if (!ciMerged.length) {
+    document.getElementById('tab-checkin').innerHTML = '<p style="color:var(--muted);font-size:.87rem;padding:20px 0">Ingen check-ins endnu.</p>';
+    return;
+  }
+
+  const chartData = ciMerged.slice(0, 8).reverse();
+
+  function scoreColor(v) {
+    if (v == null) return 'var(--muted)';
+    if (v < 4) return '#e05252';
+    if (v < 6) return '#c9a84c';
+    return '#4caf7d';
+  }
+
+  function alertLevel(c) {
+    const scores = [c.energy_level, c.sleep_quality, c.mood].filter(v => v != null);
+    if (scores.some(v => v < 4)) return 'red';
+    if (scores.some(v => v < 6)) return 'yellow';
+    return 'ok';
+  }
+
+  document.getElementById('tab-checkin').innerHTML = `
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Trend — seneste ${chartData.length} uger</h3>
+      <canvas id="checkin-trend-chart" height="110"></canvas>
+    </div>
+    ${ciMerged.map(c => {
+      const level = alertLevel(c);
+      const borderCol = level === 'red' ? '#e05252' : level === 'yellow' ? '#c9a84c' : 'var(--bdr)';
+      const bgCol = level === 'red' ? 'rgba(224,82,82,.04)' : level === 'yellow' ? 'rgba(201,168,76,.04)' : 'var(--surf)';
+      return `
+      <div style="border:1px solid ${borderCol};border-radius:var(--r2);padding:18px;margin-bottom:12px;background:${bgCol}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-weight:700;font-size:.95rem">Uge ${c.week_number}, ${c.year}</div>
+          ${level !== 'ok' ? `<span style="background:${borderCol};color:#fff;border-radius:6px;font-size:.7rem;padding:2px 9px;font-weight:700">${level==='red'?'⚠ Lav score':'⚡ Opmærksomhed'}</span>` : '<span style="background:rgba(76,175,125,.15);color:#4caf7d;border-radius:6px;font-size:.7rem;padding:2px 9px;font-weight:700">✓ OK</span>'}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+          ${[['Vægt', c.weight ? c.weight+' kg' : '—', c.weight ? 'var(--fg)' : 'var(--dim)'],
+             ['Energi', c.energy_level != null ? c.energy_level+'/10' : '—', scoreColor(c.energy_level)],
+             ['Søvn',   c.sleep_quality != null ? c.sleep_quality+'/10' : '—', scoreColor(c.sleep_quality)],
+             ['Humør',  c.mood != null ? c.mood+'/10' : '—', scoreColor(c.mood)]
+            ].map(([label, val, col]) => `
+            <div style="text-align:center;background:var(--surf2);border-radius:var(--r);padding:10px 6px">
+              <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.15em;margin-bottom:5px">${label}</div>
+              <div style="font-weight:700;font-size:1.05rem;color:${col}">${val}</div>
+            </div>`).join('')}
+        </div>
+        ${c.notes ? `<div style="font-size:.83rem;color:var(--muted);padding:10px 12px;background:var(--surf2);border-radius:var(--r);border-left:3px solid var(--bdr);margin-bottom:12px">💬 ${escHtml(c.notes)}</div>` : ''}
+        <div>
+          <label style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:6px">Coach svar</label>
+          <textarea id="cn-${c.id}" rows="2" style="width:100%;box-sizing:border-box;background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 10px;color:var(--fg);font-size:.82rem;resize:none;font-family:inherit;outline:none">${escHtml(c.coach_notes||'')}</textarea>
+          <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="saveCoachNote('${c.id}')">💾 Gem svar</button>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+
+  const ctx = document.getElementById('checkin-trend-chart')?.getContext('2d');
+  if (!ctx) return;
+  if (checkinChart) checkinChart.destroy();
+  checkinChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartData.map(c => `Uge ${c.week_number}`),
+      datasets: [
+        { label: 'Energi', data: chartData.map(c => c.energy_level ?? null), borderColor: '#c9a84c', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, tension: 0.4, spanGaps: true },
+        { label: 'Søvn',   data: chartData.map(c => c.sleep_quality ?? null), borderColor: '#5b9bd5', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, tension: 0.4, spanGaps: true },
+        { label: 'Humør',  data: chartData.map(c => c.mood ?? null), borderColor: '#a57fd4', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, tension: 0.4, spanGaps: true },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#888', font: { size: 11 }, boxWidth: 14, padding: 14 } },
+        tooltip: { backgroundColor: '#1a1a1a', borderColor: 'rgba(201,168,76,.3)', borderWidth: 1, titleColor: '#f0f0f0', bodyColor: '#aaa' }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 } } },
+        y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 }, stepSize: 2 } }
+      }
+    }
+  });
+}
+
+async function saveCoachNote(id) {
+  const val = (document.getElementById('cn-' + id)?.value ?? '').trim();
+  const { error } = await sb.from('checkins').update({ coach_notes: val }).eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  const ci = currentClientData.checkins.find(c => c.id == id);
+  if (ci) ci.coach_notes = val;
+  toast('Svar gemt ✓', 'ok');
 }
 
 async function deleteWeightEntry(id) {
@@ -2137,80 +2724,238 @@ function calcClientTDEE() {
   return { tdee, cal, pro, carb, fat, goal: goalKey, actMult };
 }
 
-function openGenerator() {
-  const m = calcClientTDEE();
+function openDietGenerator() {
   const d = currentClientData.intake || {};
-  const goalLabel = d.primary_goal || 'Ikke angivet';
   const savedKey = localStorage.getItem('claude_api_key') || '';
-  document.getElementById('gen-body').innerHTML = `
-    <div style="background:var(--surf2);border-radius:var(--r);padding:13px 15px;margin-bottom:16px;font-size:.86rem;line-height:1.8">
-      <div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Klientdata</div>
-      <div>Mål: <strong>${escHtml(goalLabel)}</strong> &nbsp;|&nbsp; Erfaring: <strong>${d.years_training||'?'} år</strong></div>
-      <div>TDEE: <strong>${m.tdee} kcal</strong> → Mål: <strong style="color:var(--gold)">${m.cal} kcal</strong> &nbsp;|&nbsp; P: ${m.pro}g · KH: ${m.carb}g · F: ${m.fat}g</div>
+  const m = calcClientTDEE();
+
+  document.getElementById('diet-gen-body').innerHTML = `
+    <div style="background:var(--surf2);border-radius:var(--r);padding:9px 13px;margin-bottom:12px;font-size:.82rem">
+      <span style="color:var(--muted)">Klient: </span><strong>${escHtml(currentClient?.full_name || '—')}</strong>
+      ${m?.cal ? `<span style="color:var(--muted);margin-left:8px">Mål: </span><strong>${m.cal} kcal</strong>` : ''}
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">API-nøgle (Anthropic)</label>
+      <input class="input" type="password" id="claude-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
+      <div style="font-size:.7rem;color:var(--dim);margin-top:3px">Gemmes lokalt · console.anthropic.com</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label class="label">Antal måltider</label>
+        <select class="input" id="gen-n-meals">
+          <option value="3">3 måltider</option>
+          <option value="4" selected>4 måltider</option>
+          <option value="5">5 måltider</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Kosttype</label>
+        <select class="input" id="gen-diet-type">
+          <option value="klassisk">Klassisk / Balanced</option>
+          <option value="high-protein">High-Protein</option>
+          <option value="low-carb">Low-Carb</option>
+          <option value="if">Intermittent Fasting (16:8)</option>
+          <option value="carb-cycling">Carb-Cycling</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Timing-strategi</label>
+        <select class="input" id="gen-diet-timing">
+          <option value="standard">Standard</option>
+          <option value="peri">Peri-workout fokus</option>
+          <option value="protein-first">Protein-first</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Madlavningsniveau</label>
+        <select class="input" id="gen-cooking">
+          <option value="minimal">Minimal (ingen tilberedning)</option>
+          <option value="let" selected>Let (maks 15 min)</option>
+          <option value="middel">Middel (maks 30 min)</option>
+          <option value="avanceret">Avanceret (meal prep)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">Kcal override (valgfrit — tilsidesæt beregnet mål)</label>
+      <input type="number" class="input" id="gen-kcal-override" min="500" max="6000" placeholder="fx 1200 — lad stå tom for auto">
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">Instruks til AI (valgfrit)</label>
+      <textarea class="input" id="gen-diet-coach-note" rows="2" placeholder="fx undgå mælkeprodukter, inkluder ris til aftensmad..." style="resize:none;font-size:.82rem"></textarea>
+    </div>
+    <button class="btn btn-gold btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">✨ AI Kostplan (3 valgmuligheder)</button>
+    <div style="margin-top:8px">
+      <button class="btn btn-outline btn-full btn-sm" onclick="runDietGenerator()">Skabelon kostplan (ingen API)</button>
+    </div>`;
+
+  document.getElementById('diet-gen-modal').classList.remove('hidden');
+}
+
+function openWorkoutGenerator() {
+  const d = currentClientData.intake || {};
+  const savedKey = localStorage.getItem('claude_api_key') || '';
+
+  const exp = +(d.years_training || 0);
+  const levelDefault = exp === 0 ? 'Begynder' : exp <= 2 ? 'Let øvet' : exp <= 5 ? 'Øvet' : 'Avanceret';
+  const daysDefault = parseInt(d.trainingDays) || 4;
+  const eqRaw = (d.equipment || '').toLowerCase();
+  const eqDefault = eqRaw.includes('hjemme') ? 'Hjemmetræning' : 'Fitnesscenter';
+  const goalRaw = (d.primary_goal || '').toLowerCase();
+  const goalDefault = goalRaw.includes('vægt') || goalRaw.includes('cut') ? 'Vægttab'
+    : goalRaw.includes('performance') || goalRaw.includes('styrke') ? 'Performance'
+    : 'Muskelopbygning';
+  const hasIntake = !!(d.injuries || d.best_lifts || d.equipment || d.years_training);
+
+  document.getElementById('workout-gen-body').innerHTML = `
+    <div style="background:var(--surf2);border-radius:var(--r);padding:9px 13px;margin-bottom:12px;font-size:.82rem">
+      <span style="color:var(--muted)">Klient: </span><strong>${escHtml(currentClient?.full_name || '—')}</strong>
+      <span style="color:var(--muted);margin-left:8px">Erfaring: </span><strong>${exp} år</strong>
     </div>
 
-    <div style="background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(201,168,76,.02));border:1px solid var(--bdr-g);border-radius:var(--r2);padding:18px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <span style="font-size:.9rem;font-weight:700;color:var(--gold)">✨ Claude AI Generator</span>
-        <span style="font-size:.72rem;color:var(--green);background:rgba(76,175,125,.12);border:1px solid rgba(76,175,125,.25);border-radius:10px;padding:1px 8px">Anbefalet</span>
+    ${hasIntake ? `
+    <div style="background:rgba(255,200,0,.06);border:1px solid rgba(255,200,0,.25);border-radius:var(--r);padding:10px 13px;margin-bottom:12px;font-size:.78rem">
+      <div style="font-weight:700;color:var(--gold);margin-bottom:6px">📋 Klientdata brugt i generering</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px">
+        <div><span style="color:var(--muted)">Skader:</span> <strong>${escHtml(d.injuries || 'Ingen')}</strong></div>
+        <div><span style="color:var(--muted)">Udstyr:</span> <strong>${escHtml(d.equipment || '?')}</strong></div>
+        <div><span style="color:var(--muted)">Bedste løft:</span> <strong>${escHtml(d.best_lifts || '—')}</strong></div>
+        <div><span style="color:var(--muted)">Mål:</span> <strong>${escHtml(d.primary_goal || '—')}</strong></div>
       </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="label">Anthropic API-nøgle</label>
-        <input class="input" type="password" id="claude-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
-        <div style="font-size:.72rem;color:var(--dim);margin-top:4px">Gemmes kun i din browser · Hent på console.anthropic.com</div>
+    </div>` : ''}
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">API-nøgle (Anthropic)</label>
+      <input class="input" type="password" id="workout-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
+      <div style="font-size:.7rem;color:var(--dim);margin-top:3px">Gemmes lokalt · console.anthropic.com</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label class="label">Mål</label>
+        <select class="input" id="gen-goal">
+          ${['Muskelopbygning','Vægttab','Performance','Generel form'].map(g=>`<option${g===goalDefault?' selected':''}>${g}</option>`).join('')}
+        </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div class="form-group" style="margin:0">
-          <label class="label">Antal måltider</label>
-          <select class="input" id="gen-n-meals">
-            <option value="3">3 måltider</option>
-            <option value="4" selected>4 måltider</option>
-            <option value="5">5 måltider</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="label">Træningssplit</label>
-          <select class="input" id="gen-split">
-            <option value="fb2">Fullbody 2x/uge</option>
-            <option value="fb3">Fullbody 3x/uge</option>
-            <option value="brab3">Bryst/Ryg + Arme/Skuldre + Ben 3x/uge</option>
-            <option value="brab5">Bryst/Ryg + Arme/Skuldre + Ben 5x/uge</option>
-            <option value="ul4">Upper/Lower 4x/uge (ULUL)</option>
-            <option value="ul5">Upper/Lower 5x/uge (ULUL)</option>
-            <option value="ppl6">Push/Pull/Legs 6x/uge</option>
-            <option value="custom">Custom (egne dage)</option>
-          </select>
-        </div>
+      <div class="form-group" style="margin:0">
+        <label class="label">Niveau</label>
+        <select class="input" id="gen-level">
+          ${['Begynder','Let øvet','Øvet','Avanceret'].map(l=>`<option${l===levelDefault?' selected':''}>${l}</option>`).join('')}
+        </select>
       </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="label">Din instruks til AI'en (valgfrit)</label>
-        <textarea class="input" id="gen-coach-note" rows="3" placeholder="Eks: Undgå mælkeprodukter. Fokus på compound øvelser. Klienten foretrækker hurtige måltider..." style="resize:vertical;font-size:.85rem"></textarea>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button class="btn btn-gold btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">🥗 AI Kostplan</button>
-        <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">💪 AI Træningsplan</button>
+      <div class="form-group" style="margin:0;grid-column:1/-1">
+        <label class="label">Udstyr</label>
+        <select class="input" id="gen-equipment">
+          ${['Fitnesscenter','Hjemmetræning','Begge'].map(e=>`<option${e===eqDefault?' selected':''}>${e}</option>`).join('')}
+        </select>
       </div>
     </div>
 
-    <details>
-      <summary style="font-size:.81rem;color:var(--muted);cursor:pointer;user-select:none;padding:4px 0;margin-bottom:8px">Brug skabelon i stedet (ingen API-nøgle)</summary>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
-        <button class="btn btn-outline btn-full" onclick="runDietGenerator()">Skabelon kostplan</button>
-        <button class="btn btn-outline btn-full" onclick="runWorkoutGenerator()">Skabelon træning</button>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">Antal træningsdage</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+        ${[2,3,4,5,6].map(n=>`<button type="button" class="btn btn-sm${n===daysDefault?' btn-gold':' btn-outline'}" onclick="setGenDays(${n})" id="gen-day-btn-${n}">${n}</button>`).join('')}
       </div>
-    </details>
-    <p style="font-size:.78rem;color:var(--dim);margin-top:10px">Planen indlæses i editoren – tilpas og gem når du er tilfreds.</p>`;
+      <input type="hidden" id="gen-days" value="${daysDefault}">
+    </div>
 
-  const days = parseInt(d.trainingDays) || 3;
-  const splitSel = document.getElementById('gen-split');
-  if (splitSel) {
-    if (days <= 2) splitSel.value = 'fb2';
-    else if (days === 3) splitSel.value = 'fb3';
-    else if (days === 4) splitSel.value = 'ul4';
-    else if (days === 5) splitSel.value = 'ul5';
-    else splitSel.value = 'ppl6';
-  }
-  document.getElementById('gen-modal').classList.remove('hidden');
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="label">Dag-struktur — vælg fokus for hver dag</label>
+      <div id="day-structure-builder" style="display:flex;flex-direction:column;gap:5px;margin-top:4px"></div>
+      <div style="font-size:.71rem;color:var(--dim);margin-top:5px">Gentag muskelgrupper for A/B-rotation — fx Push · Pull · Ben · Push · Pull = 5 dage med automatisk øvelsesvariation</div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="label">Coach-instruks til denne klient (valgfrit)</label>
+      <textarea class="input" id="gen-coach-note" rows="2" placeholder="fx undgå squat, fokus på compound, 5×5 progression..." style="resize:none;font-size:.82rem"></textarea>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <button type="button" class="btn btn-outline btn-sm btn-full" onclick="toggleKnowledgeBase()" id="kb-toggle-btn" style="justify-content:space-between">
+        <span>📚 Coachens vidensbase ${localStorage.getItem('coach_knowledge_base') ? '<span style="color:var(--green);font-size:.7rem">● Aktiv</span>' : '<span style="color:var(--dim);font-size:.7rem">Tom</span>'}</span>
+        <span id="kb-arrow">▼</span>
+      </button>
+      <div id="kb-panel" style="display:none;margin-top:6px">
+        <textarea class="input" id="gen-knowledge-base" rows="8" placeholder="Skriv dine træningsteoretiske principper her — de inkluderes i ALLE genereringer fremover.
+
+Eksempel:
+- SRA-princippet: stimulus → restitution → adaptation. Mindst 48t mellem samme muskelgruppe.
+- MEV (Minimum Effective Volume): begynder 10 sæt/uge, øvet 14 sæt/uge pr. muskelgruppe.
+- Compound first: altid tunge compound-løft når CNS er frisk, isolation til sidst.
+- Progressive overload: dobbelt-progression (reps → vægt) på isolationsøvelser..." style="font-size:.79rem;line-height:1.5">${escHtml(localStorage.getItem('coach_knowledge_base') || '')}</textarea>
+        <div style="display:flex;gap:6px;margin-top:5px">
+          <button type="button" class="btn btn-gold btn-sm" onclick="saveKnowledgeBase()" style="flex:1">💾 Gem vidensbase</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearKnowledgeBase()" style="color:var(--red)">Ryd</button>
+        </div>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:4px">Gemmes lokalt i browseren · bruges i alle fremtidige genereringer</div>
+      </div>
+    </div>
+
+    <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">✨ Generér AI Træningsplan</button>
+
+    <div id="gen-workout-error" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5;word-break:break-word"></div>
+
+    <div id="gen-workout-preview" style="display:none;border:1px solid var(--bdr-g);border-radius:var(--r2);padding:16px;margin-top:12px">
+      <div style="font-size:.83rem;font-weight:700;color:var(--gold);margin-bottom:10px" id="gen-preview-title">—</div>
+      <div id="gen-preview-days" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-bottom:12px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn btn-gold btn-full" onclick="saveGenPlanDirect()">💾 Gem til klient</button>
+        <button class="btn btn-outline btn-full" onclick="openGenPlanInEditor()">✏️ Åbn i editor</button>
+      </div>
+    </div>
+
+    <div style="margin-top:8px">
+      <button class="btn btn-outline btn-full btn-sm" onclick="runWorkoutGenerator()">Skabelon træning (ingen API)</button>
+    </div>`;
+
+  renderDayBuilder(daysDefault);
+  document.getElementById('workout-gen-modal').classList.remove('hidden');
+}
+
+function setGenDays(n) {
+  document.getElementById('gen-days').value = n;
+  [2,3,4,5,6].forEach(i => {
+    const b = document.getElementById('gen-day-btn-'+i);
+    if (b) b.className = 'btn btn-sm ' + (i===n ? 'btn-gold' : 'btn-outline');
+  });
+  renderDayBuilder(n);
+}
+
+function renderDayBuilder(n) {
+  const dayNames = DAY_NAMES_FOR_N[n] || ALL_DAYS.slice(0, n);
+  const defaults = DAY_DEFAULTS_BY_N[n] || Array(n).fill('fullbody');
+  const existing = [...document.querySelectorAll('.gen-day-type')].map(s => s.value);
+  document.getElementById('day-structure-builder').innerHTML = dayNames.map((day, i) => `
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:.75rem;color:var(--gold);font-weight:700;min-width:108px;flex-shrink:0">Dag ${i+1} · ${day}</span>
+      <select class="input gen-day-type" style="flex:1;font-size:.79rem;padding:5px 8px" data-day="${day}">
+        ${Object.entries(DAY_TYPES).map(([k,t])=>`<option value="${k}"${(existing[i]||defaults[i])===k?' selected':''}>${t.label}</option>`).join('')}
+      </select>
+    </div>`).join('');
+}
+
+function toggleKnowledgeBase() {
+  const panel = document.getElementById('kb-panel');
+  const arrow = document.getElementById('kb-arrow');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▲' : '▼';
+}
+function saveKnowledgeBase() {
+  const val = document.getElementById('gen-knowledge-base')?.value.trim() || '';
+  localStorage.setItem('coach_knowledge_base', val);
+  toast('Vidensbase gemt ✓', 'ok');
+  const btn = document.getElementById('kb-toggle-btn');
+  if (btn) btn.querySelector('span span').outerHTML = val
+    ? '<span style="color:var(--green);font-size:.7rem">● Aktiv</span>'
+    : '<span style="color:var(--dim);font-size:.7rem">Tom</span>';
+}
+function clearKnowledgeBase() {
+  if (!confirm('Ryd hele vidensbasen?')) return;
+  localStorage.removeItem('coach_knowledge_base');
+  const el = document.getElementById('gen-knowledge-base');
+  if (el) el.value = '';
+  toast('Vidensbase ryddet', 'ok');
 }
 
 // Rund til nærmeste 5g (fx 114 → 115, 112 → 110)
@@ -2226,6 +2971,15 @@ function clientVariantIdx(n) {
 
 function runDietGenerator() {
   const m = calcClientTDEE();
+  // Brug kcal override-felt hvis udfyldt (fx til gastric sleeve / særlige tilfælde)
+  const overrideKcal = +document.getElementById('gen-kcal-override')?.value;
+  if (overrideKcal >= 500) {
+    const ratio = overrideKcal / m.cal;
+    m.pro  = Math.round(m.pro  * ratio);
+    m.carb = Math.round(m.carb * ratio);
+    m.fat  = Math.round(m.fat  * ratio);
+    m.cal  = overrideKcal;
+  }
   const nMeals = +document.getElementById('gen-n-meals').value || 4;
   const goalKey = m.goal === 'cut' ? 'cut' : m.goal === 'bulk' ? 'bulk' : 'maintain';
   const pool = MEAL_POOLS[goalKey];
@@ -2257,14 +3011,25 @@ function runDietGenerator() {
              calories:Math.round(tot.cal), protein:+tot.pro.toFixed(1), carbs:+tot.carb.toFixed(1), fat:+tot.fat.toFixed(1) };
   });
 
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('diet-gen-modal').classList.add('hidden');
   switchTab('kostplan', null);
   renderDietEditor();
   toast('Kostplan genereret! Gem når du er klar.', 'ok');
 }
 
+function inferSplitKey(daySelects) {
+  const keys = daySelects.map(s => s.value);
+  const n = keys.length;
+  if (keys.every(k => k === 'fullbody'))                                           return n <= 2 ? 'fb2' : 'fb3';
+  if (keys.every(k => k === 'push' || k === 'pull' || k === 'legs'))               return n <= 3 ? 'ppl3' : n <= 5 ? 'ppl5' : 'ppl6';
+  if (keys.every(k => k === 'upper' || k === 'lower'))                             return n <= 4 ? 'ul4' : 'ul5';
+  if (keys.every(k => k === 'chest_back' || k === 'shoulders_arms' || k === 'legs')) return n <= 3 ? 'brab3' : 'brab5';
+  return n <= 2 ? 'fb2' : n <= 3 ? 'ppl3' : n <= 4 ? 'ul4' : n <= 5 ? 'ppl5' : 'ppl6';
+}
+
 function runWorkoutGenerator() {
-  const split = document.getElementById('gen-split').value;
+  const daySelects = [...document.querySelectorAll('.gen-day-type')];
+  const split = inferSplitKey(daySelects);
   exCnt = 0;
   const ex = (name) => {
     const b = EXERCISE_BANK.find(e => e.n === name) || {sets:3,reps:'8-12',rest:90};
@@ -2344,13 +3109,6 @@ function runWorkoutGenerator() {
     ],
   };
 
-  if (split === 'custom') {
-    document.getElementById('gen-modal').classList.add('hidden');
-    switchTab('traening', null);
-    toast('Custom: vælg dage manuelt og tilføj øvelser 💪', 'ok');
-    return;
-  }
-
   const EXTRA_POOLS = {
     brab5: [
       {name:'BRAB 5-Day', days:[
@@ -2417,7 +3175,7 @@ function runWorkoutGenerator() {
   wp.days = chosen.days;
   exCnt = chosen.days.reduce((m, d) => Math.max(m, ...d.exercises.map(e => e.id)), exCnt);
 
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('workout-gen-modal').classList.add('hidden');
   switchTab('traening', null);
   renderWorkoutEditor();
   toast('Træningsplan genereret! Gem når du er klar.', 'ok');
@@ -2438,51 +3196,83 @@ async function runClaudeDietGenerator() {
   btn.innerHTML = '⏳ Genererer valgmuligheder...';
 
   const m = calcClientTDEE();
-  // Brug manuelt satte makroer fra editoren hvis coach har trykket "Anvend →"
-  const overrideKcal = +document.getElementById('dp-kcal')?.value;
-  if (overrideKcal > 0) {
-    m.cal  = overrideKcal;
+  // Prioriter override fra modal-felt, dernæst manuelt satte makroer fra editoren
+  const modalOverride = +document.getElementById('gen-kcal-override')?.value;
+  const editorOverride = +document.getElementById('dp-kcal')?.value;
+  if (modalOverride >= 500) {
+    const ratio = modalOverride / m.cal;
+    m.pro  = Math.round((+document.getElementById('dp-protein')?.value || m.pro  * ratio));
+    m.carb = Math.round((+document.getElementById('dp-carbs')?.value  || m.carb * ratio));
+    m.fat  = Math.round((+document.getElementById('dp-fat')?.value    || m.fat  * ratio));
+    m.cal  = modalOverride;
+  } else if (editorOverride > 0) {
+    m.cal  = editorOverride;
     m.pro  = +document.getElementById('dp-protein')?.value || m.pro;
     m.carb = +document.getElementById('dp-carbs')?.value  || m.carb;
     m.fat  = +document.getElementById('dp-fat')?.value    || m.fat;
   }
   const d = currentClientData.intake || {};
-  const nMeals = +document.getElementById('gen-n-meals').value || 4;
-  const goalLabel = m.goal === 'cut' ? 'Vægttab' : m.goal === 'bulk' ? 'Muskelmasse' : 'Vedligeholdelse';
+  const nMeals     = +document.getElementById('gen-n-meals').value     || 4;
+  const dietType   = document.getElementById('gen-diet-type')?.value   || 'klassisk';
+  const timing     = document.getElementById('gen-diet-timing')?.value || 'standard';
+  const cookingLvl = document.getElementById('gen-cooking')?.value     || d.cooking_level || 'let';
+  const goalLabel  = m.goal === 'cut' ? 'Vægttab' : m.goal === 'bulk' ? 'Muskelmasse' : 'Vedligeholdelse';
 
-  // Frokost & Aftensmad tæller som 2 i den daglige total (spises 2 gange).
-  // Snacks = nMeals - 3 (morgenmad=1 + frokost=1 + aftensmad=1 → F&A slot dækker de to)
+  const dietTypeDesc = {
+    'klassisk':     'Balanced makrofordeling — protein, kulhydrat og fedt i balance tilpasset målet.',
+    'high-protein': 'Høj protein (≥2g/kg) — kulhydrat og fedt justeres ned. Fokus på mæthed og muskelbevaring.',
+    'low-carb':     'Low-Carb — kulhydrat under 100g/dag. Protein og fedt som primære energikilder.',
+    'if':           'Intermittent Fasting 16:8 — alle måltider inden for et 8-timers vindue (12:00–20:00). Ingen morgenmad.',
+    'carb-cycling': 'Carb-Cycling — høj kulhydrat på træningsdage, lav kulhydrat på hviledage. Beregn for træningsdag.',
+  }[dietType];
+
+  const timingDesc = {
+    'standard':      'Jævn fordeling af kalorier og protein over dagen.',
+    'peri':          'Peri-workout: placér kulhydrat og protein i måltiderne før og efter træning for at maksimere glykogenresyntese og MPS.',
+    'protein-first': 'Protein-first: hvert måltid starter med proteinkilden — sikrer leucin-tærsklen (≥3g leucin/måltid) og øger mæthed (Alan Aragon).',
+  }[timing];
+
   const snackCount = Math.max(0, nMeals - 3);
-
   const slotList = [
-    { slot: 'Morgenmad',        time: '07:30', extra: '' },
+    { slot: 'Morgenmad', time: '07:30', extra: dietType === 'if' ? 'SKIP — IF-protokol: ingen morgenmad.' : '' },
     { slot: 'Frokost & Aftensmad', time: '12:30', extra: 'MEALPREP: PRÆCIS SAMME ret spises til BÅDE frokost (12:30) OG aftensmad (18:00). Klienten laver én stor batch søndag. Kalorietallet for dette slot GANGES MED 2 i den daglige total.' },
   ];
   for (let i = 0; i < snackCount; i++) {
-    slotList.push({ slot: snackCount > 1 ? `Snack ${i+1}` : 'Snack', time: i === 0 ? '15:00' : '21:00', extra: 'Kræver NUL tilberedning. Klar til at spise.' });
+    slotList.push({ slot: snackCount > 1 ? `Snack ${i+1}` : 'Snack', time: i === 0 ? '15:00' : '21:00', extra: cookingLvl === 'minimal' ? 'Kræver NUL tilberedning. Klar til at spise.' : 'Hurtig og nem.' });
   }
 
-  const coachNote = document.getElementById('gen-coach-note')?.value.trim();
-  const prompt = `Du er en professionel sports-ernæringsekspert. Generer PRÆCIS 3 VALGMULIGHEDER per måltidsslot.
+  const coachNote = document.getElementById('gen-diet-coach-note')?.value.trim();
+  const prompt = `Du er en ekspert i evidensbaseret sports-ernæring. Generer PRÆCIS 3 VALGMULIGHEDER per måltidsslot.
 
 KLIENTPROFIL:
 - Mål: ${goalLabel} (${d.primary_goal || ''})
 - Kaloriemål: ${m.cal} kcal/dag | Protein: ${m.pro}g | Kulhydrat: ${m.carb}g | Fedt: ${m.fat}g
+- Kosttype: ${dietTypeDesc}
+- Timing-strategi: ${timingDesc}
 - Allergier: ${d.allergies || 'Ingen'}
 - Undgå / kan ikke lide: ${d.food_dislikes || 'Ingen'}
-- Madlavningsniveau: ${d.cooking_level || 'Middel'}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet — følg disse præcist):\n${coachNote}` : ''}
+- Madlavningsniveau: ${cookingLvl}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet):\n${coachNote}` : ''}
+
+EVIDENSBASEREDE PRINCIPPER (følg disse):
+- Protein-fordeling: mindst 0.4g protein/kg per måltid for at ramme leucin-tærsklen og maksimere MPS (Layne Norton / Alan Aragon)
+- Mindst 3g leucin per måltid — sikres ved at prioritere animalske proteinkilder eller kombinationer (Norton)
+- Fiber: 25–35g total per dag for mæthed, tarmhelse og glukosekontrol (Eric Helms)
+- Kulhydrat placeres primært peri-workout hvis relevant (Mike Israetel / RP Nutrition)
+- Fleksibel tilgang: undgå rigide "clean eating"-regler — prioriter adherence og variation (Eric Helms)
+- Mæthed: kombiner protein + fiber + volumen for at kontrollere sult på cut
 
 REGLER:
-1. Returner præcis ${slotList.length} slots – ét per måltid i listen nedenfor.
+1. Returner præcis ${slotList.filter(s => !s.extra.startsWith('SKIP')).length} slots.
 2. Hvert slot har PRÆCIS 3 options med FORSKELLIGT indhold og FORSKELLIG proteinkilde.
-3. NAVNE: Appetitvækkende og beskrivende – ALDRIG "Kogt kyllingebryst" eller "Hvid ris".
+3. NAVNE: Appetitvækkende og beskrivende — ALDRIG "Kogt kyllingebryst" eller "Hvid ris".
 4. Afrund gram til nærmeste 5.
 5. Undgå ALLE allergener og "undgå"-liste.
-6. note: Korte nummererede tilberednings-trin.
-7. Kalorier per slot skal tilsammen ramme præcis ${m.cal} kcal/dag.
+6. note: Korte nummererede tilberednings-trin tilpasset madlavningsniveau (${cookingLvl}).
+7. Kalorier per slot skal tilsammen ramme ${m.cal} kcal/dag.
+8. Hver option skal have mindst ${Math.round(m.pro / nMeals)}g protein.
 
 SLOTS DER SKAL GENERERES:
-${slotList.map(s => `- "${s.slot}" (${s.time})${s.extra ? ': ' + s.extra : ''}`).join('\n')}
+${slotList.filter(s => !s.extra.startsWith('SKIP')).map(s => `- "${s.slot}" (${s.time})${s.extra ? ': ' + s.extra : ''}`).join('\n')}
 
 Returner KUN valid JSON – ingen forklaring, ingen markdown:
 {
@@ -2676,81 +3466,173 @@ function buildDietPlan() {
   dp.calories = m.cal; dp.protein = m.pro; dp.carbs = m.carb; dp.fat = m.fat;
   dp.plan_name = 'AI Kostplan';
   dp.meals = scaledMeals;
-  document.getElementById('gen-modal').classList.add('hidden');
+  document.getElementById('diet-gen-modal').classList.add('hidden');
   switchTab('kostplan', null);
   renderDietEditor();
   toast('✨ Kostplan indlæst! Kontrollér og gem.', 'ok');
 }
 
 async function runClaudeWorkoutGenerator() {
-  const apiKey = document.getElementById('claude-api-key')?.value.trim();
+  const apiKey = document.getElementById('workout-api-key')?.value.trim();
   if (!apiKey) { toast('Indtast Claude API-nøgle', 'err'); return; }
   localStorage.setItem('claude_api_key', apiKey);
 
   const btn = document.getElementById('claude-workout-btn');
   const origText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '⏳ Genererer...';
+  btn.innerHTML = '⏳ Genererer professionel plan...';
+  const errEl = document.getElementById('gen-workout-error');
+  if (errEl) errEl.style.display = 'none';
 
   const d = currentClientData.intake || {};
-  const split = document.getElementById('gen-split').value;
-  const splitDescriptions = {
-    fb2: 'Fullbody 2x/uge — Mandag + Torsdag. Hvert pas træner hele kroppen. A og B varianter med forskellige øvelser.',
-    fb3: 'Fullbody 3x/uge — Mandag + Onsdag + Fredag. Hvert pas træner hele kroppen. A, B og C varianter med forskellige øvelser.',
-    brab3: 'Bryst/Ryg + Arme/Skuldre + Ben 3x/uge — Mandag (Bryst & Ryg: bryst-compound, bryst-isolation, ryg-compound, ryg-isolation, rear delt) + Onsdag (Arme & Skuldre: skuldre-compound, lateral raises, biceps, triceps, face pull) + Fredag (Ben & Core: squat, hamstring, glutes, quad-isolation, læg, core).',
-    brab5: 'Bryst/Ryg + Arme/Skuldre + Ben 5x/uge — Mandag (Bryst & Ryg A: bench, incline, flyes, row, lat pulldown, rear delt) + Tirsdag (Arme & Skuldre A: OHP, lateral raises, face pull, curl, hammer curl, triceps) + Onsdag (Ben: squat, RDL, leg press, leg curl, calf, core) + Torsdag (Bryst & Ryg B: andre øvelser end A, variation) + Fredag (Arme & Skuldre B: variation af A med andre øvelser).',
-    ul4: 'Upper/Lower 4x/uge — Mandag (Upper A) + Tirsdag (Lower A) + Torsdag (Upper B) + Fredag (Lower B). Upper: bryst, ryg, skuldre, arme. Lower: ben, glutes, core.',
-    ul5: 'Upper/Lower 5x/uge — Mandag (Upper A) + Tirsdag (Lower A) + Onsdag (Upper B) + Torsdag (Lower B) + Fredag (Upper C). Upper: bryst, ryg, skuldre, arme. Lower: ben, glutes, core.',
-    ppl6: 'Push/Pull/Legs 6x/uge — Mandag (Push A) + Tirsdag (Pull A) + Onsdag (Legs A) + Torsdag (Push B) + Fredag (Pull B) + Lørdag (Legs B). Push: bryst, skuldre, triceps. Pull: ryg, biceps. Legs: quadriceps, hamstrings, glutes, læg.',
-    custom: 'Custom split — tilpas dagene frit.',
-  };
-  const exp = +(d.years_training || 0);
-  const level = exp === 0 ? 'Begynder' : exp <= 2 ? 'Let øvet' : exp <= 5 ? 'Øvet' : 'Avanceret';
+  const goal      = document.getElementById('gen-goal')?.value      || d.primary_goal || 'Muskelopbygning';
+  const level     = document.getElementById('gen-level')?.value     || 'Øvet';
+  const equipment = document.getElementById('gen-equipment')?.value || d.equipment    || 'Fitnesscenter';
+  const coachNote      = document.getElementById('gen-coach-note')?.value.trim();
+  const knowledgeBase  = localStorage.getItem('coach_knowledge_base')?.trim() || '';
 
-  if (split === 'custom') {
-    document.getElementById('gen-modal').classList.add('hidden');
-    switchTab('traening', null);
-    toast('Custom: vælg dage manuelt og tilføj øvelser 💪', 'ok');
-    btn.disabled = false; btn.innerHTML = origText;
-    return;
+  // Build split description dynamically from day-structure builder
+  const daySelects = [...document.querySelectorAll('.gen-day-type')];
+  if (daySelects.length === 0) {
+    toast('Vælg dag-struktur', 'err'); btn.disabled = false; btn.innerHTML = origText; return;
   }
+  const nDays = parseInt(document.getElementById('gen-days').value) || daySelects.length;
+  const dayNames = DAY_NAMES_FOR_N[nDays] || ALL_DAYS.slice(0, daySelects.length);
+  const groupCount = {};
+  daySelects.forEach(s => { groupCount[s.value] = (groupCount[s.value] || 0) + 1; });
+  const groupSession = {};
+  const splitDesc = daySelects.map((s, i) => {
+    const key = s.value;
+    const dt  = DAY_TYPES[key] || { label: key, desc: key };
+    groupSession[key] = (groupSession[key] || 0) + 1;
+    const sess      = groupCount[key] > 1 ? ` Session ${String.fromCharCode(64 + groupSession[key])}` : '';
+    const noOverlap = groupCount[key] > 1 ? ` — INGEN overlap med andre ${dt.label} sessioner. Brug HELT ANDRE øvelser og vinkler.` : '';
+    return `Dag ${i+1} (${dayNames[i] || 'Dag '+(i+1)}) –${sess} ${dt.label}: ${dt.desc}${noOverlap}`;
+  }).join('\n');
 
-  const coachNote = document.getElementById('gen-coach-note')?.value.trim();
-  const prompt = `Du er en certificeret styrketræner. Generer en personlig og varieret træningsplan.
+  // Volumen og intensitet efter niveau
+  const levelStandards = {
+    'Begynder':  { setsEx: 3, compReps: '10-15', isoReps: '12-15', rir: '3-4', restComp: 120, restIso: 60,  weeklyVol: '10-12 sæt/uge/muskelgruppe', note: 'FOKUS PÅ TEKNIK. Samme compound-øvelser uge for uge for motorisk læring. Simpel lineær progression (+2.5 kg pr. session).' },
+    'Let øvet':  { setsEx: 3, compReps: '8-12',  isoReps: '10-15', rir: '2-3', restComp: 120, restIso: 60,  weeklyVol: '12-14 sæt/uge/muskelgruppe', note: 'Linear progression på compound. Double progression på isolation (reps → vægt).' },
+    'Øvet':      { setsEx: 4, compReps: '6-10',  isoReps: '10-12', rir: '2-3', restComp: 150, restIso: 75,  weeklyVol: '14-16 sæt/uge/muskelgruppe', note: 'Double progression. Deload hver 4. uge. Variation i rep-ranges (wave loading).' },
+    'Avanceret': { setsEx: 4, compReps: '4-8',   isoReps: '8-12',  rir: '1-2', restComp: 180, restIso: 90,  weeklyVol: '16-20 sæt/uge/muskelgruppe', note: 'Periodisering. Bølger i volumen og intensitet. Arbejdssæt nær failure.' },
+  };
 
-KLIENTPROFIL:
-- Mål: ${d.primary_goal || 'Generel fitness'}
-- Niveau: ${level} (${exp} års erfaring)
-- Split: ${splitDescriptions[split]}
-- Skader / begrænsninger: ${d.injuries || 'Ingen'}
-- Udstyr: ${d.equipment || 'Fuldt gym med frivægte og maskiner'}
-- Bedste løft: ${d.best_lifts || 'Ikke angivet'}${coachNote ? `\n\nCOACH INSTRUKTIONER (højeste prioritet — følg disse præcist):\n${coachNote}` : ''}
+  // Rep-scheme og fokus efter mål
+  const goalSchemes = {
+    'Muskelopbygning': { compReps: '6-10', isoReps: '10-15', rir: '2-3', focus: 'Hypertrofi: maks mekanisk spænding + metabolisk stress. Kontrolleret excentrik fase (2-3 sek).' },
+    'Vægttab':         { compReps: '10-15', isoReps: '15-20', rir: '1-2', focus: 'Kalorieforbrænding + muskelbevarelse. Kortere pauser. Fokus på volumen frem for intensitet.' },
+    'Performance':     { compReps: '3-6',  isoReps: '8-12',  rir: '1-2', focus: 'Maksimal kraft og eksplosivitet. Tunge compound-løft er prioritet. Isolation er supplement.' },
+    'Generel form':    { compReps: '8-15', isoReps: '12-20', rir: '2-3', focus: 'Funktionel styrke og kondition. Varieret rep-range. Bevægelseskvalitet over belastning.' },
+  };
 
-REGLER:
-1. Følg splittet PRÆCIST — antal dage og muskelgrupper per dag som beskrevet ovenfor
-2. Tilpas øvelsesvalg til niveau: begynder = basale compound-øvelser, øvet = variation og isolation
-3. Tag ALTID hensyn til skader — undgå øvelser der belaster skadet område
-4. Sæt/reps passer til målet: styrke (3-5 reps, tung), muskelmasse (6-12), definition (12-20)
-5. A og B (og C) dage i samme muskelgruppe skal have HELT FORSKELLIGE øvelser — ingen gentagelse
-6. Brug NØJAGTIGE øvelsesnavne fra listen nedenfor
-7. Giv hvert træningspas et beskrivende dansk navn
+  const ls  = levelStandards[level] || levelStandards['Øvet'];
+  const gs  = goalSchemes[goal] || goalSchemes['Muskelopbygning'];
 
-Returner KUN valid JSON:
+  // Override reps baseret på mål hvis mere specifikt end level default
+  const compReps = gs.compReps;
+  const isoReps  = gs.isoReps;
+  const workRIR  = gs.rir;
+
+  const injurySection = (d.injuries && d.injuries.toLowerCase() !== 'ingen' && d.injuries.trim())
+    ? `
+═══ SKADE-HENSYN ═══
+Klienten har: "${d.injuries}"
+REGEL 1: Udskift KUN øvelser der DIREKTE og primært belaster det skadede område. Eksempel: knæskade → udskift squat, lunges, leg extension — IKKE bench press, rows, curls.
+REGEL 2: Øvelser der ikke involverer det skadede område gennemføres UÆNDRET. Tilføj INGEN skade-note til disse.
+REGEL 3: Brug "notes"-feltet KUN på de øvelser du faktisk har udskiftet — skriv kort: "Erstattet [original] pga. [skade]: undgår [belastning]".`
+    : '';
+
+  const prompt = `Du er verdens bedste styrketræningscoach — på niveau med Jeff Nippard, Mike Israetel og Eric Helms. Generer en PROFESSIONEL, evidensbaseret træningsplan der er skræddersyet præcist til denne klient.
+
+═══════════════════════════════════════
+FULDSTÆNDIG KLIENTPROFIL
+═══════════════════════════════════════
+Alder: ${d.age || '?'} år | Køn: ${d.gender || '?'}
+Træningstid: ${d.years_training || 0} år → Niveau: ${level}
+Primært mål: ${goal}
+Udstyr: ${equipment}
+Skader/begrænsninger: ${d.injuries || 'INGEN'}
+Bedste løft (reference): ${d.best_lifts || 'Ikke angivet'}
+Aktivitetsniveau dagligt: ${d.activity_level || 'Moderat aktiv'}
+Nuværende program: ${d.current_program || 'Intet'}
+Træner: ${d.trainingDays || '?'} dage/uge | Session maks: ${d.session_duration || '60'} min
+
+═══════════════════════════════════════
+SPLIT STRUKTUR — FØLG PRÆCIST
+═══════════════════════════════════════
+${splitDesc}
+
+═══════════════════════════════════════
+PROGRAMMERINGSSTANDARDER
+═══════════════════════════════════════
+NIVEAU "${level}":
+• Ugentlig volumen: ${ls.weeklyVol}
+• Sæt pr. øvelse: ${ls.setsEx}
+• Pausetid compound: ${ls.restComp} sek | Isolation: ${ls.restIso} sek
+• Coachens note til niveau: ${ls.note}
+
+MÅL "${goal}":
+• Compound reps: ${compReps} | Isolation reps: ${isoReps}
+• RIR på arbejdssæt: @${workRIR} RIR
+• Fokus: ${gs.focus}
+
+ØVELSESRÆKKEFØLGE PR. SESSION (OBLIGATORISK):
+1. Primær compound (squat/DL/bench/row/OHP) — ${ls.setsEx} sæt, ${compReps} reps, tyngst
+2. Sekundær compound eller semi-compound — ${ls.setsEx} sæt
+3. Isolation A — 3 sæt
+4. Isolation B — 3 sæt
+5. Isolation C (valgfrit) — 3 sæt
+6. Core/finisher (valgfrit) — 2-3 sæt
+MAKS 6 øvelser pr. session, 45-65 min total${injurySection}
+
+═══════════════════════════════════════
+KVALITETSKRAV — UBRYDELIGE REGLER
+═══════════════════════════════════════
+• Pull-dag SKAL altid indeholde mindst 1 horisontal row (Barbell Row / T-Bar Row / One-Arm Dumbbell Row). Lat pulldown ERSTATTER IKKE en row.
+• A og B sessioner med SAMME muskelgrupper: NULPROCENT overlap i øvelsesvalg
+• Ingen øvelse gentages inden for samme uge for SAMME primære muskelgruppe
+• Begynder: max 4-5 unikke compound-løft på tværs af ugen (motorisk indlæring)
+• Øvet/Avanceret: bredt øvelsesudvalg for komplet muskeldækning fra alle vinkler
+• "notes"-feltet bruges KUN til progressionsmodel og evt. skade-erstatning — ALDRIG til generelle anatomiske forklaringer
+
+═══════════════════════════════════════
+OUTPUT — KUN VALID JSON (INGEN MARKDOWN, INGEN KOMMENTARER)
+═══════════════════════════════════════
 {
-  "program_name": "Programnavn",
+  "program_name": "Professionelt navn der afspejler split + niveau",
   "days": [
     {
       "day": "Mandag",
-      "name": "Push – Bryst & Triceps",
+      "name": "Sessionens navn (fx Upper A – Bryst & Ryg)",
       "exercises": [
-        {"name": "Nøjagtigt øvelsesnavn", "sets": 4, "reps": "6-8", "rest": 120}
+        {
+          "name": "NØJAGTIGT øvelsesnavn fra listen nedenfor",
+          "sets": 4,
+          "reps": "6-10",
+          "weight": "@2 RIR",
+          "rest": 150,
+          "notes": "Progressionsmodel: dobbelt progression — øg reps til 10, derefter +2.5 kg"
+        }
       ]
     }
   ]
 }
 
-TILGÆNGELIGE ØVELSER (brug NØJAGTIGE navne):
-${EXERCISE_BANK.map(e => e.n).join(', ')}`;
+═══════════════════════════════════════
+TILGÆNGELIGE ØVELSER — BRUG KUN DISSE NAVNE NØJAGTIGT
+═══════════════════════════════════════
+${EXERCISE_BANK.map(e => `${e.n} [${e.g}]`).join(' | ')}
+
+${knowledgeBase ? `═══════════════════════════════════════
+COACHENS TRÆNINGSTEORETISKE PRINCIPPER — BRUG SOM FUNDAMENT
+═══════════════════════════════════════
+${knowledgeBase}` : ''}
+
+${coachNote ? `═══════════════════════════════════════
+COACH INSTRUKTIONER TIL DENNE KLIENT — ABSOLUT HØJESTE PRIORITET
+═══════════════════════════════════════
+${coachNote}` : ''}`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -2763,7 +3645,7 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+        max_tokens: 8000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -2781,36 +3663,109 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
     if (!Array.isArray(json.days) || json.days.length === 0) throw new Error('AI returnerede ingen træningsdage');
 
     exCnt = 0;
-    wp.program_name = json.program_name || 'AI Træningsplan';
-    wp.days = json.days.map(day => ({
+    const mappedDays = json.days.map(day => ({
       day: day.day,
       name: day.name,
       exercises: (day.exercises || []).map(ex => {
         const bank = EXERCISE_BANK.find(e => e.n === ex.name) || {};
-        return { id: ++exCnt, name: ex.name, sets: ex.sets || bank.sets || 3, reps: ex.reps || bank.reps || '8-12', weight: '', rest: ex.rest || bank.rest || 90 };
+        return {
+          id: ++exCnt,
+          name: ex.name,
+          sets: ex.sets || bank.sets || 3,
+          reps: ex.reps || bank.reps || '8-12',
+          weight: ex.weight || '@2 RIR',
+          rest: ex.rest || bank.rest || 90,
+          notes: ex.notes || '',
+        };
       }).filter(e => e.name),
     })).filter(day => day.exercises.length > 0);
 
-    document.getElementById('gen-modal').classList.add('hidden');
-    switchTab('traening', null);
-    renderWorkoutEditor();
-    toast('✨ AI træningsplan klar! Tilpas og gem.', 'ok');
+    window._genPlan = { program_name: json.program_name || 'AI Træningsplan', days: mappedDays };
+
+    document.getElementById('gen-preview-title').textContent = json.program_name || 'AI Træningsplan';
+    document.getElementById('gen-preview-days').innerHTML = mappedDays.map(day => `
+      <div style="background:var(--surf2);border-radius:var(--r);padding:12px">
+        <div style="font-size:.8rem;font-weight:700;color:var(--gold);margin-bottom:2px">${escHtml(day.day)}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">${escHtml(day.name)}</div>
+        ${day.exercises.map(ex => `
+          <div style="padding:4px 0;border-bottom:1px solid var(--bdr)">
+            <div style="display:flex;justify-content:space-between;font-size:.78rem">
+              <span style="font-weight:600">${escHtml(ex.name)}</span>
+              <span style="color:var(--muted)">${ex.sets}×${ex.reps} · ${escHtml(ex.weight)} · ${ex.rest}s</span>
+            </div>
+            ${ex.notes ? `<div style="font-size:.71rem;color:var(--dim);margin-top:1px">${escHtml(ex.notes)}</div>` : ''}
+          </div>`).join('')}
+      </div>`).join('');
+    document.getElementById('gen-workout-preview').style.display = 'block';
+    toast('✨ Professionel plan genereret — godkend eller åbn i editor', 'ok');
 
   } catch (err) {
     toast('AI fejl: ' + err.message, 'err');
+    const errEl = document.getElementById('gen-workout-error');
+    if (errEl) { errEl.textContent = '⚠ ' + err.message; errEl.style.display = 'block'; }
   } finally {
     btn.disabled = false;
     btn.innerHTML = origText;
   }
 }
 
+async function saveGenPlanDirect() {
+  const p = window._genPlan;
+  if (!p || !currentClient?.id) { toast('Ingen plan eller klient valgt', 'err'); return; }
+
+  const saveBtn = document.querySelector('#gen-workout-preview .btn-gold');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Gemmer...'; }
+
+  const showSaveErr = (msg) => {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Gem til klient'; }
+    const errEl = document.getElementById('gen-workout-error');
+    if (errEl) { errEl.textContent = '⚠ Gem fejl: ' + msg; errEl.style.display = 'block'; }
+    toast('Gem fejl: ' + msg, 'err');
+  };
+
+  try {
+    const now = new Date().toISOString();
+
+    const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
+    if (selRes.error) { showSaveErr(selRes.error.message); return; }
+
+    let prog = {};
+    try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
+    prog.workout = { program_name: p.program_name, days: p.days };
+    const progStr = JSON.stringify(prog);
+
+    let saveRes;
+    if (selRes.data?.[0]?.id) {
+      saveRes = await sb.from('client_data').update({ program: progStr, updated_at: now })
+        .eq('user_id', currentClient.id).select('id');
+    } else {
+      saveRes = await sb.from('client_data').insert({ user_id: currentClient.id, program: progStr, updated_at: now });
+    }
+
+    if (saveRes.error) { showSaveErr(saveRes.error.message); return; }
+
+    currentClientData.workout = prog.workout;
+    document.getElementById('workout-gen-modal').classList.add('hidden');
+    toast('✅ Plan gemt — klienten kan se den nu', 'ok');
+  } catch (e) {
+    showSaveErr(e.message);
+  }
+}
+
+function openGenPlanInEditor() {
+  const p = window._genPlan;
+  if (!p) return;
+  wp.program_name = p.program_name;
+  wp.days = p.days;
+  document.getElementById('workout-gen-modal').classList.add('hidden');
+  switchTab('traening', null);
+  renderWorkoutEditor();
+  toast('Plan indlæst i editor — tilpas og gem', 'ok');
+}
+
 async function runDiagnostic() {
   const out = document.getElementById('diag-result');
   out.innerHTML = 'Tester...';
-
-  function withTimeout(promise, ms = 8000) {
-    return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), ms))]);
-  }
 
   async function testTable(name, queryFn) {
     try {
@@ -3013,6 +3968,103 @@ async function renderFotosTab() {
       <span style="color:var(--muted)">Sørg for at oprette en Supabase Storage bucket kaldet <strong>progress-photos</strong> og sæt den til public.</span>
     </div>`;
   }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MÅL TAB – kropsomfang per klient
+// ════════════════════════════════════════════════════════════════════════════
+let målChart = null;
+
+function renderMålTab() {
+  const bm = [...(currentClientData.bodyMeasurements || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const el = document.getElementById('tab-mål');
+
+  const fields = [
+    { key: 'waist',       label: 'Talje',      color: '#c9a84c' },
+    { key: 'hips',        label: 'Hofter',     color: '#7aa4f0' },
+    { key: 'chest',       label: 'Bryst',      color: '#5cb285' },
+    { key: 'left_arm',    label: 'V. Arm',     color: '#e36868' },
+    { key: 'right_arm',   label: 'H. Arm',     color: '#e39868' },
+    { key: 'left_thigh',  label: 'V. Lår',     color: '#a078d4' },
+    { key: 'right_thigh', label: 'H. Lår',     color: '#d478b4' },
+  ];
+
+  if (!bm.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📐</div><p>Klienten har ikke logget kropsomfang endnu.</p></div>';
+    return;
+  }
+
+  const labels = bm.map(r => new Date(r.date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }));
+
+  const activeFields = fields.filter(f => bm.some(r => r[f.key] != null));
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:18px">Kropsomfang over tid (cm)</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        ${activeFields.map(f => `<div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)"><div style="width:12px;height:3px;background:${f.color};border-radius:2px"></div>${f.label}</div>`).join('')}
+      </div>
+      <canvas id="mål-chart" height="110"></canvas>
+    </div>
+    <div class="card">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Historik</h3>
+      <div style="overflow-x:auto">
+        <table class="ci-table">
+          <thead><tr>
+            <th>Dato</th>
+            ${activeFields.map(f => `<th style="text-align:center">${f.label}</th>`).join('')}
+            <th>Note</th>
+          </tr></thead>
+          <tbody>
+            ${[...bm].reverse().map(r => `<tr>
+              <td>${new Date(r.date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' })}</td>
+              ${activeFields.map(f => `<td style="text-align:center;font-weight:${r[f.key]!=null?'600':'400'};color:${r[f.key]!=null?'var(--txt)':'var(--dim)'}">${r[f.key] != null ? r[f.key] + ' cm' : '—'}</td>`).join('')}
+              <td style="color:var(--muted);font-size:.82rem">${escHtml(r.notes || '—')}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  if (målChart) { målChart.destroy(); målChart = null; }
+  const ctx = document.getElementById('mål-chart')?.getContext('2d');
+  if (!ctx) return;
+  målChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: activeFields.map(f => ({
+        label: f.label,
+        data: bm.map(r => r[f.key]),
+        borderColor: f.color,
+        backgroundColor: f.color + '18',
+        borderWidth: 2,
+        pointBackgroundColor: f.color,
+        pointRadius: 4,
+        tension: 0.35,
+        spanGaps: true
+      }))
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          borderColor: 'rgba(201,168,76,.3)',
+          borderWidth: 1,
+          titleColor: '#f0f0f0',
+          bodyColor: '#aaa',
+          callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y} cm` }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#777', font: { size: 11 }, callback: v => v + ' cm' } }
+      }
+    }
+  });
 }
 
 function toast(msg, type = 'ok') {
