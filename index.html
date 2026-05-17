@@ -2146,19 +2146,26 @@ async function saveWorkoutPlan() {
         exercises: (d.exercises || []).filter(e => e.name?.trim())
       }))
     };
-    // Hent eksisterende for at bevare diet-data
-    const { data: existing } = await sb.from('client_data').select('program').eq('user_id', currentClient.id).limit(1);
+    const { data: existing, error: selErr } = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
+    if (selErr) { showSaveError('workout', selErr.message); return; }
     let prog = {};
     try { prog = JSON.parse(existing?.[0]?.program || '{}'); } catch(e) {}
     prog.workout = plan;
 
-    const { error } = await sb.from('client_data').upsert({
-      user_id: currentClient.id,
-      program: JSON.stringify(prog),
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
-
-    if (error) { showSaveError('workout', error.message); return; }
+    let saveErr;
+    if (existing?.[0]?.id) {
+      ({ error: saveErr } = await sb.from('client_data').update({
+        program: JSON.stringify(prog),
+        updated_at: new Date().toISOString()
+      }).eq('user_id', currentClient.id));
+    } else {
+      ({ error: saveErr } = await sb.from('client_data').insert({
+        user_id: currentClient.id,
+        program: JSON.stringify(prog),
+        updated_at: new Date().toISOString()
+      }));
+    }
+    if (saveErr) { showSaveError('workout', saveErr.message); return; }
     currentClientData.workout = plan;
     clearSaveError('workout');
     toast('Træningsplan gemt! ✓', 'ok');
