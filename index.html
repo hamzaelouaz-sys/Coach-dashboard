@@ -1019,6 +1019,9 @@ function showClientList() {
 }
 
 function switchTab(tab, el) {
+  // Gem workout-inputs inden vi forlader træningsfanen
+  if (!document.getElementById('tab-traening')?.classList.contains('hidden')) syncWorkoutDOM();
+
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   else document.querySelectorAll('.tab').forEach((t, i) => {
