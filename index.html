@@ -2146,24 +2146,22 @@ async function saveWorkoutPlan() {
         exercises: (d.exercises || []).filter(e => e.name?.trim())
       }))
     };
-    const { data: existing, error: selErr } = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
-    if (selErr) { showSaveError('workout', selErr.message); return; }
-    let prog = {};
-    try { prog = JSON.parse(existing?.[0]?.program || '{}'); } catch(e) {}
-    prog.workout = plan;
+    // Brug cachet diet-data — ingen ekstra SELECT til DB nødvendig
+    const prog = { diet: currentClientData.diet || null, workout: plan };
+    const progJson = JSON.stringify(prog);
+    const now = new Date().toISOString();
 
     let saveErr;
-    if (existing?.[0]?.id) {
+    if (currentClientData.clientRow?.id) {
       ({ error: saveErr } = await sb.from('client_data').update({
-        program: JSON.stringify(prog),
-        updated_at: new Date().toISOString()
+        program: progJson, updated_at: now
       }).eq('user_id', currentClient.id));
     } else {
-      ({ error: saveErr } = await sb.from('client_data').insert({
-        user_id: currentClient.id,
-        program: JSON.stringify(prog),
-        updated_at: new Date().toISOString()
-      }));
+      const { data: inserted, error: insErr } = await sb.from('client_data').insert({
+        user_id: currentClient.id, program: progJson, updated_at: now
+      }).select('id');
+      saveErr = insErr;
+      if (!insErr && inserted?.[0]) currentClientData.clientRow = inserted[0];
     }
     if (saveErr) { showSaveError('workout', saveErr.message); return; }
     currentClientData.workout = plan;
