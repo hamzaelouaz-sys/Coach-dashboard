@@ -2155,7 +2155,7 @@ async function saveWorkoutPlan() {
     if (currentClientData.clientRow?.id) {
       ({ error: saveErr } = await sb.from('client_data').update({
         program: progJson, updated_at: now
-      }).eq('user_id', currentClient.id));
+      }).eq('user_id', currentClient.id).select('id'));
     } else {
       const { data: inserted, error: insErr } = await sb.from('client_data').insert({
         user_id: currentClient.id, program: progJson, updated_at: now
