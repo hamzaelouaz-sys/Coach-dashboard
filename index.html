@@ -1945,9 +1945,9 @@ async function saveDietPlan() {
       }))
     };
 
-    console.log('[saveDietPlan] client id:', currentClient.id, '| meals:', plan.meals.length);
-    const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
-    console.log('[saveDietPlan] select result:', selRes);
+    const selRes = await withTimeout(
+      sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1)
+    );
 
     let prog = {};
     try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
@@ -1955,32 +1955,24 @@ async function saveDietPlan() {
 
     let saveRes;
     if (selRes.data?.[0]?.id) {
-      console.log('[saveDietPlan] UPDATE existing row id:', selRes.data[0].id);
-      saveRes = await sb.from('client_data').update({
-        kcal_goal: dp.calories, prot_goal: dp.protein, kh_goal: dp.carbs, fedt_goal: dp.fat,
-        program: JSON.stringify(prog), updated_at: new Date().toISOString()
-      }).eq('user_id', currentClient.id).select('id');
-
-      // Silent RLS block: UPDATE returned no rows but no error either
-      if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
-        console.warn('[saveDietPlan] UPDATE affected 0 rows — RLS may be blocking. Run SQL from 🔧-button.');
-        showSaveError('diet', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Kør SQL fra 🔧-knappen øverst.');
-        return;
-      }
+      saveRes = await withTimeout(
+        sb.from('client_data').update({
+          kcal_goal: dp.calories, prot_goal: dp.protein, kh_goal: dp.carbs, fedt_goal: dp.fat,
+          program: JSON.stringify(prog), updated_at: new Date().toISOString()
+        }).eq('user_id', currentClient.id).select('id')
+      );
     } else {
-      console.log('[saveDietPlan] INSERT new row');
-      saveRes = await sb.from('client_data').insert({
-        user_id: currentClient.id,
-        kcal_goal: dp.calories, prot_goal: dp.protein, kh_goal: dp.carbs, fedt_goal: dp.fat,
-        program: JSON.stringify(prog), updated_at: new Date().toISOString()
-      });
+      saveRes = await withTimeout(
+        sb.from('client_data').insert({
+          user_id: currentClient.id,
+          kcal_goal: dp.calories, prot_goal: dp.protein, kh_goal: dp.carbs, fedt_goal: dp.fat,
+          program: JSON.stringify(prog), updated_at: new Date().toISOString()
+        })
+      );
     }
-    console.log('[saveDietPlan] save result:', saveRes);
 
     if (saveRes.error) {
-      const msg = saveRes.error.message || JSON.stringify(saveRes.error);
-      console.error('[saveDietPlan] error:', saveRes.error);
-      showSaveError('diet', msg);
+      showSaveError('diet', saveRes.error.message || JSON.stringify(saveRes.error));
       return;
     }
     currentClientData.diet = plan;
@@ -2146,24 +2138,31 @@ async function saveWorkoutPlan() {
         exercises: (d.exercises || []).filter(e => e.name?.trim())
       }))
     };
-    // Brug cachet diet-data — ingen ekstra SELECT til DB nødvendig
-    const prog = { diet: currentClientData.diet || null, workout: plan };
+
+    const selRes = await withTimeout(
+      sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1)
+    );
+    if (selRes.error) { showSaveError('workout', selRes.error.message); return; }
+
+    let prog = {};
+    try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
+    prog.workout = plan;
     const progJson = JSON.stringify(prog);
     const now = new Date().toISOString();
 
-    let saveErr;
-    if (currentClientData.clientRow?.id) {
-      ({ error: saveErr } = await sb.from('client_data').update({
-        program: progJson, updated_at: now
-      }).eq('user_id', currentClient.id).select('id'));
+    let saveRes;
+    if (selRes.data?.[0]?.id) {
+      saveRes = await withTimeout(
+        sb.from('client_data').update({ program: progJson, updated_at: now })
+          .eq('user_id', currentClient.id).select('id')
+      );
     } else {
-      const { data: inserted, error: insErr } = await sb.from('client_data').insert({
-        user_id: currentClient.id, program: progJson, updated_at: now
-      }).select('id');
-      saveErr = insErr;
-      if (!insErr && inserted?.[0]) currentClientData.clientRow = inserted[0];
+      saveRes = await withTimeout(
+        sb.from('client_data').insert({ user_id: currentClient.id, program: progJson, updated_at: now })
+      );
     }
-    if (saveErr) { showSaveError('workout', saveErr.message); return; }
+
+    if (saveRes.error) { showSaveError('workout', saveRes.error.message); return; }
     currentClientData.workout = plan;
     clearSaveError('workout');
     toast('Træningsplan gemt! ✓', 'ok');
