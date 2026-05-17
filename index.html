@@ -2064,7 +2064,7 @@ function renderWorkoutEditor() {
       </div>
       <div style="overflow-x:auto">
         <table class="item-table">
-          <thead><tr><th>Øvelse</th><th>Sæt</th><th>Reps</th><th>Vægt</th><th>Hvile (s)</th><th></th></tr></thead>
+          <thead><tr><th>Øvelse</th><th>Sæt</th><th>Reps</th><th>Vægt</th><th>Hvile (s)</th><th>YouTube URL</th><th></th></tr></thead>
           <tbody>
             ${day.exercises.map(ex => `
               <tr data-ex-id="${ex.id}">
@@ -2074,6 +2074,7 @@ function renderWorkoutEditor() {
                 <td><input class="input ex-reps" value="${escHtml(ex.reps)}" placeholder="8-12" style="width:78px"></td>
                 <td><input class="input ex-weight" value="${escHtml(ex.weight)}" placeholder="80 kg" style="width:88px"></td>
                 <td><input class="input ex-rest" type="number" value="${ex.rest}" min="0" style="width:75px"></td>
+                <td><input class="input ex-video" value="${escHtml(ex.video_url||'')}" placeholder="https://youtu.be/..." style="min-width:180px" title="YouTube link til øvelsesvideo"></td>
                 <td><button class="btn btn-ghost btn-sm" onclick="syncWorkoutDOM();removeExercise('${day.day}',${ex.id})">✕</button></td>
               </tr>`).join('')}
           </tbody>
@@ -2102,6 +2103,7 @@ function syncWorkoutDOM() {
         reps: row.querySelector('.ex-reps')?.value || '8-12',
         weight: row.querySelector('.ex-weight')?.value || '',
         rest: +row.querySelector('.ex-rest')?.value || 90,
+        video_url: row.querySelector('.ex-video')?.value.trim() || '',
       });
     });
   });
@@ -2121,7 +2123,7 @@ function toggleDay(day) {
 
 function addExercise(dayName) {
   const day = wp.days.find(d => d.day === dayName);
-  if (day) day.exercises.push({ id: ++exCnt, name:'', sets:3, reps:'8-12', weight:'', rest:90 });
+  if (day) day.exercises.push({ id: ++exCnt, name:'', sets:3, reps:'8-12', weight:'', rest:90, video_url:'' });
   renderWorkoutEditor();
 }
 
@@ -3681,6 +3683,7 @@ ${coachNote}` : ''}`;
           weight: ex.weight || '@2 RIR',
           rest: ex.rest || bank.rest || 90,
           notes: ex.notes || '',
+          video_url: ex.video_url || '',
         };
       }).filter(e => e.name),
     })).filter(day => day.exercises.length > 0);
