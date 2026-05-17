@@ -3810,7 +3810,19 @@ async function runDiagnostic() {
     </div>`;
   }
 
-  out.innerHTML = '<div style="font-weight:700;margin-bottom:6px;font-size:.8rem">TABELLER</div>' + rows.join('') + storageRow;
+  // Skrivetest på client_data
+  let writeRow = '';
+  if (currentClient?.id) {
+    writeRow = await testTable('client_data (SKRIV)', () =>
+      sb.from('client_data').update({ updated_at: new Date().toISOString() })
+        .eq('user_id', currentClient.id).select('id')
+    );
+  } else {
+    writeRow = `<div style="color:var(--muted);font-size:.78rem;padding:3px 0">⚠ Åbn en klient for at teste skrivning</div>`;
+  }
+
+  out.innerHTML = '<div style="font-weight:700;margin-bottom:6px;font-size:.8rem">TABELLER</div>' + rows.join('') + storageRow
+    + '<div style="font-weight:700;margin:10px 0 6px;font-size:.8rem">SKRIVETEST</div>' + writeRow;
 }
 
 function escHtml(str) {
