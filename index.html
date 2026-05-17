@@ -669,8 +669,13 @@ const SUPA_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-function withTimeout(promise, ms = 10000) {
-  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout — tjek din forbindelse')), ms))]);
+function withTimeout(promise, ms = 30000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return Promise.race([
+    promise,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout — Supabase svarer ikke. Prøv igen.')), ms))
+  ]).finally(() => clearTimeout(timer));
 }
 
 // ─── EmailJS ────────────────────────────────────────────────────────────────
