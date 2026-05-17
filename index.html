@@ -2132,19 +2132,22 @@ function removeExercise(dayName, exId) {
 }
 
 async function saveWorkoutPlan() {
+  console.log('[saveWorkoutPlan] KALDT — client:', currentClient?.id, '| wp.days:', wp.days?.length);
   if (!currentClient?.id) { toast('Ingen klient valgt', 'err'); return; }
   try {
     syncWorkoutDOM();
+    console.log('[saveWorkoutPlan] efter syncWorkoutDOM — wp.days:', JSON.stringify(wp.days?.map(d => ({day:d.day, exCount:d.exercises?.length}))));
     const plan = {
       program_name: wp.program_name,
       days: wp.days.map(d => ({
         day: d.day, name: d.name,
-        exercises: d.exercises.filter(e => e.name.trim())
+        exercises: (d.exercises || []).filter(e => e.name?.trim())
       }))
     };
 
     // Hent eksisterende række for at bevare diet-data og undgå RLS-problemer med upsert
     const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
+    console.log('[saveWorkoutPlan] selRes:', selRes?.data?.[0]?.id, selRes?.error);
     let prog = {};
     try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
     prog.workout = plan;
@@ -2155,6 +2158,7 @@ async function saveWorkoutPlan() {
         program: JSON.stringify(prog),
         updated_at: new Date().toISOString()
       }).eq('user_id', currentClient.id).select('id');
+      console.log('[saveWorkoutPlan] UPDATE result:', saveRes?.data, saveRes?.error);
       // UPDATE rammer 0 rækker = RLS blokerer
       if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
         showSaveError('workout', 'UPDATE ramte 0 rækker — RLS blokerer. Kør SQL fra 🔧-knappen øverst.');
@@ -2166,6 +2170,7 @@ async function saveWorkoutPlan() {
         program: JSON.stringify(prog),
         updated_at: new Date().toISOString()
       });
+      console.log('[saveWorkoutPlan] INSERT result:', saveRes?.data, saveRes?.error);
     }
 
     if (saveRes.error) {
