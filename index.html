@@ -203,6 +203,47 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ai-err{border:1px solid rgba(201,123,107,.4);color:var(--red);padding:12px 14px;font-size:.82rem;margin-top:14px}
 
+/* ===== LEADS ===== */
+.lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.lead-card{background:var(--surf);border:1px solid var(--line);padding:18px 20px}
+.lead-card-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.lead-avatar{width:40px;height:40px;background:var(--brown);color:var(--sand);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:.9rem;flex:none}
+.lead-name{font-weight:700;font-size:.95rem}
+.lead-sub{color:var(--muted);font-size:.78rem;margin-top:2px}
+.status-pill{display:inline-block;font-family:var(--display);font-size:.56rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border:1px solid}
+.status-ny{color:var(--sand);border-color:rgba(217,199,167,.4)}
+.status-kontaktet{color:#7FA9FF;border-color:rgba(127,169,255,.4)}
+.status-konverteret{color:var(--green);border-color:rgba(127,169,139,.4)}
+.status-afvist{color:var(--red);border-color:rgba(201,123,107,.4)}
+
+/* ===== CHAT ===== */
+.chat-wrap{display:flex;flex-direction:column;gap:10px;padding:4px 0 18px}
+.msg-bubble{max-width:75%;padding:11px 15px;font-size:.88rem;line-height:1.5}
+.msg-bubble.client{background:var(--surf2);border:1px solid var(--line);align-self:flex-start}
+.msg-bubble.coach{background:var(--brown);border:1px solid var(--brown-l);align-self:flex-end}
+.msg-meta{font-family:var(--mono);font-size:.66rem;color:var(--muted);margin-top:5px}
+.chat-input-row{display:flex;gap:10px;padding-top:14px;border-top:1px solid var(--line-s)}
+.msg-badge{background:var(--sand);color:#1A130C;border-radius:10px;font-size:.58rem;font-weight:800;padding:1px 6px;margin-left:6px;vertical-align:middle}
+
+/* ===== CHECK-IN ===== */
+.ci-card{border:1px solid var(--line-s);padding:16px 20px;margin-bottom:14px;background:var(--surf)}
+.ci-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.ci-week{font-family:var(--display);font-size:.66rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--sand)}
+.ci-scores{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+.ci-score{font-size:.82rem}
+.ci-score .sv{font-family:var(--mono);color:var(--beige);font-weight:700}
+
+/* ===== FOTOS ===== */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.photo-item{aspect-ratio:3/4;background:var(--surf2);border:1px solid var(--line);overflow:hidden;cursor:pointer}
+.photo-item img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .2s}
+.photo-item img:hover{opacity:.85}
+
+/* ===== UNREAD STAT ===== */
+.unread-stat{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;border-top:1px solid var(--line);margin-bottom:6px}
+.unread-stat .l{font-family:var(--display);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.unread-stat .v{font-family:var(--mono);font-size:.9rem;color:var(--sand)}
+
 @media (max-width: 900px){
   #app{grid-template-columns:1fr}
   .sidebar{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:0;border-right:none;border-bottom:1px solid var(--line)}
@@ -241,7 +282,12 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
     <button class="nav-item active" data-page="clients" onclick="navigate('clients')">Klienter</button>
     <button class="nav-item" data-page="foods" onclick="navigate('foods')">Madbank</button>
     <button class="nav-item" data-page="exercises" onclick="navigate('exercises')">Øvelsesbank</button>
+    <button class="nav-item" data-page="leads" onclick="navigate('leads')">Leads</button>
     <div class="side-foot">
+      <div class="unread-stat">
+        <span class="l">Ulæste beskeder</span>
+        <span class="v" id="sidebar-unread">0</span>
+      </div>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Log ud</button>
     </div>
   </aside>
@@ -285,6 +331,9 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
         <button class="tab active" data-tab="profile" onclick="switchTab('profile')">Profil &amp; TDEE</button>
         <button class="tab" data-tab="diet" onclick="switchTab('diet')">Kostplan<span id="diet-dirty"></span></button>
         <button class="tab" data-tab="workout" onclick="switchTab('workout')">Træningsplan<span id="wk-dirty"></span></button>
+        <button class="tab" data-tab="checkin" onclick="switchTab('checkin')">Check-in</button>
+        <button class="tab" data-tab="beskeder" onclick="switchTab('beskeder')">Beskeder<span id="msg-badge" class="hidden msg-badge"></span></button>
+        <button class="tab" data-tab="fotos" onclick="switchTab('fotos')">Fotos</button>
       </div>
 
       <!-- TAB: PROFIL -->
@@ -370,6 +419,13 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
         <div class="totals-bar" id="diet-totals"></div>
       </div>
 
+      <!-- TAB: CHECK-IN -->
+      <div id="tab-checkin" class="hidden"></div>
+      <!-- TAB: BESKEDER -->
+      <div id="tab-beskeder" class="hidden"></div>
+      <!-- TAB: FOTOS -->
+      <div id="tab-fotos" class="hidden"></div>
+
       <!-- TAB: TRÆNINGSPLAN -->
       <div id="tab-workout" class="hidden">
         <div class="panel" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
@@ -409,6 +465,23 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
       </div>
     </div>
 
+    <!-- LEADS -->
+    <div id="pg-leads" class="hidden">
+      <div class="panel" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" data-lf="alle" onclick="setLeadFilter('alle',this)" style="border-color:var(--sand);color:var(--sand)">Alle</button>
+          <button class="btn btn-outline btn-sm" data-lf="ny" onclick="setLeadFilter('ny',this)">Ny</button>
+          <button class="btn btn-outline btn-sm" data-lf="kontaktet" onclick="setLeadFilter('kontaktet',this)">Kontaktet</button>
+          <button class="btn btn-outline btn-sm" data-lf="konverteret" onclick="setLeadFilter('konverteret',this)">Konverteret</button>
+          <button class="btn btn-outline btn-sm" data-lf="afvist" onclick="setLeadFilter('afvist',this)">Afvist</button>
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openLeadModal(null)">+ Tilføj lead</button>
+      </div>
+      <div class="lead-grid" id="leads-grid">
+        <div class="empty">Ingen leads endnu</div>
+      </div>
+    </div>
+
     <!-- ØVELSESBANK -->
     <div id="pg-exercises" class="hidden">
       <div class="panel">
@@ -436,6 +509,43 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
       </div>
     </div>
   </main>
+</div>
+
+<!-- LEAD MODAL -->
+<div id="lead-modal" class="modal-ov hidden" onclick="if(event.target===this)closeLeadModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="panel-title" id="lead-modal-title">Tilføj lead</span>
+      <button class="icon-x" onclick="closeLeadModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lead-edit-id">
+      <div class="tdee-grid" style="margin-bottom:16px">
+        <div><label class="label">Navn *</label><input class="input" id="lead-name" placeholder="Fulde navn"></div>
+        <div><label class="label">E-mail</label><input class="input" type="email" id="lead-email" placeholder="email@..."></div>
+        <div><label class="label">Telefon</label><input class="input" id="lead-phone" placeholder="+45 ..."></div>
+        <div><label class="label">Kilde</label>
+          <select class="input" id="lead-source">
+            <option value="instagram">Instagram</option><option value="anbefaling">Anbefaling</option>
+            <option value="hjemmeside">Hjemmeside</option><option value="tiktok">TikTok</option><option value="andet">Andet</option>
+          </select>
+        </div>
+        <div><label class="label">Status</label>
+          <select class="input" id="lead-status">
+            <option value="ny">Ny</option><option value="kontaktet">Kontaktet</option>
+            <option value="konverteret">Konverteret</option><option value="afvist">Afvist</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:18px"><label class="label">Noter</label>
+        <textarea class="input" id="lead-notes" rows="3" placeholder="Notater om denne lead..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveLead()">Gem</button>
+        <button class="btn btn-ghost" onclick="closeLeadModal()">Annuller</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="modal-ov" class="modal-ov hidden" onclick="if(event.target===this)closeModal()">
@@ -504,13 +614,14 @@ if (sessionStorage.getItem('dsl_coach') === '1') {
 // ════════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════════
-const PAGE_TITLES = { clients: 'Klienter', foods: 'Madbank', exercises: 'Øvelsesbank' };
+const PAGE_TITLES = { clients: 'Klienter', foods: 'Madbank', exercises: 'Øvelsesbank', leads: 'Leads' };
 function navigate(page) {
   if (!confirmLeaveDirty()) return;
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page === page));
-  ['clients', 'foods', 'exercises'].forEach(p => $('pg-' + p).classList.toggle('hidden', p !== page));
+  ['clients', 'foods', 'exercises', 'leads'].forEach(p => $('pg-' + p).classList.toggle('hidden', p !== page));
   $('pg-client').classList.add('hidden');
   if (page === 'clients') $('pg-clients').classList.remove('hidden');
+  if (page === 'leads') loadLeads();
   $('page-title').textContent = PAGE_TITLES[page];
   $('crumb').textContent = 'Oversigt';
 }
@@ -535,6 +646,7 @@ function markDietDirtyGoals() { /* mål gemmes separat via Gem mål */ }
 // ════════════════════════════════════════════════════════════════════
 async function init() {
   await Promise.all([loadClients(), loadBanks()]);
+  loadUnreadCount();
 }
 
 async function loadClients() {
@@ -627,10 +739,12 @@ async function openClient(id) {
   const profile = CLIENTS.find(c => c.id === id);
   if (!profile) return;
 
-  const [intakeRes, cdRow, wlRes] = await Promise.all([
+  const [intakeRes, cdRow, wlRes, checkinRes, msgRes] = await Promise.all([
     sb.from('intake_forms').select('*').eq('user_id', id).maybeSingle(),
     fetchClientDataRow(id),
-    sb.from('weight_log').select('weight,date').eq('user_id', id).order('date', { ascending: false }).limit(1).maybeSingle()
+    sb.from('weight_log').select('weight,date').eq('user_id', id).order('date', { ascending: false }).limit(1).maybeSingle(),
+    sb.from('checkins').select('*').eq('user_id', id).order('created_at', { ascending: false }).limit(20),
+    sb.from('messages').select('*').eq('user_id', id).order('created_at', { ascending: true }).limit(100)
   ]);
 
   const program = parseProgram(cdRow?.program);
@@ -639,9 +753,13 @@ async function openClient(id) {
     intake: intakeRes.data || null,
     latestWeight: wlRes.data || null,
     cdRow,
+    checkins: checkinRes.data || [],
+    messages: msgRes.data || [],
     dietDraft: normalizeDiet(program.diet),
     wkDraft: normalizeWorkout(program.workout)
   };
+  // Markér klientens beskeder som læst
+  sb.from('messages').update({ read: true }).eq('user_id', id).eq('sender', 'client').eq('read', false).then(() => loadUnreadCount());
 
   $('pg-clients').classList.add('hidden');
   $('pg-client').classList.remove('hidden');
@@ -661,11 +779,14 @@ async function openClient(id) {
   switchTab('profile');
 }
 
-function backToClients() { if (!confirmLeaveDirty()) return; clearDirty('diet'); clearDirty('wk'); navigate('clients'); }
+function backToClients() { if (!confirmLeaveDirty()) return; clearDirty('diet'); clearDirty('wk'); CUR = null; navigate('clients'); }
 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  ['profile', 'diet', 'workout'].forEach(t => $('tab-' + t).classList.toggle('hidden', t !== tab));
+  ['profile', 'diet', 'workout', 'checkin', 'beskeder', 'fotos'].forEach(t => $('tab-' + t).classList.toggle('hidden', t !== tab));
+  if (tab === 'checkin') renderCheckinTab();
+  if (tab === 'beskeder') renderBeskederTab();
+  if (tab === 'fotos') renderFotosTab();
 }
 
 async function approveClient(id) {
@@ -1609,6 +1730,219 @@ function renderExBank() {
       <td style="color:var(--dim);font-size:.78rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.video || '')}</td>
       <td class="ta-r"><button class="icon-x" onclick="delExercise('${e.id}')" title="Slet">&times;</button></td>
     </tr>`).join('') : '<tr><td colspan="5"><div class="empty">Ingen øvelser fundet</div></td></tr>';
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ULÆSTE BESKEDER
+// ════════════════════════════════════════════════════════════════════
+async function loadUnreadCount() {
+  const { count } = await sb.from('messages').select('id', { count: 'exact', head: true })
+    .eq('sender', 'client').eq('read', false);
+  const n = count || 0;
+  $('sidebar-unread').textContent = n;
+  $('sidebar-unread').style.color = n > 0 ? 'var(--sand)' : 'var(--dim)';
+}
+
+// ════════════════════════════════════════════════════════════════════
+// LEADS
+// ════════════════════════════════════════════════════════════════════
+let ALL_LEADS = [], LEAD_FILTER = 'alle';
+
+async function loadLeads() {
+  const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false });
+  if (error) { toast('Kunne ikke hente leads: ' + error.message, 'err'); return; }
+  ALL_LEADS = data || [];
+  renderLeads();
+}
+
+function setLeadFilter(f, el) {
+  LEAD_FILTER = f;
+  document.querySelectorAll('[data-lf]').forEach(b => b.classList.toggle('active', b.dataset.lf === f));
+  renderLeads();
+}
+
+const LEAD_STATUS_CLASS = { ny: 'status-ny', kontaktet: 'status-kontaktet', konverteret: 'status-konverteret', afvist: 'status-afvist' };
+const LEAD_STATUS_LABEL = { ny: 'Ny', kontaktet: 'Kontaktet', konverteret: 'Konverteret ✓', afvist: 'Afvist' };
+const LEAD_SOURCE_LABEL = { instagram: 'Instagram', anbefaling: 'Anbefaling', hjemmeside: 'Hjemmeside', tiktok: 'TikTok', andet: 'Andet' };
+
+function renderLeads() {
+  const list = LEAD_FILTER === 'alle' ? ALL_LEADS : ALL_LEADS.filter(l => l.status === LEAD_FILTER);
+  $('leads-grid').innerHTML = list.length ? list.map(l => `
+    <div class="lead-card">
+      <div class="lead-card-top">
+        <div class="lead-avatar">${(l.name || '?').charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div class="lead-name">${esc(l.name)}</div>
+          <div class="lead-sub">${esc(l.email || l.phone || '—')}</div>
+        </div>
+        <span class="status-pill ${LEAD_STATUS_CLASS[l.status] || ''}">${LEAD_STATUS_LABEL[l.status] || l.status}</span>
+      </div>
+      ${l.notes ? `<div style="font-size:.82rem;color:var(--muted);margin-bottom:10px;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">"${esc(l.notes)}"</div>` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;margin-top:6px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:.72rem;color:var(--dim)">${LEAD_SOURCE_LABEL[l.source] || l.source || '—'} · ${new Date(l.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="editLead('${l.id}')">Rediger</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLead('${l.id}')">Slet</button>
+        </div>
+      </div>
+    </div>`).join('')
+    : '<div class="empty">Ingen leads i denne kategori</div>';
+}
+
+function openLeadModal(lead) {
+  $('lead-modal-title').textContent = lead ? 'Rediger lead' : 'Tilføj lead';
+  $('lead-edit-id').value = lead?.id || '';
+  $('lead-name').value = lead?.name || '';
+  $('lead-email').value = lead?.email || '';
+  $('lead-phone').value = lead?.phone || '';
+  $('lead-source').value = lead?.source || 'andet';
+  $('lead-status').value = lead?.status || 'ny';
+  $('lead-notes').value = lead?.notes || '';
+  $('lead-modal').classList.remove('hidden');
+  setTimeout(() => $('lead-name').focus(), 60);
+}
+function closeLeadModal() { $('lead-modal').classList.add('hidden'); }
+function editLead(id) { openLeadModal(ALL_LEADS.find(l => l.id === id)); }
+
+async function saveLead() {
+  const name = $('lead-name').value.trim();
+  if (!name) { toast('Navn er påkrævet', 'err'); return; }
+  const payload = {
+    name,
+    email: $('lead-email').value.trim() || null,
+    phone: $('lead-phone').value.trim() || null,
+    source: $('lead-source').value,
+    status: $('lead-status').value,
+    notes: $('lead-notes').value.trim() || null
+  };
+  const editId = $('lead-edit-id').value;
+  const { error } = editId
+    ? await sb.from('leads').update(payload).eq('id', editId)
+    : await sb.from('leads').insert(payload);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  closeLeadModal();
+  toast(editId ? 'Lead opdateret' : 'Lead tilføjet', 'ok');
+  await loadLeads();
+}
+
+async function deleteLead(id) {
+  if (!confirm('Slet dette lead?')) return;
+  const { error } = await sb.from('leads').delete().eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  toast('Lead slettet', 'ok');
+  await loadLeads();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CHECK-IN TAB
+// ════════════════════════════════════════════════════════════════════
+function renderCheckinTab() {
+  const ci = CUR.checkins || [];
+  const scoreLabel = v => v ? ['', '★', '★★', '★★★', '★★★★', '★★★★★'][v] || v : '—';
+  $('tab-checkin').innerHTML = ci.length ? ci.map(c => `
+    <div class="ci-card">
+      <div class="ci-head">
+        <span class="ci-week">Uge ${c.week_number || '?'} · ${c.year || ''}</span>
+        <span style="font-family:var(--mono);font-size:.8rem;color:var(--muted)">${c.created_at ? new Date(c.created_at).toLocaleDateString('da-DK') : ''}</span>
+      </div>
+      <div class="ci-scores">
+        ${c.weight ? `<span class="ci-score"><span class="sv">${c.weight} kg</span> Vægt</span>` : ''}
+        ${c.energy_level ? `<span class="ci-score"><span class="sv">${scoreLabel(c.energy_level)}</span> Energi</span>` : ''}
+        ${c.sleep_quality ? `<span class="ci-score"><span class="sv">${scoreLabel(c.sleep_quality)}</span> Søvn</span>` : ''}
+        ${c.mood ? `<span class="ci-score"><span class="sv">${scoreLabel(c.mood)}</span> Humør</span>` : ''}
+      </div>
+      ${c.notes ? `<div style="font-size:.84rem;color:var(--muted);margin-bottom:10px">${esc(c.notes)}</div>` : ''}
+      <div>
+        <label class="label" style="margin-bottom:6px">Coach-svar</label>
+        <div style="display:flex;gap:8px">
+          <input class="input inp-sm" style="flex:1" id="ci-note-${c.id}" value="${esc(c.coach_notes || '')}" placeholder="Skriv feedback til klienten...">
+          <button class="btn btn-outline btn-sm" onclick="saveCheckinNote('${c.id}')">Gem</button>
+        </div>
+      </div>
+    </div>`).join('')
+    : '<div class="empty">Ingen check-ins fra klienten endnu</div>';
+}
+
+async function saveCheckinNote(id) {
+  const note = $('ci-note-' + id)?.value || '';
+  const { error } = await sb.from('checkins').update({ coach_notes: note }).eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  const ci = CUR.checkins.find(c => c.id === id);
+  if (ci) ci.coach_notes = note;
+  toast('Feedback gemt', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// BESKEDER TAB
+// ════════════════════════════════════════════════════════════════════
+function renderBeskederTab() {
+  const msgs = CUR.messages || [];
+  const bubbles = msgs.map(m => {
+    const isCoach = m.sender === 'coach';
+    const time = m.created_at ? new Date(m.created_at).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    return `<div class="msg-bubble ${isCoach ? 'coach' : 'client'}">
+      ${esc(m.content)}
+      <div class="msg-meta">${isCoach ? 'Coach' : esc(CUR.profile.full_name || 'Klient')} · ${time}</div>
+    </div>`;
+  }).join('');
+
+  $('tab-beskeder').innerHTML = `
+    <div class="panel">
+      <div class="chat-wrap" id="chat-msgs">${bubbles || '<div class="empty">Ingen beskeder endnu</div>'}</div>
+      <div class="chat-input-row">
+        <input class="input" id="chat-input" placeholder="Skriv besked til ${esc(CUR.profile.full_name || 'klient')}..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCoachMsg()}">
+        <button class="btn btn-primary btn-sm" onclick="sendCoachMsg()">Send</button>
+      </div>
+    </div>`;
+
+  // Scroll til bund
+  setTimeout(() => {
+    const el = $('chat-msgs');
+    if (el) el.scrollTop = el.scrollHeight;
+  }, 50);
+}
+
+async function sendCoachMsg() {
+  const input = $('chat-input');
+  const content = input?.value.trim();
+  if (!content) return;
+  input.value = '';
+  input.disabled = true;
+
+  const { data, error } = await sb.from('messages').insert({
+    user_id: CUR.profile.id,
+    sender: 'coach',
+    content,
+    read: false
+  }).select().single();
+
+  input.disabled = false;
+  if (error) { toast('Kunne ikke sende: ' + error.message, 'err'); return; }
+  CUR.messages.push(data);
+  renderBeskederTab();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// FOTOS TAB
+// ════════════════════════════════════════════════════════════════════
+async function renderFotosTab() {
+  $('tab-fotos').innerHTML = '<div class="panel"><div class="empty">Henter fotos...</div></div>';
+  const { data, error } = await sb.storage.from('progress-photos').list(CUR.profile.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+  if (error || !data?.length) {
+    $('tab-fotos').innerHTML = '<div class="empty">Ingen progress fotos fra klienten endnu</div>';
+    return;
+  }
+  const photos = data.map(f => {
+    const { data: url } = sb.storage.from('progress-photos').getPublicUrl(CUR.profile.id + '/' + f.name);
+    const date = f.created_at ? new Date(f.created_at).toLocaleDateString('da-DK') : '';
+    return `<div class="photo-item" onclick="window.open('${url.publicUrl}','_blank')" title="${esc(date)}">
+      <img src="${url.publicUrl}" alt="Progress foto ${esc(date)}" loading="lazy">
+    </div>`;
+  }).join('');
+  $('tab-fotos').innerHTML = `<div class="panel">
+    <div class="h-rule"><span class="panel-title">Progress fotos (${data.length})</span></div>
+    <div class="photo-grid">${photos}</div>
+  </div>`;
 }
 </script>
 </body>
