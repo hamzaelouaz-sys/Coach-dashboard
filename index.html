@@ -189,6 +189,20 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
 .dirty-dot{display:inline-block;width:7px;height:7px;background:var(--sand);border-radius:50%;margin-left:8px;vertical-align:middle}
 .day-block{border:1px solid var(--line-s);margin-bottom:18px;background:var(--surf)}
 
+/* ===== MODAL ===== */
+.modal-ov{position:fixed;inset:0;z-index:120;background:rgba(10,8,6,.78);display:flex;align-items:center;justify-content:center;padding:24px}
+.modal{width:100%;max-width:660px;max-height:88vh;overflow-y:auto;background:var(--surf);border:1px solid var(--line-s)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surf);z-index:2}
+.modal-body{padding:22px}
+.ai-opt{border:1px solid var(--line-s);padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:border-color .15s ease;background:var(--surf2)}
+.ai-opt:hover{border-color:var(--sand)}
+.ai-opt h4{font-family:var(--display);font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--sand);margin-bottom:6px}
+.ai-opt p{color:var(--muted);font-size:.82rem;line-height:1.5}
+.ai-opt .meta{font-family:var(--mono);font-size:.74rem;color:var(--dim);margin-top:8px}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line-s);border-top-color:var(--sand);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-err{border:1px solid rgba(201,123,107,.4);color:var(--red);padding:12px 14px;font-size:.82rem;margin-top:14px}
+
 @media (max-width: 900px){
   #app{grid-template-columns:1fr}
   .sidebar{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:0;border-right:none;border-bottom:1px solid var(--line)}
@@ -282,7 +296,14 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
           </div>
           <div>
             <div class="panel">
-              <div class="h-rule"><span class="panel-title">Ligevægtsindtag — Mifflin-St Jeor</span></div>
+              <div class="h-rule"><span class="panel-title">Ligevægtsindtag — TDEE</span></div>
+              <div style="margin-bottom:16px">
+                <label class="label">Formel</label>
+                <select class="input" id="td-formula" onchange="toggleFormulaFields()">
+                  <option value="mifflin" selected>Mifflin-St Jeor (alder, højde, vægt, køn)</option>
+                  <option value="katch">Katch-McArdle (vægt + fedtprocent)</option>
+                </select>
+              </div>
               <div class="tdee-grid">
                 <div><label class="label">Alder</label><input class="input inp-num" type="number" id="td-age" oninput="calcTDEE()"></div>
                 <div><label class="label">Højde (cm)</label><input class="input inp-num" type="number" id="td-height" oninput="calcTDEE()"></div>
@@ -293,6 +314,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
                     <option value="female">Kvinde</option>
                   </select>
                 </div>
+                <div id="td-bf-wrap" class="hidden"><label class="label">Fedtprocent (%)</label><input class="input inp-num" type="number" step="0.5" min="3" max="60" id="td-bf" oninput="calcTDEE()"></div>
               </div>
               <div style="margin-top:16px">
                 <label class="label">Aktivitetsniveau (PAL)</label>
@@ -340,6 +362,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
             <label class="label">Planens navn</label>
             <input class="input" id="diet-name" placeholder="F.eks. Cut – fase 1" oninput="markDirty('diet')">
           </div>
+          <button class="btn btn-outline" onclick="openDietGen()">Generer plan</button>
           <button class="btn btn-outline" onclick="addMeal()">+ Tilføj måltid</button>
           <button class="btn btn-primary" id="btn-save-diet" onclick="saveDiet()">Gem kostplan</button>
         </div>
@@ -354,6 +377,7 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
             <label class="label">Programnavn</label>
             <input class="input" id="wk-name" placeholder="F.eks. Push/Pull/Legs – uge 1-6" oninput="markDirty('wk')">
           </div>
+          <button class="btn btn-outline" onclick="openWkGen()">Generer plan</button>
           <button class="btn btn-outline" onclick="addDay()">+ Tilføj træningsdag</button>
           <button class="btn btn-primary" id="btn-save-wk" onclick="saveWorkout()">Gem træningsplan</button>
         </div>
@@ -412,6 +436,16 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.55}
       </div>
     </div>
   </main>
+</div>
+
+<div id="modal-ov" class="modal-ov hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="panel-title" id="modal-title"></span>
+      <button class="icon-x" onclick="closeModal()" title="Luk">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -677,12 +711,26 @@ function prefillTDEE() {
   calcTDEE();
 }
 
+function toggleFormulaFields() {
+  $('td-bf-wrap').classList.toggle('hidden', $('td-formula').value !== 'katch');
+  calcTDEE();
+}
+
 function calcTDEE() {
-  const age = +$('td-age').value, h = +$('td-height').value, w = +$('td-weight').value;
-  const male = $('td-gender').value === 'male';
+  const w = +$('td-weight').value;
   const pal = +$('td-pal').value;
-  if (!age || !h || !w) { $('td-bmr').textContent = '—'; $('td-tdee').textContent = '—'; return null; }
-  const bmr = 10 * w + 6.25 * h - 5 * age + (male ? 5 : -161);
+  let bmr = null;
+  if ($('td-formula').value === 'katch') {
+    // Katch-McArdle: BMR = 370 + 21,6 × LBM, LBM = vægt × (1 − fedt%/100)
+    const bf = +$('td-bf').value;
+    if (w && bf > 0 && bf < 70) bmr = 370 + 21.6 * (w * (1 - bf / 100));
+  } else {
+    // Mifflin-St Jeor
+    const age = +$('td-age').value, h = +$('td-height').value;
+    const male = $('td-gender').value === 'male';
+    if (age && h && w) bmr = 10 * w + 6.25 * h - 5 * age + (male ? 5 : -161);
+  }
+  if (!bmr) { $('td-bmr').textContent = '—'; $('td-tdee').textContent = '—'; return null; }
   const tdee = bmr * pal;
   $('td-bmr').textContent = n0(bmr);
   $('td-tdee').textContent = n0(tdee);
@@ -691,7 +739,7 @@ function calcTDEE() {
 
 function applyTDEE(delta) {
   const tdee = calcTDEE();
-  if (!tdee) { toast('Udfyld alder, højde og vægt først', 'err'); return; }
+  if (!tdee) { toast('Udfyld felterne til den valgte formel først', 'err'); return; }
   $('goal-kcal').value = tdee + delta;
   suggestMacros();
 }
@@ -1135,6 +1183,301 @@ async function saveWorkout() {
     clearDirty('wk');
     toast('Træningsplan gemt — synlig for klienten med det samme', 'ok');
   }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// PLAN-GENERATOR — Claude API + skabelon-fallback
+// ════════════════════════════════════════════════════════════════════
+function openModal(title, body) {
+  $('modal-title').textContent = title;
+  $('modal-body').innerHTML = body;
+  $('modal-ov').classList.remove('hidden');
+}
+function closeModal() { $('modal-ov').classList.add('hidden'); }
+
+function apiKeyField() {
+  const k = localStorage.getItem('claude_api_key') || '';
+  return `<div style="margin-bottom:16px">
+    <label class="label">Anthropic API-nøgle</label>
+    <input class="input inp-sm" type="password" id="ai-key" value="${esc(k)}" placeholder="sk-ant-..." autocomplete="off">
+    <p style="color:var(--dim);font-size:.72rem;margin-top:6px">Gemmes kun lokalt i din browser (localStorage) — sendes aldrig til andre end Anthropic.</p>
+  </div>`;
+}
+
+function clientContext() {
+  const i = CUR.intake || {}, r = CUR.cdRow || {};
+  const tdee = calcTDEE();
+  return `KLIENTDATA:
+- Navn: ${CUR.profile.full_name || '?'} | Alder: ${i.age || '?'} | Køn: ${i.gender || '?'} | Højde: ${i.height || '?'} cm
+- Vægt: ${CUR.latestWeight?.weight || i.weight || '?'} kg | Målvægt: ${i.target_weight || '?'} kg
+- Primært mål: ${i.primary_goal || '?'} | Træningserfaring: ${i.years_training != null ? i.years_training + ' år' : '?'}
+- Træningsdage/uge: ${i.activity_level || '?'} | Sessionslængde: ${i.session_duration || '?'}
+- Skader/hensyn: ${i.injuries || 'ingen oplyst'} | Allergier: ${i.allergies || 'ingen'} | Kan ikke lide: ${i.food_dislikes || '-'}
+- Typisk kost: ${i.typical_diet || '?'} | Madlavningsniveau: ${i.cooking_level || '?'}
+- TDEE (ligevægtsindtag): ${tdee || 'ukendt'} kcal
+- Daglige mål: ${r.kcal_goal || '?'} kcal | Protein ${r.prot_goal || '?'} g | Kulhydrat ${r.kh_goal || '?'} g | Fedt ${r.fedt_goal || '?'} g`;
+}
+
+async function callClaude(prompt) {
+  const key = $('ai-key').value.trim();
+  if (!key) throw new Error('Indsæt din API-nøgle først — eller brug skabelon-knappen uden API.');
+  localStorage.setItem('claude_api_key', key);
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Ukendt API-fejl');
+  const text = (data.content || []).map(b => b.text || '').join('');
+  const clean = text.replace(/```json|```/g, '').trim();
+  const a = clean.indexOf('{'), b = clean.lastIndexOf('}');
+  if (a < 0 || b < 0) throw new Error('Kunne ikke læse JSON fra svaret — prøv igen');
+  return JSON.parse(clean.slice(a, b + 1));
+}
+
+function setGenBusy(busy) {
+  const btn = $('ai-go');
+  if (!btn) return;
+  btn.disabled = busy;
+  btn.innerHTML = busy ? '<span class="spin"></span> Genererer...' : btn.dataset.lbl;
+}
+function showGenError(e) {
+  const out = $('ai-out');
+  if (out) out.innerHTML = `<div class="ai-err">${esc(e.message || e)}</div>`;
+}
+
+// ── KOSTPLAN ────────────────────────────────────────────────────────
+function openDietGen() {
+  const mpd = +(CUR.intake?.meals_per_day) || 4;
+  openModal('Generer kostplan', apiKeyField() + `
+    <div class="tdee-grid" style="margin-bottom:16px">
+      <div><label class="label">Antal måltider</label>
+        <select class="input inp-sm" id="ai-meals">${[3,4,5,6].map(n => `<option${n === mpd ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      </div>
+      <div><label class="label">Kostpræference</label>
+        <select class="input inp-sm" id="ai-pref">
+          <option>Ingen særlig</option><option>Halal</option><option>Vegetarisk</option>
+          <option>Lav-kulhydrat</option><option>Høj-kulhydrat</option><option>Budgetvenlig</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <label class="label">Ekstra instruktioner (valgfri)</label>
+      <textarea class="input inp-sm" id="ai-notes" rows="2" placeholder="F.eks. nem meal prep, max 30 min tilberedning, samme morgenmad hver dag..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="ai-go" data-lbl="Generer 3 forslag (AI)" onclick="genDietAI()">Generer 3 forslag (AI)</button>
+      <button class="btn btn-outline" onclick="genDietTemplate()">Skabelon (ingen API)</button>
+    </div>
+    <div id="ai-out" style="margin-top:20px"></div>`);
+}
+
+async function genDietAI() {
+  setGenBusy(true);
+  $('ai-out').innerHTML = '';
+  const goals = {
+    kcal: +$('goal-kcal').value || CUR.cdRow?.kcal_goal || calcTDEE() || 2400,
+    p: +$('goal-prot').value || CUR.cdRow?.prot_goal || 0,
+    c: +$('goal-carb').value || CUR.cdRow?.kh_goal || 0,
+    f: +$('goal-fat').value || CUR.cdRow?.fedt_goal || 0
+  };
+  const prompt = `Du er en evidensbaseret ernæringscoach, der arbejder efter principperne fra Eric Helms (The Muscle and Strength Pyramid: Nutrition), Mike Israetel (Renaissance Periodization) og Brad Schoenfeld: kalorier og makroer styrer resultatet, protein fordeles jævnt (0,4-0,55 g/kg pr. måltid), fødevarevalg prioriterer mæthed, mikronæring og vedholdenhed (80/20-princippet).
+
+${clientContext()}
+
+OPGAVE: Lav 3 FORSKELLIGE kostplansforslag på dansk (forskellig stil, f.eks. klassisk dansk, meal prep-venlig, hurtig hverdag). Hvert forslag skal:
+- Ramme målene: ${goals.kcal} kcal, P ${goals.p} g, K ${goals.c} g, F ${goals.f} g (inden for ±3 %)
+- Bestå af ${$('ai-meals').value} måltider med tider
+- Respektere: allergier, ting klienten ikke kan lide, præference "${$('ai-pref').value}"
+- Bruge almindelige danske fødevarer med ALLE mængder i gram (rå vægt for kød/ris/pasta — skriv det i navnet)
+- Korte tilberedningsnoter pr. måltid
+${$('ai-notes').value ? '- Ekstra: ' + $('ai-notes').value : ''}
+
+Svar KUN med gyldig JSON uden markdown, i præcis dette format:
+{"options":[{"plan_name":"...","desc":"én sætning om stilen","meals":[{"name":"Morgenmad","time":"07:00","note":"...","items":[{"name":"Havregryn","gram":80,"per100":{"kcal":366,"p":13.5,"c":58.7,"f":7}}]}]}]}`;
+  try {
+    const res = await callClaude(prompt);
+    const opts = res.options || [];
+    if (!opts.length) throw new Error('Tomt svar — prøv igen');
+    window._dietOpts = opts;
+    $('ai-out').innerHTML = '<div class="label" style="margin-bottom:10px">Vælg et forslag — det indsættes i builderen, hvor du kan finjustere før gem</div>' +
+      opts.map((o, i) => {
+        const d = aiDietToDraft(o);
+        const t = d.meals.reduce((a, m) => { const x = mealMac(m); return { kcal: a.kcal + x.kcal, p: a.p + x.p, c: a.c + x.c, f: a.f + x.f }; }, { kcal: 0, p: 0, c: 0, f: 0 });
+        return `<div class="ai-opt" onclick="pickDietOpt(${i})">
+          <h4>${esc(o.plan_name || 'Forslag ' + (i + 1))}</h4>
+          <p>${esc(o.desc || '')}</p>
+          <div class="meta">${n0(t.kcal)} kcal · P ${n1(t.p)} · K ${n1(t.c)} · F ${n1(t.f)} · ${d.meals.length} måltider</div>
+        </div>`;
+      }).join('');
+  } catch (e) { showGenError(e); }
+  setGenBusy(false);
+}
+
+function aiDietToDraft(o) {
+  return {
+    plan_name: o.plan_name || 'Kostplan',
+    meals: (o.meals || []).map(m => ({
+      uid: uid(), name: m.name || 'Måltid', time: m.time || '', note: m.note || '',
+      items: (m.items || []).map(it => ({
+        uid: uid(), name: it.name || '', gram: Math.max(0, +it.gram || 0),
+        per: { kcal: +(it.per100?.kcal) || 0, p: +(it.per100?.p) || 0, c: +(it.per100?.c) || 0, f: +(it.per100?.f) || 0 }
+      }))
+    }))
+  };
+}
+
+function pickDietOpt(i) {
+  const o = (window._dietOpts || [])[i];
+  if (!o) return;
+  CUR.dietDraft = aiDietToDraft(o);
+  markDirty('diet'); renderDiet(); closeModal(); switchTab('diet');
+  toast('Forslag indsat — gennemgå og tryk GEM KOSTPLAN', 'ok');
+}
+
+// Skabelon uden API: fast dag skaleret proportionalt til kcal-målet
+function genDietTemplate() {
+  const goalKcal = +$('goal-kcal').value || CUR.cdRow?.kcal_goal || calcTDEE() || 2400;
+  const base = [
+    { name: 'Morgenmad', time: '07:00', note: 'Havregrød med skyr og bær.', items: [
+      ['Havregryn', 80, 366, 13.5, 58.7, 7], ['Skyr, naturel', 250, 57, 10.5, 3.8, 0.2],
+      ['Blåbær', 100, 57, 0.7, 14.5, 0.3], ['Mandler', 15, 579, 21.2, 21.6, 49.9]] },
+    { name: 'Frokost', time: '12:00', note: 'Kylling steges på panden — vægt er rå.', items: [
+      ['Kyllingebryst, rå', 200, 112, 23.5, 0, 1.2], ['Rugbrød', 90, 244, 7.5, 41, 3.5],
+      ['Blandet salat', 100, 17, 1.2, 3, 0.2], ['Olivenolie', 10, 884, 0, 0, 100]] },
+    { name: 'Aftensmad', time: '18:00', note: 'Ris og kød er rå vægt.', items: [
+      ['Hakket oksekød 5%, rå', 200, 124, 21.4, 0, 4.3], ['Basmatiris, rå', 90, 350, 7.5, 78, 0.8],
+      ['Broccoli', 150, 34, 2.8, 6.6, 0.4], ['Olivenolie', 10, 884, 0, 0, 100]] },
+    { name: 'Aftensnack', time: '21:00', note: '', items: [
+      ['Skyr, naturel', 250, 57, 10.5, 3.8, 0.2], ['Banan', 100, 89, 1.1, 22.8, 0.3],
+      ['Peanutbutter', 15, 588, 25, 20, 50]] }
+  ];
+  let baseKcal = 0;
+  base.forEach(m => m.items.forEach(([, g, k]) => baseKcal += k * g / 100));
+  const factor = goalKcal / baseKcal;
+  CUR.dietDraft = {
+    plan_name: 'Skabelon — ' + n0(goalKcal) + ' kcal',
+    meals: base.map(m => ({
+      uid: uid(), name: m.name, time: m.time, note: m.note,
+      items: m.items.map(([name, g, kcal, p, c, f]) => ({
+        uid: uid(), name, gram: Math.max(5, Math.round(g * factor / 5) * 5),
+        per: { kcal, p, c, f }
+      }))
+    }))
+  };
+  markDirty('diet'); renderDiet(); closeModal(); switchTab('diet');
+  toast('Skabelon indsat — justér gram så makroerne rammer målene, og tryk GEM', 'ok');
+}
+
+// ── TRÆNINGSPLAN ────────────────────────────────────────────────────
+function openWkGen() {
+  openModal('Generer træningsplan', apiKeyField() + `
+    <div class="tdee-grid" style="margin-bottom:16px">
+      <div><label class="label">Dage pr. uge</label>
+        <select class="input inp-sm" id="ai-days">${[2,3,4,5,6].map(n => `<option${n === 4 ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      </div>
+      <div><label class="label">Split</label>
+        <select class="input inp-sm" id="ai-split">
+          <option>Auto (vælg bedst)</option><option>Fullbody</option><option>Upper/Lower</option><option>Push/Pull/Legs</option>
+        </select>
+      </div>
+      <div><label class="label">Udstyr</label>
+        <select class="input inp-sm" id="ai-equip">
+          <option>Fitnesscenter</option><option>Hjemme med håndvægte</option><option>Kropsvægt</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <label class="label">Fokus / ekstra instruktioner (valgfri)</label>
+      <textarea class="input inp-sm" id="ai-notes" rows="2" placeholder="F.eks. Men's Physique-fokus: V-taper, sidedelts, ryg-bredde..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="ai-go" data-lbl="Generer plan (AI)" onclick="genWkAI()">Generer plan (AI)</button>
+      <button class="btn btn-outline" onclick="genWkTemplate()">Skabelon (ingen API)</button>
+    </div>
+    <div id="ai-out" style="margin-top:20px"></div>`);
+}
+
+async function genWkAI() {
+  setGenBusy(true);
+  $('ai-out').innerHTML = '';
+  const prompt = `Du er en evidensbaseret styrketræningscoach, der programmerer efter principperne fra Eric Helms (The Muscle and Strength Pyramid: Training), Mike Israetel (MEV/MAV/MRV-volumen-landmærker, typisk 10-20 hårde sæt pr. muskelgruppe pr. uge) og Brad Schoenfeld (mekanisk spænding som primær driver, fuld ROM, 1-3 RIR på de fleste sæt, både tunge compound-løft og isolationsarbejde).
+
+${clientContext()}
+
+OPGAVE: Lav et ugentligt træningsprogram på dansk:
+- ${$('ai-days').value} træningsdage pr. uge | Split: ${$('ai-split').value} | Udstyr: ${$('ai-equip').value}
+- Compound-løft først, derefter isolation; angiv reps som interval (f.eks. "6-8") og belastning som RPE
+- Tag højde for klientens skader/hensyn og erfaring
+- Fordel dagene fornuftigt over ugen (restitution mellem samme muskelgrupper)
+${$('ai-notes').value ? '- Fokus: ' + $('ai-notes').value : ''}
+
+Ugedagene SKAL være på dansk: Mandag, Tirsdag, Onsdag, Torsdag, Fredag, Lørdag, Søndag.
+Svar KUN med gyldig JSON uden markdown, i præcis dette format:
+{"program_name":"...","days":[{"day":"Mandag","name":"PUSH A","exercises":[{"name":"Bænkpres, stang","sets":4,"reps":"6-8","weight":"RPE 8","rest":150,"video_url":""}]}]}`;
+  try {
+    const res = await callClaude(prompt);
+    if (!res.days?.length) throw new Error('Tomt svar — prøv igen');
+    window._wkPlan = res;
+    $('ai-out').innerHTML = `<div class="ai-opt" onclick="pickWkPlan()">
+      <h4>${esc(res.program_name || 'Genereret program')}</h4>
+      <p>${res.days.map(d => `${esc(d.day)}: ${esc(d.name || '')} (${(d.exercises || []).length} øvelser)`).join(' · ')}</p>
+      <div class="meta">Klik for at indsætte i builderen</div>
+    </div>`;
+  } catch (e) { showGenError(e); }
+  setGenBusy(false);
+}
+
+function pickWkPlan() {
+  if (!window._wkPlan) return;
+  CUR.wkDraft = normalizeWorkout(window._wkPlan);
+  markDirty('wk'); renderWorkout(); closeModal(); switchTab('workout');
+  toast('Program indsat — gennemgå og tryk GEM TRÆNINGSPLAN', 'ok');
+}
+
+// Skabelon uden API: standard-splits efter antal dage
+function genWkTemplate() {
+  const days = +$('ai-days').value || 4;
+  const EX = (name, sets, reps, rest) => ({ name, sets, reps, weight: 'RPE 8', rest, video_url: '' });
+  const FULL_A = [EX('Squat',3,'5-8',180), EX('Bænkpres, stang',3,'5-8',150), EX('Siddende kabelroning',3,'8-12',120), EX('Skulderpres, dumbbell',3,'8-12',120), EX('Liggende leg curl',3,'10-15',75), EX('Biceps curl, stang',2,'10-15',75), EX('Triceps pushdown',2,'10-15',75)];
+  const FULL_B = [EX('Rumænsk dødløft',3,'6-10',150), EX('Incline dumbbell press',3,'8-12',120), EX('Lat pulldown',3,'8-12',120), EX('Leg press',3,'10-15',120), EX('Sidehæv, dumbbell',3,'12-20',60), EX('Hammer curls',2,'10-15',75), EX('Overhead triceps extension',2,'10-15',75)];
+  const UPPER_A = [EX('Bænkpres, stang',4,'5-8',150), EX('Bent-over row',4,'6-10',150), EX('Skulderpres, dumbbell',3,'8-12',120), EX('Lat pulldown',3,'8-12',120), EX('Sidehæv, dumbbell',3,'12-20',60), EX('Biceps curl, stang',3,'10-15',75), EX('Triceps pushdown',3,'10-15',75)];
+  const LOWER_A = [EX('Squat',4,'5-8',180), EX('Rumænsk dødløft',3,'6-10',150), EX('Leg press',3,'10-15',120), EX('Liggende leg curl',3,'10-15',75), EX('Læghæv, stående',4,'10-15',60), EX('Cable crunch',3,'10-15',60)];
+  const UPPER_B = [EX('Incline dumbbell press',4,'8-12',120), EX('Pull-ups',4,'6-10',150), EX('Siddende kabelroning',3,'8-12',120), EX('Cable flyes',3,'12-15',75), EX('Sidehæv, kabel',3,'12-20',60), EX('Incline dumbbell curl',3,'10-15',75), EX('Overhead triceps extension',3,'10-15',75)];
+  const LOWER_B = [EX('Leg press',4,'8-12',150), EX('Hip thrust',3,'8-12',120), EX('Walking lunges',3,'10-12',90), EX('Leg extension',3,'12-15',75), EX('Læghæv, siddende',4,'12-20',60), EX('Hanging leg raises',3,'10-15',60)];
+  const PUSH = [EX('Bænkpres, stang',4,'5-8',150), EX('Skulderpres, dumbbell',3,'8-12',120), EX('Incline dumbbell press',3,'8-12',120), EX('Sidehæv, dumbbell',4,'12-20',60), EX('Triceps pushdown',3,'10-15',75), EX('Overhead triceps extension',2,'10-15',75)];
+  const PULL = [EX('Pull-ups',4,'6-10',150), EX('Bent-over row',4,'6-10',150), EX('Lat pulldown',3,'8-12',120), EX('Face pulls',3,'12-20',60), EX('Biceps curl, stang',3,'10-15',75), EX('Hammer curls',2,'10-15',75)];
+  const LEGS = [EX('Squat',4,'5-8',180), EX('Rumænsk dødløft',3,'6-10',150), EX('Leg press',3,'10-15',120), EX('Liggende leg curl',3,'10-15',75), EX('Læghæv, stående',4,'10-15',60), EX('Cable crunch',3,'10-15',60)];
+  const W = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
+  let plan;
+  if (days <= 3) {
+    const blocks = [['Fullbody A',FULL_A],['Fullbody B',FULL_B],['Fullbody C',FULL_A]];
+    const slots = days === 2 ? ['Mandag','Torsdag'] : ['Mandag','Onsdag','Fredag'];
+    plan = { program_name: 'Fullbody ' + days + 'x/uge', days: slots.map((d,i) => ({ day: d, name: blocks[i][0], exercises: blocks[i][1] })) };
+  } else if (days === 4) {
+    plan = { program_name: 'Upper/Lower 4x/uge', days: [
+      { day:'Mandag', name:'UPPER A', exercises: UPPER_A }, { day:'Tirsdag', name:'LOWER A', exercises: LOWER_A },
+      { day:'Torsdag', name:'UPPER B', exercises: UPPER_B }, { day:'Fredag', name:'LOWER B', exercises: LOWER_B }] };
+  } else if (days === 5) {
+    plan = { program_name: 'PPL + Upper/Lower 5x/uge', days: [
+      { day:'Mandag', name:'PUSH', exercises: PUSH }, { day:'Tirsdag', name:'PULL', exercises: PULL },
+      { day:'Onsdag', name:'LEGS', exercises: LEGS }, { day:'Fredag', name:'UPPER', exercises: UPPER_B },
+      { day:'Lørdag', name:'LOWER', exercises: LOWER_B }] };
+  } else {
+    plan = { program_name: 'Push/Pull/Legs 6x/uge', days: [
+      { day:'Mandag', name:'PUSH A', exercises: PUSH }, { day:'Tirsdag', name:'PULL A', exercises: PULL },
+      { day:'Onsdag', name:'LEGS A', exercises: LEGS }, { day:'Torsdag', name:'PUSH B', exercises: PUSH },
+      { day:'Fredag', name:'PULL B', exercises: PULL }, { day:'Lørdag', name:'LEGS B', exercises: LEGS }] };
+  }
+  CUR.wkDraft = normalizeWorkout(plan);
+  markDirty('wk'); renderWorkout(); closeModal(); switchTab('workout');
+  toast('Skabelon indsat — tilpas og tryk GEM TRÆNINGSPLAN', 'ok');
 }
 
 // ════════════════════════════════════════════════════════════════════
