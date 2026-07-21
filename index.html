@@ -240,9 +240,17 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
       </div>
     </div>
     <nav class="sb-nav">
-      <div class="nav-item active" onclick="showClientList()">
+      <div class="nav-item active" id="nav-clients" onclick="showClientList()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Klienter
+      </div>
+      <div class="nav-item" id="nav-foods" onclick="showBankPage('foods')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Madbank
+      </div>
+      <div class="nav-item" id="nav-exercises" onclick="showBankPage('exercises')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 2l4 4-3 3-4-4z"/><path d="M2 18l4 4 3-3-4-4z"/><path d="M8 14l-3.5 3.5"/><path d="M17.5 3.5L14 7"/></svg>
+        Øvelsesbank
       </div>
     </nav>
     <div class="sb-footer">
@@ -329,6 +337,57 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
         <div id="tab-data" class="hidden"></div>
         <div id="tab-beskeder" class="hidden"></div>
         <div id="tab-fotos" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- MADBANK -->
+    <div id="pg-foods" class="hidden page-wrap">
+      <div class="card" style="margin-bottom:18px">
+        <div style="font-size:.85rem;font-weight:700;margin-bottom:14px">Tilføj fødevare (pr. 100 g)</div>
+        <div style="display:grid;grid-template-columns:2fr repeat(4,1fr) auto;gap:10px;align-items:end">
+          <div class="form-group" style="margin:0"><label class="label">Navn</label><input class="input" id="nf-name" placeholder="F.eks. Kyllingebryst, rå"></div>
+          <div class="form-group" style="margin:0"><label class="label">Kcal</label><input class="input" type="number" step="0.1" id="nf-kcal"></div>
+          <div class="form-group" style="margin:0"><label class="label">Protein</label><input class="input" type="number" step="0.1" id="nf-p"></div>
+          <div class="form-group" style="margin:0"><label class="label">Kulhydrat</label><input class="input" type="number" step="0.1" id="nf-c"></div>
+          <div class="form-group" style="margin:0"><label class="label">Fedt</label><input class="input" type="number" step="0.1" id="nf-f"></div>
+          <button class="btn btn-gold" onclick="addCustomFood()">Tilføj</button>
+        </div>
+      </div>
+      <div class="card">
+        <input class="input" id="food-search" placeholder="Søg i madbanken..." oninput="renderFoodBankPage()" style="max-width:320px;margin-bottom:16px">
+        <div style="overflow-x:auto">
+          <table class="item-table">
+            <thead><tr><th>Fødevare</th><th>Kcal</th><th>Protein</th><th>Kulhydrat</th><th>Fedt</th><th></th></tr></thead>
+            <tbody id="food-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ØVELSESBANK -->
+    <div id="pg-exercises" class="hidden page-wrap">
+      <div class="card" style="margin-bottom:18px">
+        <div style="font-size:.85rem;font-weight:700;margin-bottom:14px">Tilføj øvelse</div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 2fr auto;gap:10px;align-items:end">
+          <div class="form-group" style="margin:0"><label class="label">Navn</label><input class="input" id="ne-name" placeholder="F.eks. Incline dumbbell press"></div>
+          <div class="form-group" style="margin:0"><label class="label">Muskelgruppe</label>
+            <select class="input" id="ne-muscle">
+              <option>Bryst</option><option>Ryg</option><option>Skulder</option><option>Arme</option><option>Ben</option><option>Core</option><option>Andet</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0"><label class="label">Std. hvile (sek)</label><input class="input" type="number" id="ne-rest" value="90"></div>
+          <div class="form-group" style="margin:0"><label class="label">Video-URL (valgfri)</label><input class="input" id="ne-video" placeholder="https://..."></div>
+          <button class="btn btn-gold" onclick="addCustomExercise()">Tilføj</button>
+        </div>
+      </div>
+      <div class="card">
+        <input class="input" id="ex-search" placeholder="Søg i øvelsesbanken..." oninput="renderExBankPage()" style="max-width:320px;margin-bottom:16px">
+        <div style="overflow-x:auto">
+          <table class="item-table">
+            <thead><tr><th>Øvelse</th><th>Muskelgruppe</th><th>Std. hvile</th><th>Video</th><th></th></tr></thead>
+            <tbody id="ex-rows"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -819,6 +878,107 @@ const EXERCISE_BANK = [
   {n:'Turkish Get-Up',g:'Cardio',sets:3,reps:'5-6',rest:90},
 ];
 
+// ─── Coach-tilføjede fødevarer/øvelser (gemt i Supabase: food_bank / exercise_bank) ──
+let CUSTOM_FOODS = [];
+let CUSTOM_EXS = [];
+
+function allFoods() {
+  return FOOD_BANK.concat(CUSTOM_FOODS.map(f => ({ n: f.name, g: 'Din tilføjelse', cal: f.kcal, pro: f.p, carb: f.c, fat: f.f, _customId: f.id })));
+}
+function allExercises() {
+  return EXERCISE_BANK.concat(CUSTOM_EXS.map(e => ({ n: e.name, g: e.muscle || 'Din tilføjelse', sets: 3, reps: '8-12', rest: e.rest || 90, video: e.video || '', _customId: e.id })));
+}
+
+async function loadBanks() {
+  const [fRes, eRes] = await Promise.all([
+    sb.from('food_bank').select('*').order('name'),
+    sb.from('exercise_bank').select('*').order('name'),
+  ]);
+  CUSTOM_FOODS = fRes.data || [];
+  CUSTOM_EXS = eRes.data || [];
+}
+
+async function addCustomFood() {
+  const name = document.getElementById('nf-name').value.trim();
+  if (!name) { toast('Skriv et navn', 'err'); return; }
+  const row = {
+    name,
+    kcal: +document.getElementById('nf-kcal').value || 0,
+    p: +document.getElementById('nf-p').value || 0,
+    c: +document.getElementById('nf-c').value || 0,
+    f: +document.getElementById('nf-f').value || 0,
+  };
+  const { data, error } = await sb.from('food_bank').insert(row).select().single();
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  CUSTOM_FOODS.push(data);
+  CUSTOM_FOODS.sort((a,b) => a.name.localeCompare(b.name, 'da'));
+  ['nf-name','nf-kcal','nf-p','nf-c','nf-f'].forEach(id => document.getElementById(id).value = '');
+  renderFoodBankPage();
+  toast('Fødevare tilføjet ✓', 'ok');
+}
+
+async function deleteCustomFood(id) {
+  if (!confirm('Slet fødevaren fra madbanken?')) return;
+  const { error } = await sb.from('food_bank').delete().eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  CUSTOM_FOODS = CUSTOM_FOODS.filter(f => String(f.id) !== String(id));
+  renderFoodBankPage();
+}
+
+function renderFoodBankPage() {
+  const q = (document.getElementById('food-search').value || '').toLowerCase();
+  const rows = CUSTOM_FOODS.filter(f => f.name.toLowerCase().includes(q));
+  document.getElementById('food-rows').innerHTML = rows.length ? rows.map(f => `
+    <tr>
+      <td>${escHtml(f.name)}</td>
+      <td>${Math.round(f.kcal)}</td>
+      <td>${(+f.p).toFixed(1)}</td>
+      <td>${(+f.c).toFixed(1)}</td>
+      <td>${(+f.f).toFixed(1)}</td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteCustomFood('${f.id}')">✕</button></td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><p>${CUSTOM_FOODS.length ? 'Ingen match' : 'Ingen tilføjede fødevarer endnu — den indbyggede liste bruges stadig i søgning ved kostplaner'}</p></div></td></tr>`;
+}
+
+async function addCustomExercise() {
+  const name = document.getElementById('ne-name').value.trim();
+  if (!name) { toast('Skriv et navn', 'err'); return; }
+  const row = {
+    name,
+    muscle: document.getElementById('ne-muscle').value,
+    rest: +document.getElementById('ne-rest').value || 90,
+    video: document.getElementById('ne-video').value.trim(),
+  };
+  const { data, error } = await sb.from('exercise_bank').insert(row).select().single();
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  CUSTOM_EXS.push(data);
+  CUSTOM_EXS.sort((a,b) => a.name.localeCompare(b.name, 'da'));
+  document.getElementById('ne-name').value = '';
+  document.getElementById('ne-video').value = '';
+  renderExBankPage();
+  toast('Øvelse tilføjet ✓', 'ok');
+}
+
+async function deleteCustomExercise(id) {
+  if (!confirm('Slet øvelsen fra øvelsesbanken?')) return;
+  const { error } = await sb.from('exercise_bank').delete().eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  CUSTOM_EXS = CUSTOM_EXS.filter(e => String(e.id) !== String(id));
+  renderExBankPage();
+}
+
+function renderExBankPage() {
+  const q = (document.getElementById('ex-search').value || '').toLowerCase();
+  const rows = CUSTOM_EXS.filter(e => e.name.toLowerCase().includes(q) || (e.muscle||'').toLowerCase().includes(q));
+  document.getElementById('ex-rows').innerHTML = rows.length ? rows.map(e => `
+    <tr>
+      <td>${escHtml(e.name)}</td>
+      <td style="color:var(--muted)">${escHtml(e.muscle || '')}</td>
+      <td>${e.rest || 90}s</td>
+      <td style="color:var(--dim);font-size:.78rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.video || '')}</td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteCustomExercise('${e.id}')">✕</button></td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><p>${CUSTOM_EXS.length ? 'Ingen match' : 'Ingen tilføjede øvelser endnu — den indbyggede liste bruges stadig i søgning ved træningsplaner'}</p></div></td></tr>`;
+}
+
 // ─── Meal Pools (3 varianter pr. mål – vælges ud fra klient-hash) ──────────
 const MEAL_POOLS = {
   bulk: [
@@ -980,6 +1140,7 @@ async function bootCoach(user) {
   const initials = user.email.charAt(0).toUpperCase();
   document.getElementById('c-av').textContent = initials;
   document.getElementById('c-nm').textContent = user.email.split('@')[0];
+  await loadBanks();
   await loadClients();
 }
 
@@ -1252,9 +1413,27 @@ async function openClient(id) {
 
 function showClientList() {
   document.getElementById('pg-client').classList.add('hidden');
+  document.getElementById('pg-foods').classList.add('hidden');
+  document.getElementById('pg-exercises').classList.add('hidden');
   document.getElementById('pg-clients').classList.remove('hidden');
   document.getElementById('main-title').textContent = 'Klienter';
+  document.getElementById('nav-clients').classList.add('active');
+  document.getElementById('nav-foods').classList.remove('active');
+  document.getElementById('nav-exercises').classList.remove('active');
   if (weightChart) { weightChart.destroy(); weightChart = null; }
+}
+
+function showBankPage(page) {
+  document.getElementById('pg-clients').classList.add('hidden');
+  document.getElementById('pg-client').classList.add('hidden');
+  document.getElementById('pg-foods').classList.toggle('hidden', page !== 'foods');
+  document.getElementById('pg-exercises').classList.toggle('hidden', page !== 'exercises');
+  document.getElementById('main-title').textContent = page === 'foods' ? 'Madbank' : 'Øvelsesbank';
+  document.getElementById('nav-clients').classList.remove('active');
+  document.getElementById('nav-foods').classList.toggle('active', page === 'foods');
+  document.getElementById('nav-exercises').classList.toggle('active', page === 'exercises');
+  if (weightChart) { weightChart.destroy(); weightChart = null; }
+  if (page === 'foods') renderFoodBankPage(); else renderExBankPage();
 }
 
 function switchTab(tab, el) {
@@ -2228,7 +2407,7 @@ let _acTarget = null;
 function acShow(input, type) {
   _acTarget = input;
   const q = input.value.toLowerCase().trim();
-  const bank = type === 'food' ? FOOD_BANK : EXERCISE_BANK;
+  const bank = type === 'food' ? allFoods() : allExercises();
   const results = q.length >= 1
     ? bank.filter(f => f.n.toLowerCase().includes(q)).slice(0, 22)
     : bank.slice(0, 22);
@@ -2469,8 +2648,9 @@ function runDietGenerator() {
   const variant = clientVariantIdx(pool.length);
   const tpl = pool[variant].slice(0, nMeals);
 
+  const foods = allFoods();
   const tplCal = tpl.reduce((sum, meal) => sum + meal.items.reduce((s, item) => {
-    const food = FOOD_BANK.find(f => f.n === item.n);
+    const food = foods.find(f => f.n === item.n);
     return s + (food ? food.cal * item.gram / 100 : 0);
   }, 0), 0);
   const scale = tplCal > 0 ? m.cal / tplCal : 1;
@@ -2479,7 +2659,7 @@ function runDietGenerator() {
   dp.calories = m.cal; dp.protein = m.pro; dp.carbs = m.carb; dp.fat = m.fat;
   dp.meals = tpl.map(meal => {
     const items = meal.items.map(item => {
-      const food = FOOD_BANK.find(f => f.n === item.n);
+      const food = foods.find(f => f.n === item.n);
       const g = r5(item.gram * scale);
       const cal = food ? Math.round(food.cal * g / 100) : 0;
       const pro = food ? +((food.pro * g / 100).toFixed(1)) : 0;
@@ -2503,8 +2683,9 @@ function runDietGenerator() {
 function runWorkoutGenerator() {
   const split = document.getElementById('gen-split').value;
   exCnt = 0;
+  const exBank = allExercises();
   const ex = (name) => {
-    const b = EXERCISE_BANK.find(e => e.n === name) || {sets:3,reps:'8-12',rest:90};
+    const b = exBank.find(e => e.n === name) || {sets:3,reps:'8-12',rest:90};
     return { id:++exCnt, name, sets:b.sets, reps:b.reps, weight:'', rest:b.rest };
   };
 
@@ -2753,7 +2934,7 @@ Returner KUN valid JSON:
 }
 
 TILGÆNGELIGE INGREDIENSER (brug NØJAGTIGE navne):
-${FOOD_BANK.map(f => f.n).join(', ')}`;
+${allFoods().map(f => f.n).join(', ')}`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -2780,10 +2961,11 @@ ${FOOD_BANK.map(f => f.n).join(', ')}`;
     if (!Array.isArray(json.slots) || json.slots.length === 0) throw new Error('AI returnerede ingen slots');
 
     let iCnt = 0;
+    const foods = allFoods();
     const parsedSlots = json.slots.map(slot => {
       const options = (slot.options || []).slice(0, 3).map(opt => {
         const items = (opt.items || []).map(item => {
-          const food = FOOD_BANK.find(f => f.n === item.name);
+          const food = foods.find(f => f.n === item.name);
           if (!food) return null;
           const g = r5(item.gram);
           return {
@@ -3006,7 +3188,7 @@ Returner KUN valid JSON:
 }
 
 TILGÆNGELIGE ØVELSER:
-${EXERCISE_BANK.map(e => e.n).join(', ')}`;
+${allExercises().map(e => e.n).join(', ')}`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -3038,12 +3220,13 @@ ${EXERCISE_BANK.map(e => e.n).join(', ')}`;
     if (!Array.isArray(json.days) || json.days.length === 0) throw new Error('AI returnerede ingen træningsdage');
 
     exCnt = 0;
+    const exBank = allExercises();
     wp.program_name = json.program_name || 'AI Træningsplan';
     wp.days = json.days.map(day => ({
       day: day.day,
       name: day.name,
       exercises: (day.exercises || []).map(ex => {
-        const bank = EXERCISE_BANK.find(e => e.n === ex.name) || {};
+        const bank = exBank.find(e => e.n === ex.name) || {};
         return { id: ++exCnt, name: ex.name, sets: ex.sets || bank.sets || 3, reps: ex.reps || bank.reps || '8-12', weight: '', rest: ex.rest || bank.rest || 90, video_url: ex.video_url || '' };
       }).filter(e => e.name),
     })).filter(day => day.exercises.length > 0);
