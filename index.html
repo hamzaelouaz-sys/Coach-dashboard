@@ -1777,19 +1777,15 @@ function refreshPlanSummary() {
 }
 
 function planSummaryCell(label, val, target, unit, tol) {
+  // Rent informativt — ingen "rigtig/forkert"-farver. Coachen justerer bevidst
+  // pr. klient, så afvigelse fra det udregnede er helt normalt.
   const diff = val - target;
-  let color = 'var(--muted)';
-  if (target > 0) {
-    if (Math.abs(diff) <= tol)          color = 'var(--green)';   // rammer målet
-    else if (Math.abs(diff) <= tol * 3) color = '#e0a93b';        // lidt skævt
-    else                                color = 'var(--red)';     // langt fra
-  }
   const sign = diff > 0 ? '+' : '';
-  const diffTxt = target > 0 ? `${sign}${diff} ${unit}` : 'intet mål';
+  const diffTxt = target > 0 ? `${sign}${diff} ${unit} vs. mål` : 'intet mål sat';
   return `<div style="flex:1;min-width:104px;text-align:center;padding:6px 4px">
     <div style="font-size:.58rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:4px">${label}</div>
-    <div style="font-family:var(--serif);font-size:1.2rem;font-weight:600;color:${color};line-height:1">${val}<span style="font-size:.68rem;color:var(--muted);font-family:inherit"> / ${target || 0}${unit}</span></div>
-    <div style="font-size:.68rem;font-weight:700;color:${color};margin-top:3px">${diffTxt}</div>
+    <div style="font-family:var(--serif);font-size:1.2rem;font-weight:600;color:var(--gold);line-height:1">${val}<span style="font-size:.68rem;color:var(--muted);font-family:inherit"> / ${target || 0}${unit}</span></div>
+    <div style="font-size:.68rem;font-weight:600;color:var(--muted);margin-top:3px">${diffTxt}</div>
   </div>`;
 }
 
