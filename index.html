@@ -1655,12 +1655,15 @@ function renderKostplanTab() {
       <div style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Planmål</div>
       <div class="plan-targets-grid">
         <div class="form-group" style="margin:0"><label class="label">Plan navn</label><input class="input" id="dp-name" value="${escHtml(dp.plan_name)}"></div>
-        <div class="form-group" style="margin:0"><label class="label">Kalorier</label><input class="input" type="number" id="dp-kcal" value="${dp.calories}"></div>
-        <div class="form-group" style="margin:0"><label class="label">Protein (g)</label><input class="input" type="number" id="dp-protein" value="${dp.protein}"></div>
-        <div class="form-group" style="margin:0"><label class="label">Kulhydrat (g)</label><input class="input" type="number" id="dp-carbs" value="${dp.carbs}"></div>
-        <div class="form-group" style="margin:0"><label class="label">Fedt (g)</label><input class="input" type="number" id="dp-fat" value="${dp.fat}"></div>
+        <div class="form-group" style="margin:0"><label class="label">Kalorier</label><input class="input" type="number" id="dp-kcal" value="${dp.calories}" oninput="refreshPlanSummary()"></div>
+        <div class="form-group" style="margin:0"><label class="label">Protein (g)</label><input class="input" type="number" id="dp-protein" value="${dp.protein}" oninput="refreshPlanSummary()"></div>
+        <div class="form-group" style="margin:0"><label class="label">Kulhydrat (g)</label><input class="input" type="number" id="dp-carbs" value="${dp.carbs}" oninput="refreshPlanSummary()"></div>
+        <div class="form-group" style="margin:0"><label class="label">Fedt (g)</label><input class="input" type="number" id="dp-fat" value="${dp.fat}" oninput="refreshPlanSummary()"></div>
       </div>
     </div>
+
+    <!-- Live makro-overblik: planens samlede måltider vs. planmål -->
+    <div id="plan-summary" style="position:sticky;top:8px;z-index:5;display:flex;flex-wrap:wrap;gap:6px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 8px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)"></div>
 
     <!-- Meal editor -->
     <div id="diet-editor"></div>
@@ -1733,6 +1736,7 @@ function applyCalc(kcal, protein, carbs, fat) {
   document.getElementById('dp-protein').value = protein;
   document.getElementById('dp-carbs').value = carbs;
   document.getElementById('dp-fat').value = fat;
+  refreshPlanSummary();
   toast('Makroer anvendt på planen', 'ok');
 }
 
@@ -1741,6 +1745,52 @@ function renderDietEditor() {
   const el = document.getElementById('diet-editor');
   if (!el) return;
   el.innerHTML = (dp.meals || []).map(meal => renderMealCard(meal)).join('');
+  // Live-opdatering: enhver ændring i et måltid opdaterer både måltidets egen
+  // total og det samlede makro-overblik mod planmålene.
+  el.oninput = e => {
+    const card = e.target.closest('[data-meal-id]');
+    if (card) refreshMealTotals(card);
+    refreshPlanSummary();
+  };
+  refreshPlanSummary();
+}
+
+// Samlet makro-overblik: summerer alle måltider i editoren og sammenligner
+// med planmålene (dp-kcal osv.). Farvekodet så coachen med det samme ser om
+// planen rammer det, vi har regnet frem til.
+function refreshPlanSummary() {
+  const el = document.getElementById('plan-summary');
+  if (!el) return;
+  let cal = 0, pro = 0, carb = 0, fat = 0;
+  document.querySelectorAll('#diet-editor [data-item-id]').forEach(r => {
+    cal  += +r.querySelector('.i-cal')?.value  || 0;
+    pro  += +r.querySelector('.i-pro')?.value  || 0;
+    carb += +r.querySelector('.i-carb')?.value || 0;
+    fat  += +r.querySelector('.i-fat')?.value  || 0;
+  });
+  const t = id => +document.getElementById(id)?.value || 0;
+  el.innerHTML =
+    planSummaryCell('Kalorier', Math.round(cal), t('dp-kcal'),    'kcal', 60) +
+    planSummaryCell('Protein',  Math.round(pro), t('dp-protein'), 'g',    12) +
+    planSummaryCell('Kulhydrat',Math.round(carb),t('dp-carbs'),   'g',    18) +
+    planSummaryCell('Fedt',     Math.round(fat), t('dp-fat'),     'g',    10);
+}
+
+function planSummaryCell(label, val, target, unit, tol) {
+  const diff = val - target;
+  let color = 'var(--muted)';
+  if (target > 0) {
+    if (Math.abs(diff) <= tol)          color = 'var(--green)';   // rammer målet
+    else if (Math.abs(diff) <= tol * 3) color = '#e0a93b';        // lidt skævt
+    else                                color = 'var(--red)';     // langt fra
+  }
+  const sign = diff > 0 ? '+' : '';
+  const diffTxt = target > 0 ? `${sign}${diff} ${unit}` : 'intet mål';
+  return `<div style="flex:1;min-width:104px;text-align:center;padding:6px 4px">
+    <div style="font-size:.58rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:4px">${label}</div>
+    <div style="font-family:var(--serif);font-size:1.2rem;font-weight:600;color:${color};line-height:1">${val}<span style="font-size:.68rem;color:var(--muted);font-family:inherit"> / ${target || 0}${unit}</span></div>
+    <div style="font-size:.68rem;font-weight:700;color:${color};margin-top:3px">${diffTxt}</div>
+  </div>`;
 }
 
 function renderMealCard(meal) {
