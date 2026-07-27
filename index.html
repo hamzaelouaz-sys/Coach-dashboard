@@ -1373,9 +1373,13 @@ async function openClient(id) {
   // Initialize diet plan editor
   if (currentClientData.diet) {
     dp = { ...currentClientData.diet };
-    mealCnt = (dp.meals || []).reduce((max, m) => Math.max(max, m.id || 0), 0);
+    // Tildel garanteret unikke id'er til hvert måltid og hver ingrediens.
+    // Gamle/AI-genererede planer kan have manglende eller ens id'er, hvilket
+    // fik removeMeal (filter på id) til at slette FLERE måltider på én gang.
+    mealCnt = 0; itemCnt = 0;
     (dp.meals || []).forEach(m => {
-      itemCnt = Math.max(itemCnt, ...(m.items || []).map(i => i.id || 0), 0);
+      m.id = ++mealCnt;
+      (m.items || []).forEach(it => { it.id = ++itemCnt; });
     });
   } else {
     // Prefill macro goals from specific columns if they exist
