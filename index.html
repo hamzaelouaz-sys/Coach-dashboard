@@ -1202,14 +1202,39 @@ let wp = { program_name: 'Styrketræningsplan', days: [] };
 let supp = []; // kosttilskud tildelt den aktuelle klient: [{name,dose,timing,note}]
 let mealCnt = 0, itemCnt = 0, exCnt = 0;
 
-// Standard-basisliste (den "faste" del) — coachen kan hurtig-tilføje og derefter
-// tilpasse pr. klient. Klienten ser også disse som generelle anbefalinger.
+// Standard-basisliste (den "faste" del) — kun til coachens eget hurtig-tilføj.
+// Vises ALDRIG automatisk til klienter — de ser kun det coachen aktivt tildeler dem.
 const STD_SUPPS = [
-  { name:'Whey protein',        dose:'1-2 scoops (25-50 g)',   timing:'Efter træning / mellem måltider', note:'Nem måde at nå dit proteinmål.' },
-  { name:'Kreatin monohydrat',  dose:'5 g',                    timing:'Dagligt, samme tidspunkt',        note:'Tag hver dag — også hviledage. Timing er ligegyldig.' },
-  { name:'D-vitamin',           dose:'25-50 µg (1000-2000 IE)',timing:'Med et måltid',                   note:'Især vigtigt i vinterhalvåret i Danmark.' },
-  { name:'Omega-3 (fiskeolie)', dose:'1-2 g EPA/DHA',          timing:'Med et måltid',                   note:'Understøtter restitution og hjerte-kar.' },
-  { name:'Magnesium',           dose:'200-400 mg',             timing:'Om aftenen',                      note:'Kan støtte søvn og muskelfunktion.' },
+  { name:'Whey protein',            dose:'1-2 scoops (25-50 g)',    timing:'Efter træning / mellem måltider', note:'Nem måde at nå dit proteinmål.' },
+  { name:'Kreatin monohydrat',      dose:'5 g',                     timing:'Dagligt, samme tidspunkt',        note:'Tag hver dag — også hviledage. Timing er ligegyldig.' },
+  { name:'D-vitamin',               dose:'25-50 µg (1000-2000 IE)', timing:'Med et måltid',                   note:'Især vigtigt i vinterhalvåret i Danmark.' },
+  { name:'Omega-3 (fiskeolie)',     dose:'1-2 g EPA/DHA',           timing:'Med et måltid',                   note:'Understøtter restitution og hjerte-kar.' },
+  { name:'Magnesium',               dose:'200-400 mg',              timing:'Om aftenen',                      note:'Kan støtte søvn og muskelfunktion.' },
+  { name:'Casein protein',          dose:'1 scoop (25-30 g)',       timing:'Før sengetid',                    note:'Langsomt optageligt protein — godt over natten.' },
+  { name:'Beta-alanin',             dose:'3-5 g',                   timing:'Dagligt, når som helst',           note:'Kan give en prikkende fornemmelse — helt ufarligt.' },
+  { name:'Citrullin malat',         dose:'6-8 g',                   timing:'30-60 min før træning',            note:'Kan forbedre pump og udholdenhed.' },
+  { name:'Koffein / pre-workout',   dose:'150-300 mg',              timing:'30-45 min før træning',            note:'Undgå sent på dagen hvis det påvirker søvnen.' },
+  { name:'BCAA',                    dose:'5-10 g',                  timing:'Under eller efter træning',        note:'Kan undværes hvis proteinindtaget i forvejen er højt.' },
+  { name:'EAA',                     dose:'10-15 g',                 timing:'Omkring træning',                  note:'Fuldt aminosyrekompleks — alternativ til BCAA.' },
+  { name:'ZMA',                     dose:'1 dosis',                 timing:'Om aftenen på tom mave',           note:'Tages ikke sammen med mejeriprodukter/calcium.' },
+  { name:'Zink',                    dose:'15-25 mg',                timing:'Med et måltid',                    note:'Støtter immunforsvar og hormonbalance.' },
+  { name:'Multivitamin',            dose:'1 tablet',                timing:'Med morgenmaden',                  note:'God forsikring ved ensidig kost.' },
+  { name:'Probiotika',              dose:'1 kapsel',                timing:'Om morgenen på tom mave',          note:'Understøtter tarmflora og fordøjelse.' },
+  { name:'Kollagen',                dose:'10-15 g',                 timing:'Når som helst, gerne med C-vitamin', note:'Kan støtte led, hud og sener.' },
+  { name:'Glucosamin & Chondroitin',dose:'1500 mg / 1200 mg',       timing:'Med et måltid',                    note:'Populært ved ledsmerter — effekten er individuel.' },
+  { name:'MSM',                     dose:'1-3 g',                   timing:'Med et måltid',                    note:'Bruges ofte sammen med glucosamin til leddene.' },
+  { name:'Ashwagandha',             dose:'300-600 mg (KSM-66)',     timing:'Om aftenen',                       note:'Kan hjælpe med stress og søvnkvalitet.' },
+  { name:'Melatonin',               dose:'1-3 mg',                  timing:'30-60 min før sengetid',           note:'Kun ved behov — brug ikke fast uden grund.' },
+  { name:'L-theanin',               dose:'100-200 mg',              timing:'Om aftenen eller sammen med koffein', note:'Kan give roligere fokus.' },
+  { name:'Grøn te-ekstrakt (EGCG)', dose:'250-500 mg',              timing:'Med et måltid',                    note:'Bruges ofte i forbindelse med fedttab.' },
+  { name:'Jern',                    dose:'Efter lægeanbefaling',    timing:'På tom mave med C-vitamin',        note:'Tages KUN ved dokumenteret mangel — tal med læge først.' },
+  { name:'Calcium',                 dose:'500-1000 mg',             timing:'Med et måltid',                    note:'Vigtigt for knogler, især ved lavt mejeriindtag.' },
+  { name:'Vitamin C',               dose:'500-1000 mg',             timing:'Med et måltid',                    note:'Understøtter immunforsvar og kollagendannelse.' },
+  { name:'Vitamin B-kompleks',      dose:'1 tablet',                timing:'Med morgenmaden',                  note:'Særligt relevant ved plantebaseret kost.' },
+  { name:'Elektrolytter',           dose:'1 brusetablet/pose',      timing:'Under lange/svedige træninger',    note:'Erstatter salte tabt ved sved.' },
+  { name:'L-glutamin',              dose:'5 g',                     timing:'Efter træning',                    note:'Kan støtte restitution og tarmsundhed.' },
+  { name:'Taurin',                  dose:'1-2 g',                   timing:'Før træning',                      note:'Indgår ofte i pre-workouts.' },
+  { name:'HMB',                     dose:'3 g',                     timing:'Fordelt over dagen',                note:'Kan hjælpe med at bevare muskelmasse i underskudsperioder.' },
 ];
 const ALL_DAYS = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
 
