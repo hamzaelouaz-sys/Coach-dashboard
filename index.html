@@ -138,6 +138,11 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
 .day-editor{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
 .day-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
 .day-toggle-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.drag-handle{cursor:grab;user-select:none;color:var(--muted);flex-shrink:0;font-size:1rem;padding:2px 6px;line-height:1;touch-action:none}
+.drag-handle:active{cursor:grabbing}
+.day-editor.dragging,.meal-ed-card.dragging,[data-supp-idx].dragging{opacity:.35}
+tr.dragging{opacity:.35}
+tr[data-ex-id],tr[data-item-id]{cursor:default}
 /* ── DATA TAB ── */
 .data-chart-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;margin-bottom:18px}
 .data-chart-card h3{font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px}
@@ -252,6 +257,10 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 2l4 4-3 3-4-4z"/><path d="M2 18l4 4 3-3-4-4z"/><path d="M8 14l-3.5 3.5"/><path d="M17.5 3.5L14 7"/></svg>
         Øvelsesbank
       </div>
+      <div class="nav-item" id="nav-supplements" onclick="showBankPage('supplements')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5L3.5 13.5a4.95 4.95 0 117-7l7 7a4.95 4.95 0 11-7 7z"/><path d="M8.5 8.5l7 7"/></svg>
+        Tilskudsbank
+      </div>
     </nav>
     <div class="sb-footer">
       <div class="coach-chip">
@@ -326,6 +335,7 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
         <div class="tab active" onclick="switchTab('profil',this)">👤 Profil</div>
         <div class="tab" onclick="switchTab('kostplan',this)">🥗 Kostplan</div>
         <div class="tab" onclick="switchTab('traening',this)">💪 Træning</div>
+        <div class="tab" onclick="switchTab('tilskud',this)">💊 Tilskud</div>
         <div class="tab" onclick="switchTab('data',this)">📊 Data</div>
         <div class="tab" onclick="switchTab('beskeder',this)" id="tab-btn-beskeder">💬 Beskeder <span id="coach-msg-badge" class="hidden" style="background:var(--gold);color:#000;border-radius:10px;font-size:.6rem;font-weight:800;padding:1px 6px;margin-left:4px"></span></div>
         <div class="tab" onclick="switchTab('fotos',this)">📸 Fotos</div>
@@ -334,6 +344,7 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
         <div id="tab-profil"></div>
         <div id="tab-kostplan" class="hidden"></div>
         <div id="tab-traening" class="hidden"></div>
+        <div id="tab-tilskud" class="hidden"></div>
         <div id="tab-data" class="hidden"></div>
         <div id="tab-beskeder" class="hidden"></div>
         <div id="tab-fotos" class="hidden"></div>
@@ -386,6 +397,29 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
           <table class="item-table">
             <thead><tr><th>Øvelse</th><th>Muskelgruppe</th><th>Std. hvile</th><th>Video</th><th></th></tr></thead>
             <tbody id="ex-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TILSKUDSBANK -->
+    <div id="pg-supplements" class="hidden page-wrap">
+      <div class="card" style="margin-bottom:18px">
+        <div style="font-size:.85rem;font-weight:700;margin-bottom:14px">Tilføj tilskud til banken</div>
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1.2fr 1.6fr auto;gap:10px;align-items:end">
+          <div class="form-group" style="margin:0"><label class="label">Navn</label><input class="input" id="ns-name" placeholder="F.eks. ZMA"></div>
+          <div class="form-group" style="margin:0"><label class="label">Dosis</label><input class="input" id="ns-dose" placeholder="F.eks. 5 g"></div>
+          <div class="form-group" style="margin:0"><label class="label">Tidspunkt</label><input class="input" id="ns-timing" placeholder="F.eks. Om aftenen"></div>
+          <div class="form-group" style="margin:0"><label class="label">Note (valgfri)</label><input class="input" id="ns-note" placeholder="F.eks. tag på tom mave"></div>
+          <button class="btn btn-gold" onclick="addCustomSupp()">Tilføj</button>
+        </div>
+      </div>
+      <div class="card">
+        <input class="input" id="supp-search" placeholder="Søg i tilskudsbanken..." oninput="renderSuppBankPage()" style="max-width:320px;margin-bottom:16px">
+        <div style="overflow-x:auto">
+          <table class="item-table">
+            <thead><tr><th>Tilskud</th><th>Dosis</th><th>Tidspunkt</th><th>Note</th><th></th></tr></thead>
+            <tbody id="supp-bank-rows"></tbody>
           </table>
         </div>
       </div>
@@ -498,7 +532,17 @@ CREATE POLICY "photo_upload" ON storage.objects FOR INSERT
 DROP POLICY IF EXISTS "photo_view" ON storage.objects;
 CREATE POLICY "photo_view" ON storage.objects FOR SELECT
   USING (bucket_id = 'progress-photos' AND
-    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));</pre>
+    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));
+
+-- supplement_bank: coachens genbrugelige tilskudskatalog (samme mønster som food_bank/exercise_bank)
+CREATE TABLE IF NOT EXISTS supplement_bank (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  dose TEXT,
+  timing TEXT,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
@@ -878,9 +922,10 @@ const EXERCISE_BANK = [
   {n:'Turkish Get-Up',g:'Cardio',sets:3,reps:'5-6',rest:90},
 ];
 
-// ─── Coach-tilføjede fødevarer/øvelser (gemt i Supabase: food_bank / exercise_bank) ──
+// ─── Coach-tilføjede fødevarer/øvelser/tilskud (gemt i Supabase: food_bank / exercise_bank / supplement_bank) ──
 let CUSTOM_FOODS = [];
 let CUSTOM_EXS = [];
+let CUSTOM_SUPPS_BANK = [];
 
 function allFoods() {
   return FOOD_BANK.concat(CUSTOM_FOODS.map(f => ({ n: f.name, g: 'Din tilføjelse', cal: f.kcal, pro: f.p, carb: f.c, fat: f.f, _customId: f.id })));
@@ -888,14 +933,19 @@ function allFoods() {
 function allExercises() {
   return EXERCISE_BANK.concat(CUSTOM_EXS.map(e => ({ n: e.name, g: e.muscle || 'Din tilføjelse', sets: 3, reps: '8-12', rest: e.rest || 90, video: e.video || '', _customId: e.id })));
 }
+function allSupps() {
+  return STD_SUPPS.concat(CUSTOM_SUPPS_BANK.map(s => ({ name: s.name, dose: s.dose || '', timing: s.timing || '', note: s.note || '', _customId: s.id })));
+}
 
 async function loadBanks() {
-  const [fRes, eRes] = await Promise.all([
+  const [fRes, eRes, sRes] = await Promise.all([
     sb.from('food_bank').select('*').order('name'),
     sb.from('exercise_bank').select('*').order('name'),
+    sb.from('supplement_bank').select('*').order('name'),
   ]);
   CUSTOM_FOODS = fRes.data || [];
   CUSTOM_EXS = eRes.data || [];
+  CUSTOM_SUPPS_BANK = sRes.data || [];
 }
 
 async function addCustomFood() {
@@ -977,6 +1027,45 @@ function renderExBankPage() {
       <td style="color:var(--dim);font-size:.78rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.video || '')}</td>
       <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteCustomExercise('${e.id}')">✕</button></td>
     </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><p>${CUSTOM_EXS.length ? 'Ingen match' : 'Ingen tilføjede øvelser endnu — den indbyggede liste bruges stadig i søgning ved træningsplaner'}</p></div></td></tr>`;
+}
+
+async function addCustomSupp() {
+  const name = document.getElementById('ns-name').value.trim();
+  if (!name) { toast('Skriv et navn', 'err'); return; }
+  const row = {
+    name,
+    dose: document.getElementById('ns-dose').value.trim(),
+    timing: document.getElementById('ns-timing').value.trim(),
+    note: document.getElementById('ns-note').value.trim(),
+  };
+  const { data, error } = await sb.from('supplement_bank').insert(row).select().single();
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  CUSTOM_SUPPS_BANK.push(data);
+  CUSTOM_SUPPS_BANK.sort((a,b) => a.name.localeCompare(b.name, 'da'));
+  ['ns-name','ns-dose','ns-timing','ns-note'].forEach(id => document.getElementById(id).value = '');
+  renderSuppBankPage();
+  toast('Tilskud tilføjet til banken ✓', 'ok');
+}
+
+async function deleteCustomSupp(id) {
+  if (!confirm('Slet tilskuddet fra banken?')) return;
+  const { error } = await sb.from('supplement_bank').delete().eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  CUSTOM_SUPPS_BANK = CUSTOM_SUPPS_BANK.filter(s => String(s.id) !== String(id));
+  renderSuppBankPage();
+}
+
+function renderSuppBankPage() {
+  const q = (document.getElementById('supp-search').value || '').toLowerCase();
+  const rows = CUSTOM_SUPPS_BANK.filter(s => s.name.toLowerCase().includes(q));
+  document.getElementById('supp-bank-rows').innerHTML = rows.length ? rows.map(s => `
+    <tr>
+      <td>${escHtml(s.name)}</td>
+      <td style="color:var(--muted)">${escHtml(s.dose || '')}</td>
+      <td style="color:var(--muted)">${escHtml(s.timing || '')}</td>
+      <td style="color:var(--dim);font-size:.78rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.note || '')}</td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteCustomSupp('${s.id}')">✕</button></td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><p>${CUSTOM_SUPPS_BANK.length ? 'Ingen match' : 'Ingen tilføjede tilskud endnu — de 5 standard-tilskud vises stadig som hurtig-tilføj hos klienter'}</p></div></td></tr>`;
 }
 
 // ─── Meal Pools (3 varianter pr. mål – vælges ud fra klient-hash) ──────────
@@ -1110,7 +1199,18 @@ let weightChart = null;
 // Plan editor state
 let dp = { plan_name: 'Personlig kostplan', calories: 2000, protein: 150, carbs: 200, fat: 65, meals: [] };
 let wp = { program_name: 'Styrketræningsplan', days: [] };
+let supp = []; // kosttilskud tildelt den aktuelle klient: [{name,dose,timing,note}]
 let mealCnt = 0, itemCnt = 0, exCnt = 0;
+
+// Standard-basisliste (den "faste" del) — coachen kan hurtig-tilføje og derefter
+// tilpasse pr. klient. Klienten ser også disse som generelle anbefalinger.
+const STD_SUPPS = [
+  { name:'Whey protein',        dose:'1-2 scoops (25-50 g)',   timing:'Efter træning / mellem måltider', note:'Nem måde at nå dit proteinmål.' },
+  { name:'Kreatin monohydrat',  dose:'5 g',                    timing:'Dagligt, samme tidspunkt',        note:'Tag hver dag — også hviledage. Timing er ligegyldig.' },
+  { name:'D-vitamin',           dose:'25-50 µg (1000-2000 IE)',timing:'Med et måltid',                   note:'Især vigtigt i vinterhalvåret i Danmark.' },
+  { name:'Omega-3 (fiskeolie)', dose:'1-2 g EPA/DHA',          timing:'Med et måltid',                   note:'Understøtter restitution og hjerte-kar.' },
+  { name:'Magnesium',           dose:'200-400 mg',             timing:'Om aftenen',                      note:'Kan støtte søvn og muskelfunktion.' },
+];
 const ALL_DAYS = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1364,6 +1464,7 @@ async function openClient(id) {
     clientRow: clientRow || null,
     diet: programData.diet || null,
     workout: programData.workout || null,
+    supplements: programData.supplements || [],
     weightLog: weightLog || [],
     checkins: checkins || [],
     completions: completions || [],
@@ -1402,6 +1503,11 @@ async function openClient(id) {
     exCnt = 0;
   }
 
+  // Indlæs kosttilskud (kopi, så redigering ikke muterer cache før gem)
+  supp = (currentClientData.supplements || []).map(s => ({
+    name: s.name || '', dose: s.dose || '', timing: s.timing || '', note: s.note || ''
+  }));
+
   // Show first tab
   switchTab('profil', document.querySelector('.tab.active'));
   // Unread badge
@@ -1419,11 +1525,13 @@ function showClientList() {
   document.getElementById('pg-client').classList.add('hidden');
   document.getElementById('pg-foods').classList.add('hidden');
   document.getElementById('pg-exercises').classList.add('hidden');
+  document.getElementById('pg-supplements').classList.add('hidden');
   document.getElementById('pg-clients').classList.remove('hidden');
   document.getElementById('main-title').textContent = 'Klienter';
   document.getElementById('nav-clients').classList.add('active');
   document.getElementById('nav-foods').classList.remove('active');
   document.getElementById('nav-exercises').classList.remove('active');
+  document.getElementById('nav-supplements').classList.remove('active');
   if (weightChart) { weightChart.destroy(); weightChart = null; }
 }
 
@@ -1432,29 +1540,35 @@ function showBankPage(page) {
   document.getElementById('pg-client').classList.add('hidden');
   document.getElementById('pg-foods').classList.toggle('hidden', page !== 'foods');
   document.getElementById('pg-exercises').classList.toggle('hidden', page !== 'exercises');
-  document.getElementById('main-title').textContent = page === 'foods' ? 'Madbank' : 'Øvelsesbank';
+  document.getElementById('pg-supplements').classList.toggle('hidden', page !== 'supplements');
+  document.getElementById('main-title').textContent = page === 'foods' ? 'Madbank' : page === 'exercises' ? 'Øvelsesbank' : 'Tilskudsbank';
   document.getElementById('nav-clients').classList.remove('active');
   document.getElementById('nav-foods').classList.toggle('active', page === 'foods');
   document.getElementById('nav-exercises').classList.toggle('active', page === 'exercises');
+  document.getElementById('nav-supplements').classList.toggle('active', page === 'supplements');
   if (weightChart) { weightChart.destroy(); weightChart = null; }
-  if (page === 'foods') renderFoodBankPage(); else renderExBankPage();
+  if (page === 'foods') renderFoodBankPage(); else if (page === 'exercises') renderExBankPage(); else renderSuppBankPage();
 }
 
 function switchTab(tab, el) {
   // Gem workout-inputs inden vi forlader træningsfanen
   if (!document.getElementById('tab-traening')?.classList.contains('hidden')) syncWorkoutDOM();
 
+  // Gem tilskud-inputs inden vi forlader tilskudsfanen
+  if (!document.getElementById('tab-tilskud')?.classList.contains('hidden')) syncTilskudDOM();
+
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   else document.querySelectorAll('.tab').forEach((t, i) => {
-    if (['profil','kostplan','traening','data','beskeder','fotos'][i] === tab) t.classList.add('active');
+    if (['profil','kostplan','traening','tilskud','data','beskeder','fotos'][i] === tab) t.classList.add('active');
   });
-  ['profil','kostplan','traening','data','beskeder','fotos'].forEach(t => {
+  ['profil','kostplan','traening','tilskud','data','beskeder','fotos'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
   });
   if (tab === 'profil') renderProfilTab();
   if (tab === 'kostplan') renderKostplanTab();
   if (tab === 'traening') renderTræningTab();
+  if (tab === 'tilskud') renderTilskudTab();
   if (tab === 'data') renderDataTab();
   if (tab === 'beskeder') renderBeskederTab();
   if (tab === 'fotos') renderFotosTab();
@@ -1752,6 +1866,8 @@ function renderDietEditor() {
     if (card) refreshMealTotals(card);
     refreshPlanSummary();
   };
+  enableDragReorder(el, '.meal-ed-card', syncDietDOM);
+  el.querySelectorAll('tbody').forEach(tb => enableDragReorder(tb, 'tr[data-item-id]', syncDietDOM));
   refreshPlanSummary();
 }
 
@@ -1797,6 +1913,7 @@ function renderMealCard(meal) {
   return `
     <div class="meal-ed-card" data-meal-id="${meal.id}">
       <div class="meal-ed-hdr">
+        <span class="drag-handle" draggable="true" title="Træk for at ændre rækkefølge">⠿</span>
         <input class="input m-name" value="${escHtml(meal.name)}" placeholder="Måltidsnavn" style="max-width:180px;flex-shrink:0">
         <input class="input m-time" type="time" value="${meal.time||'12:00'}" style="width:105px;flex-shrink:0">
         <div class="meal-ed-totals">${totals.cal} kcal &bull; ${totals.pro}g P &bull; ${totals.carb}g K &bull; ${totals.fat}g F</div>
@@ -1804,12 +1921,13 @@ function renderMealCard(meal) {
       </div>
       <div style="overflow-x:auto">
         <table class="item-table">
-          <thead><tr><th style="min-width:180px">Fødevare</th><th>Gram</th><th>kcal</th><th>Protein</th><th>Kulh.</th><th>Fedt</th><th></th></tr></thead>
+          <thead><tr><th></th><th style="min-width:180px">Fødevare</th><th>Gram</th><th>kcal</th><th>Protein</th><th>Kulh.</th><th>Fedt</th><th></th></tr></thead>
           <tbody>
             ${(meal.items || []).map(item => {
               const gram = item.gram || (parseInt(item.amount) || 0);
               return `
               <tr data-item-id="${item.id}" data-c100="${item.cal100||0}" data-p100="${item.pro100||0}" data-k100="${item.carb100||0}" data-f100="${item.fat100||0}">
+                <td><span class="drag-handle" draggable="true" title="Træk for at ændre rækkefølge">⠿</span></td>
                 <td><input class="input i-name" value="${escHtml(item.name)}" placeholder="Søg fødevare..." autocomplete="off"
                            oninput="acShow(this,'food')" onfocus="acShow(this,'food')"></td>
                 <td><input class="input i-gram" type="number" value="${gram||''}" placeholder="g" min="0" style="width:72px"
@@ -1839,6 +1957,8 @@ function syncDietDOM() {
   dp.protein = +v('dp-protein') || dp.protein;
   dp.carbs = +v('dp-carbs') || dp.carbs;
   dp.fat = +v('dp-fat') || dp.fat;
+  const mealOrder = Array.from(document.querySelectorAll('#diet-editor [data-meal-id]')).map(el => +el.dataset.mealId);
+  if (mealOrder.length) dp.meals.sort((a, b) => mealOrder.indexOf(a.id) - mealOrder.indexOf(b.id));
   document.querySelectorAll('[data-meal-id]').forEach(card => {
     const meal = dp.meals.find(m => m.id === +card.dataset.mealId);
     if (!meal) return;
@@ -1946,6 +2066,123 @@ async function saveDietPlan() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// TILSKUD TAB — KOSTTILSKUD PR. KLIENT
+// ════════════════════════════════════════════════════════════════════════════
+function renderTilskudTab() {
+  const el = document.getElementById('tab-tilskud');
+  if (!el) return;
+  const navn = currentClient?.full_name?.split(' ')[0] || 'klienten';
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:.9rem;font-weight:700;margin-bottom:6px">💊 Kosttilskud til ${escHtml(navn)}</div>
+      <p style="color:var(--muted);font-size:.82rem;line-height:1.5;margin-bottom:14px">Tilføj de tilskud klienten skal tage. Brug hurtig-knapperne til de mest almindelige, eller tilføj dine egne. Klienten ser listen under sin "Kosttilskud"-fane.</p>
+      <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:8px">Hurtig-tilføj fra bank</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${allSupps().map((s,i)=>`<button class="btn btn-outline btn-sm" onclick="addStdSupp(${i})">+ ${escHtml(s.name)}</button>`).join('')}
+      </div>
+    </div>
+    <div id="supp-editor"></div>
+    <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="addSupp()">+ Tilføj eget tilskud</button>
+      <button class="btn btn-gold" onclick="saveSupplements()">💾 Gem tilskud</button>
+    </div>
+    <div id="tilskud-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
+  renderSuppEditor();
+}
+
+function renderSuppEditor() {
+  const el = document.getElementById('supp-editor');
+  if (!el) return;
+  if (!supp.length) {
+    el.innerHTML = `<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:.85rem;border:1px dashed var(--bdr);border-radius:var(--r2)">Ingen tilskud tilføjet endnu — brug knapperne ovenfor.</div>`;
+    return;
+  }
+  el.innerHTML = supp.map((s, i) => `
+    <div class="meal-ed-card" data-supp-idx="${i}" style="padding:14px 16px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:auto 2fr 1fr 1.4fr auto;gap:10px;align-items:end">
+        <span class="drag-handle" draggable="true" title="Træk for at ændre rækkefølge" style="align-self:center">⠿</span>
+        <div class="form-group" style="margin:0"><label class="label">Tilskud</label><input class="input s-name" value="${escHtml(s.name)}" placeholder="F.eks. Kreatin"></div>
+        <div class="form-group" style="margin:0"><label class="label">Dosis</label><input class="input s-dose" value="${escHtml(s.dose)}" placeholder="5 g"></div>
+        <div class="form-group" style="margin:0"><label class="label">Tidspunkt</label><input class="input s-timing" value="${escHtml(s.timing)}" placeholder="Dagligt"></div>
+        <button class="btn btn-ghost btn-sm" onclick="removeSupp(${i})" style="height:46px">✕ Fjern</button>
+      </div>
+      <div class="form-group" style="margin:10px 0 0"><label class="label">Note til klienten (valgfrit)</label><input class="input s-note" value="${escHtml(s.note)}" placeholder="F.eks. tag også på hviledage"></div>
+    </div>`).join('');
+  enableDragReorder(el, '[data-supp-idx]', () => { syncTilskudDOM(); renderSuppEditor(); });
+}
+
+function syncTilskudDOM() {
+  const el = document.getElementById('supp-editor');
+  if (!el) return;
+  const rows = [];
+  el.querySelectorAll('[data-supp-idx]').forEach(card => {
+    rows.push({
+      name:   card.querySelector('.s-name')?.value.trim()   || '',
+      dose:   card.querySelector('.s-dose')?.value.trim()   || '',
+      timing: card.querySelector('.s-timing')?.value.trim() || '',
+      note:   card.querySelector('.s-note')?.value.trim()   || '',
+    });
+  });
+  supp = rows;
+}
+
+function addSupp() {
+  syncTilskudDOM();
+  supp.push({ name:'', dose:'', timing:'', note:'' });
+  renderSuppEditor();
+}
+
+function addStdSupp(i) {
+  syncTilskudDOM();
+  const s = allSupps()[i];
+  if (!s) return;
+  if (supp.some(x => x.name.toLowerCase() === s.name.toLowerCase())) {
+    toast(`${s.name} er allerede tilføjet`, 'err');
+    return;
+  }
+  supp.push({ name: s.name, dose: s.dose, timing: s.timing, note: s.note });
+  renderSuppEditor();
+}
+
+function removeSupp(i) {
+  syncTilskudDOM();
+  supp.splice(i, 1);
+  renderSuppEditor();
+}
+
+async function saveSupplements() {
+  if (!currentClient?.id) { toast('Ingen klient valgt', 'err'); return; }
+  try {
+    syncTilskudDOM();
+    const clean = supp.filter(s => s.name); // drop helt tomme rækker
+    const selRes = await sb.from('client_data').select('id,program').eq('user_id', currentClient.id).limit(1);
+    let prog = {};
+    try { prog = JSON.parse(selRes.data?.[0]?.program || '{}'); } catch(e) {}
+    prog.supplements = clean;
+    let saveRes;
+    if (selRes.data?.[0]?.id) {
+      saveRes = await sb.from('client_data').update({
+        program: JSON.stringify(prog), updated_at: new Date().toISOString()
+      }).eq('user_id', currentClient.id).select('id');
+      if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
+        showSaveError('tilskud', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Kør SQL fra 🔧-knappen øverst.');
+        return;
+      }
+    } else {
+      saveRes = await sb.from('client_data').insert({
+        user_id: currentClient.id, program: JSON.stringify(prog), updated_at: new Date().toISOString()
+      });
+    }
+    if (saveRes.error) { showSaveError('tilskud', saveRes.error.message || JSON.stringify(saveRes.error)); return; }
+    currentClientData.supplements = clean;
+    clearSaveError('tilskud');
+    toast('Tilskud gemt! ✓', 'ok');
+  } catch(e) {
+    showSaveError('tilskud', e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // TRÆNING TAB — WORKOUT EDITOR
 // ════════════════════════════════════════════════════════════════════════════
 function applyWorkoutTemplate(type) {
@@ -2010,6 +2247,7 @@ function renderWorkoutEditor() {
   el.innerHTML = wp.days.map(day => `
     <div class="day-editor" data-day="${day.day}">
       <div class="day-ed-hdr">
+        <span class="drag-handle" draggable="true" title="Træk for at ændre rækkefølge">⠿</span>
         <span class="badge badge-gold">${day.day}</span>
         <input class="input day-name" value="${escHtml(day.name)}" placeholder="Fx Bryst & Triceps" style="max-width:220px;flex:1">
         <button class="btn btn-outline btn-sm" title="Kopier dag til næste ledige dag" onclick="syncWorkoutDOM();duplicateDay('${day.day}')">📋 Kopier dag</button>
@@ -2017,10 +2255,11 @@ function renderWorkoutEditor() {
       </div>
       <div style="overflow-x:auto">
         <table class="item-table">
-          <thead><tr><th>Øvelse</th><th>Sæt</th><th>Reps</th><th>Vægt</th><th>Hvile (s)</th><th>YouTube URL</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Øvelse</th><th>Sæt</th><th>Reps</th><th>Vægt</th><th>Hvile (s)</th><th>YouTube URL</th><th></th></tr></thead>
           <tbody>
             ${day.exercises.map(ex => `
               <tr data-ex-id="${ex.id}">
+                <td><span class="drag-handle" draggable="true" title="Træk for at ændre rækkefølge">⠿</span></td>
                 <td><input class="input ex-nm" value="${escHtml(ex.name)}" placeholder="Søg øvelse..." style="min-width:170px" autocomplete="off"
                            oninput="acShow(this,'ex')" onfocus="acShow(this,'ex')"></td>
                 <td><input class="input ex-sets" type="number" value="${ex.sets}" min="1" max="20" style="width:58px"></td>
@@ -2037,11 +2276,15 @@ function renderWorkoutEditor() {
         <button class="btn btn-ghost btn-sm" onclick="syncWorkoutDOM();addExercise('${day.day}')">+ Øvelse</button>
       </div>
     </div>`).join('');
+  enableDragReorder(el, '.day-editor', syncWorkoutDOM);
+  el.querySelectorAll('tbody').forEach(tb => enableDragReorder(tb, 'tr[data-ex-id]', syncWorkoutDOM));
 }
 
 function syncWorkoutDOM() {
   const wpNameEl = document.getElementById('wp-name');
   if (wpNameEl) wp.program_name = wpNameEl.value;
+  const dayOrder = Array.from(document.querySelectorAll('#workout-editor [data-day]')).map(el => el.dataset.day);
+  if (dayOrder.length) wp.days.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
   document.querySelectorAll('[data-day]').forEach(dayEl => {
     const day = wp.days.find(d => d.day === dayEl.dataset.day);
     if (!day) return;
@@ -2069,7 +2312,6 @@ function toggleDay(day) {
     wp.days.splice(idx, 1);
   } else {
     wp.days.push({ day, name: day + ' træning', exercises: [] });
-    wp.days.sort((a, b) => ALL_DAYS.indexOf(a.day) - ALL_DAYS.indexOf(b.day));
   }
   renderTræningTab();
 }
@@ -3365,6 +3607,48 @@ function escJs(s) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// DRAG-AND-DROP OMORDERING (øvelser, dage, måltider, ingredienser, tilskud)
+// ════════════════════════════════════════════════════════════════════════════
+// Native HTML5 drag-and-drop via en .drag-handle i hvert element. Elementer
+// flyttes kun i forhold til søskende med samme forælder (samme tbody/container),
+// så man fx ikke kan trække en øvelse fra én træningsdag ind i en anden.
+// onDrop kaldes efter et gyldigt drop og skal genopbygge state-arrayet ud fra
+// den nye DOM-rækkefølge (se syncWorkoutDOM/syncDietDOM/syncTilskudDOM).
+function enableDragReorder(container, itemSelector, onDrop) {
+  if (!container || container._dragReorderBound) return;
+  container._dragReorderBound = true;
+  let dragEl = null;
+  container.addEventListener('dragstart', e => {
+    const handle = e.target.closest('.drag-handle');
+    const row = handle && handle.closest(itemSelector);
+    if (!row) { e.preventDefault(); return; }
+    e.stopPropagation(); // undgå at nested containere (fx en madvare-række inde i et måltidskort) også reagerer
+    dragEl = row;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+    requestAnimationFrame(() => row.classList.add('dragging'));
+  });
+  container.addEventListener('dragend', () => {
+    if (dragEl) dragEl.classList.remove('dragging');
+    dragEl = null;
+  });
+  container.addEventListener('dragover', e => {
+    if (!dragEl) return;
+    e.preventDefault();
+    const target = e.target.closest(itemSelector);
+    if (!target || target === dragEl || target.parentNode !== dragEl.parentNode) return;
+    const rect = target.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height / 2;
+    target.parentNode.insertBefore(dragEl, before ? target : target.nextSibling);
+  });
+  container.addEventListener('drop', e => {
+    if (!dragEl) return;
+    e.preventDefault();
+    onDrop();
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // BESKEDER TAB
 // ════════════════════════════════════════════════════════════════════════════
 let coachMsgChannel = null;
@@ -3514,7 +3798,7 @@ function toast(msg, type = 'ok') {
 }
 
 function showSaveError(which, msg) {
-  const id = which === 'diet' ? 'diet-save-err' : 'workout-save-err';
+  const id = which + '-save-err';
   const el = document.getElementById(id);
   if (el) {
     el.textContent = '⚠ ' + msg;
@@ -3524,7 +3808,7 @@ function showSaveError(which, msg) {
 }
 
 function clearSaveError(which) {
-  const id = which === 'diet' ? 'diet-save-err' : 'workout-save-err';
+  const id = which + '-save-err';
   const el = document.getElementById(id);
   if (el) el.style.display = 'none';
 }
