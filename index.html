@@ -143,6 +143,8 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
 .day-editor.dragging,.meal-ed-card.dragging,[data-supp-idx].dragging{opacity:.35}
 tr.dragging{opacity:.35}
 tr[data-ex-id],tr[data-item-id]{cursor:default}
+.msg-action-btn{background:none;border:none;color:var(--dim);font-size:.78rem;cursor:pointer;padding:0 2px;line-height:1}
+.msg-action-btn:hover{color:var(--gold)}
 /* ── DATA TAB ── */
 .data-chart-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;margin-bottom:18px}
 .data-chart-card h3{font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px}
@@ -563,7 +565,19 @@ ALTER TABLE supplement_bank ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "supplement_bank_access" ON supplement_bank;
 CREATE POLICY "supplement_bank_access" ON supplement_bank FOR ALL
   USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');</pre>
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
+
+-- messages: tilføj edited_at (til "redigeret"-mærke) og lås ordentligt ned med RLS,
+-- så en klient kun kan skrive i sin egen tråd som 'client' og ikke kan udgive sig for coachen.
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "messages_access" ON messages;
+CREATE POLICY "messages_access" ON messages FOR ALL
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (
+    (auth.uid() = user_id AND sender = 'client')
+    OR (auth.email() = 'hamzaelouaz@gmail.com' AND sender = 'coach')
+  );</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
@@ -3773,6 +3787,7 @@ function enableDragReorder(container, itemSelector, onDrop) {
 // BESKEDER TAB
 // ════════════════════════════════════════════════════════════════════════════
 let coachMsgChannel = null;
+let coachMsgCache = [];
 
 async function renderBeskederTab() {
   const el = document.getElementById('tab-beskeder');
@@ -3792,17 +3807,18 @@ async function renderBeskederTab() {
   const { data } = await sb.from('messages')
     .select('*').eq('user_id', currentClient.id)
     .order('created_at', { ascending: true });
-  const msgs = data || [];
+  coachMsgCache = data || [];
 
   await sb.from('messages').update({ read: true })
     .eq('user_id', currentClient.id).eq('sender', 'client').eq('read', false);
   document.getElementById('coach-msg-badge')?.classList.add('hidden');
 
-  renderCoachMessages(msgs);
+  renderCoachMessages(coachMsgCache);
 
   if (coachMsgChannel) sb.removeChannel(coachMsgChannel);
   coachMsgChannel = sb.channel('coach-msgs-' + currentClient.id)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `user_id=eq.${currentClient.id}` }, async payload => {
+      coachMsgCache.push(payload.new);
       const c = document.getElementById('coach-chat-msgs');
       if (!c) return;
       const node = buildMsgNode(payload.new);
@@ -3828,15 +3844,68 @@ function buildMsgNode(m) {
   const clientName = currentClient.full_name?.split(' ')[0] || 'Klient';
   const time = new Date(m.created_at).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const wrap = document.createElement('div');
+  wrap.dataset.msgId = m.id;
   wrap.style.cssText = `display:flex;flex-direction:column;max-width:72%;align-self:${isCoach ? 'flex-end' : 'flex-start'};align-items:${isCoach ? 'flex-end' : 'flex-start'}`;
   wrap.innerHTML = `
     <div style="font-size:.7rem;color:var(--muted);font-weight:600;margin-bottom:3px">${isCoach ? 'Hamza El' : clientName}</div>
-    <div style="padding:11px 15px;border-radius:16px;${isCoach
+    <div class="msg-bubble" style="padding:11px 15px;border-radius:16px;${isCoach
       ? 'background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#000;border-bottom-right-radius:4px'
       : 'background:var(--surf3);border:1px solid var(--bdr);color:var(--txt);border-bottom-left-radius:4px'
     };font-size:.88rem;line-height:1.6;word-break:break-word">${escHtml(m.content)}</div>
-    <div style="font-size:.68rem;color:var(--dim);margin-top:4px">${time}</div>`;
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+      <span class="msg-time" style="font-size:.68rem;color:var(--dim)">${time}${m.edited_at ? ' · redigeret' : ''}</span>
+      ${isCoach ? `
+        <button class="msg-action-btn" title="Redigér besked" onclick="startEditMessage(${m.id})">✎</button>
+        <button class="msg-action-btn" title="Slet besked" onclick="deleteCoachMessage(${m.id})">✕</button>` : ''}
+    </div>`;
   return wrap;
+}
+
+function startEditMessage(id) {
+  const wrap = document.querySelector(`#coach-chat-msgs [data-msg-id="${id}"]`);
+  if (!wrap) return;
+  const bubble = wrap.querySelector('.msg-bubble');
+  const original = bubble.textContent;
+  bubble.dataset.original = original;
+  bubble.innerHTML = `
+    <textarea class="input edit-msg-input" rows="2" style="width:100%;min-width:220px;font-family:inherit;font-size:.88rem;color:var(--txt);resize:vertical">${escHtml(original)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-gold btn-sm" onclick="saveEditedMessage(${id})">Gem</button>
+      <button class="btn btn-outline btn-sm" onclick="cancelEditMessage(${id})">Annullér</button>
+    </div>`;
+  bubble.style.background = 'var(--surf3)';
+  bubble.style.border = '1px solid var(--bdr)';
+  bubble.style.color = 'var(--txt)';
+  bubble.querySelector('textarea')?.focus();
+}
+
+function cancelEditMessage(id) {
+  const wrap = document.querySelector(`#coach-chat-msgs [data-msg-id="${id}"]`);
+  if (!wrap) return;
+  renderCoachMessages(coachMsgCache);
+}
+
+async function saveEditedMessage(id) {
+  const wrap = document.querySelector(`#coach-chat-msgs [data-msg-id="${id}"]`);
+  const content = wrap?.querySelector('.edit-msg-input')?.value.trim();
+  if (!content) { toast('Beskeden kan ikke være tom', 'err'); return; }
+  const editedAt = new Date().toISOString();
+  const { error } = await sb.from('messages').update({ content, edited_at: editedAt })
+    .eq('id', id).eq('sender', 'coach');
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  const m = coachMsgCache.find(x => x.id === id);
+  if (m) { m.content = content; m.edited_at = editedAt; }
+  renderCoachMessages(coachMsgCache);
+  toast('Besked redigeret ✓', 'ok');
+}
+
+async function deleteCoachMessage(id) {
+  if (!confirm('Slet denne besked?')) return;
+  const { error } = await sb.from('messages').delete().eq('id', id).eq('sender', 'coach');
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  coachMsgCache = coachMsgCache.filter(m => m.id !== id);
+  renderCoachMessages(coachMsgCache);
+  toast('Besked slettet ✓', 'ok');
 }
 
 async function sendCoachMessage() {
