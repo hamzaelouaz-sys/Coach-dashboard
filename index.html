@@ -542,7 +542,28 @@ CREATE TABLE IF NOT EXISTS supplement_bank (
   timing TEXT,
   note TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
-);</pre>
+);
+
+-- food_bank / exercise_bank / supplement_bank brugte ingen RLS — hvem som helst med
+-- den offentlige anon-nøgle kunne skrive/slette i dem uden login. Låses til coachen,
+-- ligesom alle andre tabeller. Klientportalen bruger aldrig disse tabeller.
+ALTER TABLE food_bank ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "food_bank_access" ON food_bank;
+CREATE POLICY "food_bank_access" ON food_bank FOR ALL
+  USING (auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
+
+ALTER TABLE exercise_bank ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "exercise_bank_access" ON exercise_bank;
+CREATE POLICY "exercise_bank_access" ON exercise_bank FOR ALL
+  USING (auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
+
+ALTER TABLE supplement_bank ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "supplement_bank_access" ON supplement_bank;
+CREATE POLICY "supplement_bank_access" ON supplement_bank FOR ALL
+  USING (auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
@@ -557,6 +578,11 @@ const COACH_EMAIL = 'hamzaelouaz@gmail.com';
 const SUPA_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Advar før lukning/genindlæsning af fanen, hvis der er ugemte ændringer i en klients plan
+window.addEventListener('beforeunload', e => {
+  if (hasUnsavedChanges()) { e.preventDefault(); e.returnValue = ''; }
+});
 
 // ─── EmailJS ────────────────────────────────────────────────────────────────
 const EJS_PUBLIC_KEY       = 'a4KL2nPc1RL_GwdeM';
@@ -1202,6 +1228,46 @@ let wp = { program_name: 'Styrketræningsplan', days: [] };
 let supp = []; // kosttilskud tildelt den aktuelle klient: [{name,dose,timing,note}]
 let mealCnt = 0, itemCnt = 0, exCnt = 0;
 
+// ── Ugemte ændringer + "sidst gemt" (undgår at coachen mister arbejde ved skift af klient/tab) ──
+let lastSaved = { workout: null, diet: null, tilskud: null };
+let savedSnapshot = { workout: null, diet: null, tilskud: null };
+
+function currentWorkoutPlan() {
+  return { program_name: wp.program_name, days: wp.days.map(d => ({ day: d.day, name: d.name, exercises: d.exercises.filter(e => e.name.trim()) })) };
+}
+function currentDietPlan() {
+  return {
+    plan_name: dp.plan_name, calories: dp.calories, protein: dp.protein, carbs: dp.carbs, fat: dp.fat,
+    meals: dp.meals.map(m => ({
+      ...m,
+      calories: m.items.reduce((a,i)=>a+(+i.calories||0),0), protein: m.items.reduce((a,i)=>a+(+i.protein||0),0),
+      carbs: m.items.reduce((a,i)=>a+(+i.carbs||0),0), fat: m.items.reduce((a,i)=>a+(+i.fat||0),0),
+    }))
+  };
+}
+function currentSupplements() {
+  return supp.filter(s => s.name);
+}
+// Sammenligner den nuværende (usynkroniserede DOM-)tilstand mod det der senest blev gemt.
+// Synker kun de faner der rent faktisk er i DOM'et lige nu — undgår at overskrive
+// wp/dp/supp med tomme værdier hvis en fane aldrig har været åbnet for denne klient.
+function hasUnsavedChanges() {
+  if (!currentClient) return false;
+  if (!document.getElementById('tab-traening')?.classList.contains('hidden')) syncWorkoutDOM();
+  if (!document.getElementById('tab-kostplan')?.classList.contains('hidden')) syncDietDOM();
+  if (!document.getElementById('tab-tilskud')?.classList.contains('hidden')) syncTilskudDOM();
+  return JSON.stringify(currentWorkoutPlan()) !== savedSnapshot.workout
+      || JSON.stringify(currentDietPlan()) !== savedSnapshot.diet
+      || JSON.stringify(currentSupplements()) !== savedSnapshot.tilskud;
+}
+function fmtSavedTime(d) {
+  return d ? ('Sidst gemt kl. ' + new Date(d).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' })) : '';
+}
+function setSavedIndicator(id, date) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = fmtSavedTime(date);
+}
+
 // Standard-basisliste (den "faste" del) — kun til coachens eget hurtig-tilføj.
 // Vises ALDRIG automatisk til klienter — de ser kun det coachen aktivt tildeler dem.
 const STD_SUPPS = [
@@ -1447,6 +1513,10 @@ async function loadDashboardStats() {
 // CLIENT DETAIL
 // ════════════════════════════════════════════════════════════════════════════
 async function openClient(id) {
+  if (hasUnsavedChanges()) {
+    const navn = currentClient?.full_name || 'denne klient';
+    if (!confirm(`Du har ugemte ændringer for ${navn}. Skift klient uden at gemme?`)) return;
+  }
   currentClient = clients.find(c => c.id === id);
   if (!currentClient) return;
 
@@ -1532,6 +1602,17 @@ async function openClient(id) {
   supp = (currentClientData.supplements || []).map(s => ({
     name: s.name || '', dose: s.dose || '', timing: s.timing || '', note: s.note || ''
   }));
+
+  // Nulstil "ugemte ændringer"-sammenligning til den friskt indlæste klient.
+  // updated_at er fælles for kost/træning/tilskud, så den bruges som et fornuftigt
+  // (om end upræcist) bud på "sidst gemt" indtil noget gemmes i denne session.
+  const lastTouched = clientRow?.updated_at ? new Date(clientRow.updated_at) : null;
+  lastSaved = { workout: lastTouched, diet: lastTouched, tilskud: lastTouched };
+  savedSnapshot = {
+    workout: JSON.stringify(currentWorkoutPlan()),
+    diet: JSON.stringify(currentDietPlan()),
+    tilskud: JSON.stringify(currentSupplements()),
+  };
 
   // Show first tab
   switchTab('profil', document.querySelector('.tab.active'));
@@ -1806,14 +1887,16 @@ function renderKostplanTab() {
 
     <!-- Meal editor -->
     <div id="diet-editor"></div>
-    <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="addMeal()">+ Tilføj måltid</button>
       <button class="btn btn-gold" onclick="saveDietPlan()">💾 Gem kostplan</button>
+      <span id="diet-saved-at" style="font-size:.76rem;color:var(--muted)"></span>
       <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
     </div>
     <div id="diet-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
 
   renderDietEditor();
+  setSavedIndicator('diet-saved-at', lastSaved.diet);
 
   // Auto-select dropdowns based on client intake, then run calculator
   const _d = currentClientData.intake || {};
@@ -2084,6 +2167,9 @@ async function saveDietPlan() {
     }
     currentClientData.diet = plan;
     clearSaveError('diet');
+    lastSaved.diet = new Date();
+    savedSnapshot.diet = JSON.stringify(currentDietPlan());
+    setSavedIndicator('diet-saved-at', lastSaved.diet);
     toast('Kostplan gemt! ✓', 'ok');
   } catch(e) {
     showSaveError('diet', e.message);
@@ -2107,12 +2193,14 @@ function renderTilskudTab() {
       </div>
     </div>
     <div id="supp-editor"></div>
-    <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="addSupp()">+ Tilføj eget tilskud</button>
       <button class="btn btn-gold" onclick="saveSupplements()">💾 Gem tilskud</button>
+      <span id="tilskud-saved-at" style="font-size:.76rem;color:var(--muted)"></span>
     </div>
     <div id="tilskud-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
   renderSuppEditor();
+  setSavedIndicator('tilskud-saved-at', lastSaved.tilskud);
 }
 
 function renderSuppEditor() {
@@ -2201,6 +2289,9 @@ async function saveSupplements() {
     if (saveRes.error) { showSaveError('tilskud', saveRes.error.message || JSON.stringify(saveRes.error)); return; }
     currentClientData.supplements = clean;
     clearSaveError('tilskud');
+    lastSaved.tilskud = new Date();
+    savedSnapshot.tilskud = JSON.stringify(currentSupplements());
+    setSavedIndicator('tilskud-saved-at', lastSaved.tilskud);
     toast('Tilskud gemt! ✓', 'ok');
   } catch(e) {
     showSaveError('tilskud', e.message);
@@ -2258,12 +2349,14 @@ function renderTræningTab() {
       </div>
     </div>
     <div id="workout-editor"></div>
-    <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="saveWorkoutPlan()">💾 Gem træningsplan</button>
+      <span id="wp-saved-at" style="font-size:.76rem;color:var(--muted)"></span>
       <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
     </div>
     <div id="workout-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
   renderWorkoutEditor();
+  setSavedIndicator('wp-saved-at', lastSaved.workout);
 }
 
 function renderWorkoutEditor() {
@@ -2396,6 +2489,9 @@ async function saveWorkoutPlan() {
     }
     currentClientData.workout = plan;
     clearSaveError('workout');
+    lastSaved.workout = new Date();
+    savedSnapshot.workout = JSON.stringify(currentWorkoutPlan());
+    setSavedIndicator('wp-saved-at', lastSaved.workout);
     toast('Træningsplan gemt! ✓', 'ok');
   } catch(e) {
     showSaveError('workout', e.message);
