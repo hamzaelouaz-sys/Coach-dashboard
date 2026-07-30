@@ -525,6 +525,9 @@ CREATE POLICY "sl_access" ON strength_logs FOR ALL
   USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
   WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
 
+-- strength_logs: valgfri RPE (Rate of Perceived Exertion) per sæt, 1-10
+ALTER TABLE strength_logs ADD COLUMN IF NOT EXISTS rpe SMALLINT CHECK (rpe IS NULL OR (rpe >= 1 AND rpe &lt;= 10));
+
 -- progress-photos: Storage bucket + upload-politik
 -- OBS: Opret først bucket 'progress-photos' (Public) i Supabase Dashboard → Storage
 INSERT INTO storage.buckets (id, name, public) VALUES ('progress-photos', 'progress-photos', true) ON CONFLICT DO NOTHING;
