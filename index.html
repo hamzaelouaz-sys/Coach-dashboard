@@ -609,28 +609,29 @@ const EJS_TEMPLATE_REPLY   = 'template_wwbzwon'; // coach svar → klient
 // ─── Food Bank ────────────────────────────────────────────────────────────
 const FOOD_BANK = [
   // ─── Protein – Fjerkræ ────────────────────────────────────────────────────
-  {n:'Kyllingebryst (kogt)',g:'Protein',cal:165,pro:31,carb:0,fat:3.6},
-  {n:'Kyllingelår (kogt)',g:'Protein',cal:190,pro:26,carb:0,fat:9},
-  {n:'Kyllingefilet (bagt)',g:'Protein',cal:150,pro:30,carb:0,fat:3},
-  {n:'Kyllingevinge (kogt)',g:'Protein',cal:223,pro:24,carb:0,fat:14},
+  {n:'Kyllingebryst (rå)',g:'Protein',cal:120,pro:22.5,carb:0,fat:2.6},
+  {n:'Kyllingebryst (skiver, pålæg)',g:'Protein',cal:165,pro:31,carb:0,fat:3.6},
+  {n:'Kyllingelår (rå, u. skind)',g:'Protein',cal:119,pro:18,carb:0,fat:4.7},
+  {n:'Kyllingefilet (rå)',g:'Protein',cal:120,pro:22.5,carb:0,fat:2.6},
+  {n:'Kyllingevinge (rå)',g:'Protein',cal:203,pro:18.4,carb:0,fat:14},
   {n:'Kalkun (hakket)',g:'Protein',cal:155,pro:22,carb:0,fat:7},
-  {n:'Kalkun bryst (kogt)',g:'Protein',cal:135,pro:29,carb:0,fat:1.5},
-  {n:'And bryst (kogt)',g:'Protein',cal:201,pro:27,carb:0,fat:10},
+  {n:'Kalkun bryst (rå)',g:'Protein',cal:104,pro:24,carb:0,fat:0.7},
+  {n:'And bryst (rå, u. skind)',g:'Protein',cal:120,pro:19.6,carb:0,fat:4.2},
   // ─── Protein – Oksekød ───────────────────────────────────────────────────
   {n:'Oksekød hakket 10%',g:'Protein',cal:175,pro:20,carb:0,fat:10},
   {n:'Oksekød hakket 5%',g:'Protein',cal:150,pro:21,carb:0,fat:7},
-  {n:'Oksemørbrad (stegt)',g:'Protein',cal:215,pro:28,carb:0,fat:11},
-  {n:'Okse ribeye (stegt)',g:'Protein',cal:291,pro:26,carb:0,fat:20},
-  {n:'Okse inderlår (stegt)',g:'Protein',cal:185,pro:29,carb:0,fat:7},
-  {n:'Okse sirloin (stegt)',g:'Protein',cal:207,pro:26,carb:0,fat:11},
-  {n:'Okse flanke (stegt)',g:'Protein',cal:192,pro:27,carb:0,fat:9},
+  {n:'Oksemørbrad (rå)',g:'Protein',cal:143,pro:21,carb:0,fat:6},
+  {n:'Okse ribeye (rå)',g:'Protein',cal:203,pro:19,carb:0,fat:14},
+  {n:'Okse inderlår (rå)',g:'Protein',cal:133,pro:21,carb:0,fat:4.5},
+  {n:'Okse sirloin (rå)',g:'Protein',cal:148,pro:21,carb:0,fat:6.5},
+  {n:'Okse flanke (rå)',g:'Protein',cal:139,pro:21,carb:0,fat:5.5},
   // ─── Protein – Svinekød ──────────────────────────────────────────────────
   {n:'Svinekød (filet)',g:'Protein',cal:140,pro:22,carb:0,fat:5},
   {n:'Svinekød hakket',g:'Protein',cal:192,pro:18,carb:0,fat:13},
-  {n:'Svinemørbrad (stegt)',g:'Protein',cal:157,pro:26,carb:0,fat:5.5},
-  {n:'Svinekoteletter (stegt)',g:'Protein',cal:199,pro:28,carb:0,fat:9},
+  {n:'Svinemørbrad (rå)',g:'Protein',cal:143,pro:21,carb:0,fat:3.5},
+  {n:'Svinekoteletter (rå)',g:'Protein',cal:143,pro:21,carb:0,fat:6},
   {n:'Bacon (ristede)',g:'Protein',cal:541,pro:37,carb:1.4,fat:42},
-  {n:'Skinke (kogt)',g:'Protein',cal:107,pro:17,carb:2,fat:3.5},
+  {n:'Skinke (skiver, pålæg)',g:'Protein',cal:107,pro:17,carb:2,fat:3.5},
   // ─── Protein – Fisk & skaldyr ─────────────────────────────────────────────
   {n:'Laks (fersk)',g:'Protein',cal:208,pro:20,carb:0,fat:13},
   {n:'Laks (røget)',g:'Protein',cal:117,pro:18,carb:0,fat:5},
@@ -639,17 +640,17 @@ const FOOD_BANK = [
   {n:'Sej (filet)',g:'Protein',cal:90,pro:19,carb:0,fat:1},
   {n:'Hornfisk (filet)',g:'Protein',cal:90,pro:20,carb:0,fat:0.8},
   {n:'Tun (dåse, vand)',g:'Protein',cal:100,pro:23,carb:0,fat:0.5},
-  {n:'Tun (fersk, stegt)',g:'Protein',cal:184,pro:30,carb:0,fat:6},
+  {n:'Tun (fersk, rå)',g:'Protein',cal:109,pro:24,carb:0,fat:1},
   {n:'Makrel (dåse)',g:'Protein',cal:210,pro:18,carb:0,fat:15},
   {n:'Makrel (frisk)',g:'Protein',cal:205,pro:19,carb:0,fat:14},
   {n:'Sardiner (dåse)',g:'Protein',cal:208,pro:25,carb:0,fat:11},
   {n:'Ørred (filet)',g:'Protein',cal:141,pro:20,carb:0,fat:6},
   {n:'Tilapia (filet)',g:'Protein',cal:96,pro:20,carb:0,fat:2},
   {n:'Havbars (filet)',g:'Protein',cal:124,pro:24,carb:0,fat:3},
-  {n:'Rejer (kogt)',g:'Protein',cal:85,pro:18,carb:0,fat:1},
-  {n:'Krabbekød (kogt)',g:'Protein',cal:97,pro:19,carb:0,fat:1.5},
-  {n:'Blåmuslinger (kogt)',g:'Protein',cal:86,pro:12,carb:4,fat:2},
-  {n:'Calamari (kogt)',g:'Protein',cal:92,pro:16,carb:3,fat:1.5},
+  {n:'Rejer (rå)',g:'Protein',cal:85,pro:20,carb:0,fat:0.5},
+  {n:'Krabbekød (kogt, klar til brug)',g:'Protein',cal:97,pro:19,carb:0,fat:1.5},
+  {n:'Blåmuslinger (rå)',g:'Protein',cal:86,pro:12,carb:3.7,fat:2.2},
+  {n:'Calamari (rå)',g:'Protein',cal:92,pro:15.6,carb:3.1,fat:1.4},
   // ─── Protein – Æg & mejeriprotein ─────────────────────────────────────────
   {n:'Æg (helt)',g:'Protein',cal:155,pro:13,carb:1.1,fat:11},
   {n:'Æggehvide',g:'Protein',cal:52,pro:11,carb:0.7,fat:0.2},
@@ -669,20 +670,20 @@ const FOOD_BANK = [
   {n:'Havregryn',g:'Kulhydrat',cal:379,pro:13,carb:66,fat:7},
   {n:'Havregrød (lavet med vand)',g:'Kulhydrat',cal:71,pro:2.5,carb:12,fat:1.5},
   {n:'Havreklid',g:'Kulhydrat',cal:246,pro:17,carb:66,fat:7},
-  {n:'Hvid ris (kogt)',g:'Kulhydrat',cal:130,pro:2.7,carb:28,fat:0.3},
-  {n:'Brun ris (kogt)',g:'Kulhydrat',cal:122,pro:2.7,carb:26,fat:1},
-  {n:'Basmati ris (kogt)',g:'Kulhydrat',cal:121,pro:2.4,carb:26,fat:0.3},
-  {n:'Jasmin ris (kogt)',g:'Kulhydrat',cal:129,pro:2.5,carb:28,fat:0.3},
-  {n:'Pasta (kogt)',g:'Kulhydrat',cal:131,pro:5,carb:25,fat:1.1},
-  {n:'Fuldkornspasta (kogt)',g:'Kulhydrat',cal:126,pro:5.3,carb:24,fat:1},
-  {n:'Spaghetti (kogt)',g:'Kulhydrat',cal:131,pro:5,carb:25,fat:1.1},
-  {n:'Kartofler (kogt)',g:'Kulhydrat',cal:87,pro:1.9,carb:20,fat:0.1},
-  {n:'Søde kartofler (kogt)',g:'Kulhydrat',cal:90,pro:2,carb:21,fat:0.1},
-  {n:'Quinoa (kogt)',g:'Kulhydrat',cal:120,pro:4.4,carb:22,fat:1.9},
-  {n:'Bulgur (kogt)',g:'Kulhydrat',cal:83,pro:3.1,carb:18,fat:0.2},
-  {n:'Couscous (kogt)',g:'Kulhydrat',cal:112,pro:3.8,carb:23,fat:0.2},
-  {n:'Hirse (kogt)',g:'Kulhydrat',cal:119,pro:3.5,carb:23,fat:1},
-  {n:'Boghvede (kogt)',g:'Kulhydrat',cal:92,pro:3.4,carb:20,fat:0.6},
+  {n:'Hvid ris (rå)',g:'Kulhydrat',cal:365,pro:7.1,carb:80,fat:0.7},
+  {n:'Brun ris (rå)',g:'Kulhydrat',cal:370,pro:7.9,carb:77,fat:2.9},
+  {n:'Basmati ris (rå)',g:'Kulhydrat',cal:356,pro:8,carb:78,fat:0.6},
+  {n:'Jasmin ris (rå)',g:'Kulhydrat',cal:365,pro:7,carb:80,fat:0.6},
+  {n:'Pasta (rå)',g:'Kulhydrat',cal:371,pro:13,carb:75,fat:1.5},
+  {n:'Fuldkornspasta (rå)',g:'Kulhydrat',cal:348,pro:14.6,carb:68,fat:2.5},
+  {n:'Spaghetti (rå)',g:'Kulhydrat',cal:371,pro:13,carb:75,fat:1.5},
+  {n:'Kartofler (rå)',g:'Kulhydrat',cal:77,pro:2,carb:17,fat:0.1},
+  {n:'Søde kartofler (rå)',g:'Kulhydrat',cal:86,pro:1.6,carb:20,fat:0.1},
+  {n:'Quinoa (rå)',g:'Kulhydrat',cal:368,pro:14,carb:64,fat:6},
+  {n:'Bulgur (rå)',g:'Kulhydrat',cal:342,pro:12,carb:76,fat:1.3},
+  {n:'Couscous (rå)',g:'Kulhydrat',cal:376,pro:12.8,carb:77,fat:0.6},
+  {n:'Hirse (rå)',g:'Kulhydrat',cal:378,pro:11,carb:73,fat:4.2},
+  {n:'Boghvede (rå)',g:'Kulhydrat',cal:343,pro:13.3,carb:71.5,fat:3.4},
   {n:'Hvidt brød',g:'Kulhydrat',cal:265,pro:8,carb:50,fat:3.2},
   {n:'Fuldkornsbrød',g:'Kulhydrat',cal:246,pro:9.5,carb:43,fat:3.7},
   {n:'Rugbrød',g:'Kulhydrat',cal:259,pro:9,carb:48,fat:3.4},
@@ -691,8 +692,8 @@ const FOOD_BANK = [
   {n:'Pita brød',g:'Kulhydrat',cal:275,pro:9,carb:55,fat:1.5},
   {n:'Majstortilla',g:'Kulhydrat',cal:218,pro:5.7,carb:46,fat:2.5},
   {n:'Müsli (u. sukker)',g:'Kulhydrat',cal:367,pro:10,carb:61,fat:8},
-  {n:'Majskolbe (kogt)',g:'Kulhydrat',cal:86,pro:3.3,carb:19,fat:1.4},
-  {n:'Grønne ærter (kogt)',g:'Kulhydrat',cal:84,pro:5.4,carb:14,fat:0.4},
+  {n:'Majskolbe (rå)',g:'Kulhydrat',cal:86,pro:3.3,carb:19,fat:1.4},
+  {n:'Grønne ærter (rå)',g:'Kulhydrat',cal:81,pro:5.4,carb:14,fat:0.4},
   // ─── Frugt ────────────────────────────────────────────────────────────────
   {n:'Æble',g:'Frugt',cal:52,pro:0.3,carb:14,fat:0.2},
   {n:'Pære',g:'Frugt',cal:57,pro:0.4,carb:15,fat:0.1},
@@ -742,13 +743,13 @@ const FOOD_BANK = [
   {n:'Rødkål',g:'Grøntsag',cal:31,pro:1.4,carb:7,fat:0.2},
   {n:'Savoykål',g:'Grøntsag',cal:27,pro:2,carb:5.1,fat:0.1},
   {n:'Selleri',g:'Grøntsag',cal:16,pro:0.7,carb:3,fat:0.2},
-  {n:'Rødbeder (kogte)',g:'Grøntsag',cal:44,pro:1.7,carb:9.9,fat:0.2},
+  {n:'Rødbeder (rå)',g:'Grøntsag',cal:43,pro:1.6,carb:9.6,fat:0.2},
   {n:'Radiser',g:'Grøntsag',cal:16,pro:0.7,carb:3.4,fat:0.1},
   {n:'Porre',g:'Grøntsag',cal:61,pro:1.5,carb:14,fat:0.3},
   {n:'Fennikel',g:'Grøntsag',cal:31,pro:1.2,carb:7.3,fat:0.2},
   {n:'Aubergine',g:'Grøntsag',cal:25,pro:1,carb:6,fat:0.2},
   {n:'Grønne bønner',g:'Grøntsag',cal:31,pro:1.8,carb:7,fat:0.1},
-  {n:'Majskerner (kogte)',g:'Grøntsag',cal:86,pro:3.3,carb:19,fat:1.4},
+  {n:'Majskerner (rå)',g:'Grøntsag',cal:86,pro:3.3,carb:19,fat:1.4},
   {n:'Sukkerærter',g:'Grøntsag',cal:42,pro:2.8,carb:7.6,fat:0.2},
   {n:'Bok choy',g:'Grøntsag',cal:13,pro:1.5,carb:2.2,fat:0.2},
   {n:'Rucola',g:'Grøntsag',cal:25,pro:2.6,carb:3.7,fat:0.7},
@@ -794,18 +795,18 @@ const FOOD_BANK = [
   {n:'Solsikkefrø',g:'Fedt',cal:584,pro:21,carb:20,fat:51},
   {n:'Græskarkerner',g:'Fedt',cal:559,pro:30,carb:11,fat:49},
   // ─── Bælgfrugter ─────────────────────────────────────────────────────────
-  {n:'Sorte bønner (kogt)',g:'Bælgfrugt',cal:132,pro:8.9,carb:24,fat:0.5},
-  {n:'Kikærter (kogt)',g:'Bælgfrugt',cal:164,pro:8.9,carb:27,fat:2.6},
-  {n:'Røde linser (kogt)',g:'Bælgfrugt',cal:116,pro:9,carb:20,fat:0.4},
-  {n:'Grønne linser (kogt)',g:'Bælgfrugt',cal:116,pro:9,carb:20,fat:0.4},
-  {n:'Edamame (kogt)',g:'Bælgfrugt',cal:122,pro:11,carb:10,fat:5.2},
+  {n:'Sorte bønner (rå, tørrede)',g:'Bælgfrugt',cal:341,pro:21.6,carb:62,fat:1.4},
+  {n:'Kikærter (rå, tørrede)',g:'Bælgfrugt',cal:378,pro:20.5,carb:63,fat:6},
+  {n:'Røde linser (rå, tørrede)',g:'Bælgfrugt',cal:352,pro:24.6,carb:63,fat:1.1},
+  {n:'Grønne linser (rå, tørrede)',g:'Bælgfrugt',cal:353,pro:25.8,carb:60,fat:1.1},
+  {n:'Edamame (rå, skallet)',g:'Bælgfrugt',cal:122,pro:11,carb:10,fat:5.2},
   {n:'Tofu (fast)',g:'Bælgfrugt',cal:76,pro:8,carb:1.9,fat:4.2},
   {n:'Tofu (silke)',g:'Bælgfrugt',cal:55,pro:5,carb:2.9,fat:2.5},
   {n:'Hummus',g:'Bælgfrugt',cal:177,pro:4.9,carb:14,fat:11},
-  {n:'Hvide bønner (kogt)',g:'Bælgfrugt',cal:139,pro:9.7,carb:25,fat:0.4},
-  {n:'Pintobønner (kogt)',g:'Bælgfrugt',cal:143,pro:9,carb:26,fat:0.6},
-  {n:'Sojabønner (kogt)',g:'Bælgfrugt',cal:173,pro:17,carb:10,fat:9},
-  {n:'Splittede ærter (kogt)',g:'Bælgfrugt',cal:118,pro:8.3,carb:21,fat:0.4},
+  {n:'Hvide bønner (rå, tørrede)',g:'Bælgfrugt',cal:337,pro:23.4,carb:61,fat:0.9},
+  {n:'Pintobønner (rå, tørrede)',g:'Bælgfrugt',cal:347,pro:21.4,carb:63,fat:1.2},
+  {n:'Sojabønner (rå, tørrede)',g:'Bælgfrugt',cal:446,pro:36.5,carb:30,fat:20},
+  {n:'Splittede ærter (rå, tørrede)',g:'Bælgfrugt',cal:341,pro:25,carb:61,fat:1.2},
   // ─── Andet ───────────────────────────────────────────────────────────────
   {n:'Honning',g:'Andet',cal:304,pro:0.3,carb:82,fat:0},
   {n:'Sojasauce',g:'Andet',cal:53,pro:8.1,carb:4.9,fat:0.1},
@@ -1117,41 +1118,41 @@ const MEAL_POOLS = {
     // Variant A – Klassisk
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Havregryn',gram:100},{n:'Skyr (naturel)',gram:200},{n:'Banan',gram:100},{n:'Mandler',gram:25}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Hvid ris (kogt)',gram:200},{n:'Kyllingebryst (kogt)',gram:200},{n:'Broccoli',gram:150},{n:'Olivenolie',gram:10}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Hvid ris (rå)',gram:70},{n:'Kyllingebryst (rå)',gram:275},{n:'Broccoli',gram:150},{n:'Olivenolie',gram:10}]},
       {name:'Snack',       time:'16:00', items:[{n:'Proteinpulver (valle)',gram:35},{n:'Banan',gram:100},{n:'Jordnøddesmør',gram:20}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Fuldkornspasta (kogt)',gram:220},{n:'Oksekød hakket 10%',gram:150},{n:'Tomater',gram:100},{n:'Løg',gram:50}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Fuldkornspasta (rå)',gram:80},{n:'Oksekød hakket 10%',gram:150},{n:'Tomater',gram:100},{n:'Løg',gram:50}]},
       {name:'Aften snack', time:'21:00', items:[{n:'Hytteost',gram:200},{n:'Jordbær',gram:100}]},
     ],
     // Variant B – Æg & laks
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Æg (helt)',gram:150},{n:'Fuldkornsbrød',gram:100},{n:'Avocado',gram:80},{n:'Tomater',gram:100}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Kyllingelår (kogt)',gram:200},{n:'Søde kartofler (kogt)',gram:200},{n:'Spinat',gram:100},{n:'Olivenolie',gram:10}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Kyllingelår (rå, u. skind)',gram:320},{n:'Søde kartofler (rå)',gram:210},{n:'Spinat',gram:100},{n:'Olivenolie',gram:10}]},
       {name:'Snack',       time:'16:00', items:[{n:'Græksk yoghurt 2%',gram:200},{n:'Havregryn',gram:60},{n:'Blåbær',gram:100}]},
-      {name:'Aftensmad',   time:'19:00', items:[{n:'Laks (fersk)',gram:180},{n:'Hvid ris (kogt)',gram:200},{n:'Asparges',gram:120},{n:'Olivenolie',gram:10}]},
+      {name:'Aftensmad',   time:'19:00', items:[{n:'Laks (fersk)',gram:180},{n:'Hvid ris (rå)',gram:70},{n:'Asparges',gram:120},{n:'Olivenolie',gram:10}]},
       {name:'Aften snack', time:'21:00', items:[{n:'Proteinpulver (valle)',gram:35},{n:'Sødmælk 3.5%',gram:250}]},
     ],
     // Variant C – Kalkun & quinoa
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Havregrød (lavet med vand)',gram:300},{n:'Proteinpulver (valle)',gram:30},{n:'Banan',gram:100},{n:'Valnødder',gram:25}]},
-      {name:'Frokost',     time:'13:00', items:[{n:'Kalkun (hakket)',gram:180},{n:'Quinoa (kogt)',gram:200},{n:'Rød peberfrugt',gram:100},{n:'Løg',gram:50}]},
+      {name:'Frokost',     time:'13:00', items:[{n:'Kalkun (hakket)',gram:180},{n:'Quinoa (rå)',gram:65},{n:'Rød peberfrugt',gram:100},{n:'Løg',gram:50}]},
       {name:'Snack',       time:'16:30', items:[{n:'Skyr (naturel)',gram:200},{n:'Mandler',gram:30},{n:'Æble',gram:120}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Oksekød hakket 5%',gram:180},{n:'Kartofler (kogt)',gram:220},{n:'Broccoli',gram:150},{n:'Olivenolie',gram:10}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Oksekød hakket 5%',gram:180},{n:'Kartofler (rå)',gram:250},{n:'Broccoli',gram:150},{n:'Olivenolie',gram:10}]},
       {name:'Aften snack', time:'21:00', items:[{n:'Hytteost',gram:150},{n:'Jordbær',gram:100},{n:'Honning',gram:15}]},
     ],
     // Variant D – Æg & oksekød
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Æg (helt)',gram:200},{n:'Græksk yoghurt 2%',gram:150},{n:'Havregryn',gram:80},{n:'Jordbær',gram:100}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Oksekød hakket 5%',gram:180},{n:'Basmati ris (kogt)',gram:200},{n:'Blomkål',gram:150},{n:'Olivenolie',gram:10}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Oksekød hakket 5%',gram:180},{n:'Basmati ris (rå)',gram:70},{n:'Blomkål',gram:150},{n:'Olivenolie',gram:10}]},
       {name:'Snack',       time:'16:00', items:[{n:'Skyr (naturel)',gram:200},{n:'Proteinpulver (valle)',gram:25},{n:'Æble',gram:120}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingebryst (kogt)',gram:200},{n:'Fuldkornspasta (kogt)',gram:220},{n:'Tomatsauce (hjemm.)',gram:100},{n:'Parmesan (revet)',gram:20}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingebryst (rå)',gram:275},{n:'Fuldkornspasta (rå)',gram:80},{n:'Tomatsauce (hjemm.)',gram:100},{n:'Parmesan (revet)',gram:20}]},
       {name:'Aften snack', time:'21:00', items:[{n:'Hytteost',gram:150},{n:'Valnødder',gram:25}]},
     ],
     // Variant E – Vegetarisk bulk
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Havregryn',gram:120},{n:'Proteinpulver (ærte)',gram:30},{n:'Banan',gram:120},{n:'Jordnødder',gram:25}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Quinoa (kogt)',gram:200},{n:'Kikærter (kogt)',gram:200},{n:'Rød peberfrugt',gram:100},{n:'Spinat',gram:100},{n:'Avocado',gram:80}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Quinoa (rå)',gram:65},{n:'Kikærter (rå, tørrede)',gram:85},{n:'Rød peberfrugt',gram:100},{n:'Spinat',gram:100},{n:'Avocado',gram:80}]},
       {name:'Snack',       time:'16:00', items:[{n:'Skyr (naturel)',gram:200},{n:'Solsikkefrø',gram:20},{n:'Blåbær',gram:100}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Tofu (fast)',gram:200},{n:'Hvid ris (kogt)',gram:200},{n:'Broccoli',gram:150},{n:'Sojasauce',gram:15},{n:'Sesamolie',gram:8}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Tofu (fast)',gram:200},{n:'Hvid ris (rå)',gram:70},{n:'Broccoli',gram:150},{n:'Sojasauce',gram:15},{n:'Sesamolie',gram:8}]},
       {name:'Aften snack', time:'21:00', items:[{n:'Hytteost',gram:200},{n:'Mandler',gram:30}]},
     ],
   ],
@@ -1159,35 +1160,35 @@ const MEAL_POOLS = {
     // Variant A – Kylling & quinoa
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Havregryn',gram:60},{n:'Skyr (naturel)',gram:200},{n:'Jordbær',gram:100}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Kyllingebryst (kogt)',gram:200},{n:'Quinoa (kogt)',gram:120},{n:'Spinat',gram:100},{n:'Agurk',gram:100},{n:'Tomater',gram:80}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Kyllingebryst (rå)',gram:275},{n:'Quinoa (rå)',gram:40},{n:'Spinat',gram:100},{n:'Agurk',gram:100},{n:'Tomater',gram:80}]},
       {name:'Snack',       time:'16:00', items:[{n:'Skyr (naturel)',gram:150},{n:'Blåbær',gram:80}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Torsk (filet)',gram:200},{n:'Kartofler (kogt)',gram:150},{n:'Broccoli',gram:200}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Torsk (filet)',gram:200},{n:'Kartofler (rå)',gram:170},{n:'Broccoli',gram:200}]},
     ],
     // Variant B – Tun & brun ris
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Æg (helt)',gram:125},{n:'Rugbrød',gram:80},{n:'Tomater',gram:100},{n:'Agurk',gram:80}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Tun (dåse, vand)',gram:150},{n:'Brun ris (kogt)',gram:130},{n:'Broccoli',gram:150},{n:'Rød peberfrugt',gram:80}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Tun (dåse, vand)',gram:150},{n:'Brun ris (rå)',gram:45},{n:'Broccoli',gram:150},{n:'Rød peberfrugt',gram:80}]},
       {name:'Snack',       time:'16:00', items:[{n:'Græksk yoghurt 0%',gram:200},{n:'Hindbær',gram:80}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingelår (kogt)',gram:180},{n:'Søde kartofler (kogt)',gram:130},{n:'Spinat',gram:150}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingelår (rå, u. skind)',gram:290},{n:'Søde kartofler (rå)',gram:135},{n:'Spinat',gram:150}]},
     ],
     // Variant C – Hytteost & tilapia
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Græksk yoghurt 0%',gram:250},{n:'Havregryn',gram:50},{n:'Blåbær',gram:80}]},
-      {name:'Frokost',     time:'13:00', items:[{n:'Kyllingebryst (kogt)',gram:220},{n:'Quinoa (kogt)',gram:100},{n:'Blomkål',gram:200},{n:'Olivenolie',gram:8}]},
+      {name:'Frokost',     time:'13:00', items:[{n:'Kyllingebryst (rå)',gram:300},{n:'Quinoa (rå)',gram:35},{n:'Blomkål',gram:200},{n:'Olivenolie',gram:8}]},
       {name:'Snack',       time:'16:00', items:[{n:'Hytteost',gram:150},{n:'Agurk',gram:100}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Tilapia (filet)',gram:200},{n:'Kartofler (kogt)',gram:130},{n:'Asparges',gram:150}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Tilapia (filet)',gram:200},{n:'Kartofler (rå)',gram:145},{n:'Asparges',gram:150}]},
     ],
     // Variant D – Fisk & grønt
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Æggehvide',gram:200},{n:'Rugbrød',gram:60},{n:'Avocado',gram:50},{n:'Tomater',gram:100}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Torsk (filet)',gram:200},{n:'Søde kartofler (kogt)',gram:120},{n:'Broccoli',gram:200},{n:'Olivenolie',gram:8}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Torsk (filet)',gram:200},{n:'Søde kartofler (rå)',gram:125},{n:'Broccoli',gram:200},{n:'Olivenolie',gram:8}]},
       {name:'Snack',       time:'16:00', items:[{n:'Græksk yoghurt 0%',gram:200},{n:'Blåbær',gram:80}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingebryst (kogt)',gram:200},{n:'Blomkål',gram:200},{n:'Gulerødder',gram:100}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingebryst (rå)',gram:275},{n:'Blomkål',gram:200},{n:'Gulerødder',gram:100}]},
     ],
     // Variant E – Høj protein lavt kulhydrat
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Skyr (naturel)',gram:300},{n:'Æggehvide',gram:100},{n:'Jordbær',gram:80}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Kyllingebryst (kogt)',gram:220},{n:'Grønne bønner',gram:200},{n:'Rød peberfrugt',gram:100},{n:'Olivenolie',gram:8}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Kyllingebryst (rå)',gram:300},{n:'Grønne bønner',gram:200},{n:'Rød peberfrugt',gram:100},{n:'Olivenolie',gram:8}]},
       {name:'Snack',       time:'16:00', items:[{n:'Hytteost 0%',gram:150},{n:'Agurk',gram:100}]},
       {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:180},{n:'Asparges',gram:200},{n:'Spinat',gram:100},{n:'Olivenolie',gram:8}]},
     ],
@@ -1196,37 +1197,37 @@ const MEAL_POOLS = {
     // Variant A – Rugbrød & laks
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Havregryn',gram:80},{n:'Skyr (naturel)',gram:150},{n:'Banan',gram:100},{n:'Mandler',gram:20}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Rugbrød',gram:80},{n:'Kyllingebryst (kogt)',gram:150},{n:'Avocado',gram:60},{n:'Tomater',gram:80}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Rugbrød',gram:80},{n:'Kyllingebryst (rå)',gram:205},{n:'Avocado',gram:60},{n:'Tomater',gram:80}]},
       {name:'Snack',       time:'16:00', items:[{n:'Græksk yoghurt 2%',gram:150},{n:'Jordbær',gram:100}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:150},{n:'Hvid ris (kogt)',gram:160},{n:'Asparges',gram:100},{n:'Olivenolie',gram:8}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:150},{n:'Hvid ris (rå)',gram:55},{n:'Asparges',gram:100},{n:'Olivenolie',gram:8}]},
     ],
     // Variant B – Pasta & kalkun
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Havregrød (lavet med vand)',gram:280},{n:'Æg (helt)',gram:100},{n:'Blåbær',gram:80}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Fuldkornspasta (kogt)',gram:180},{n:'Kalkun (hakket)',gram:150},{n:'Tomater',gram:100},{n:'Løg',gram:40}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Fuldkornspasta (rå)',gram:65},{n:'Kalkun (hakket)',gram:150},{n:'Tomater',gram:100},{n:'Løg',gram:40}]},
       {name:'Snack',       time:'16:00', items:[{n:'Skyr (naturel)',gram:150},{n:'Banan',gram:80}]},
-      {name:'Aftensmad',   time:'19:00', items:[{n:'Oksekød hakket 5%',gram:150},{n:'Søde kartofler (kogt)',gram:180},{n:'Broccoli',gram:120},{n:'Olivenolie',gram:8}]},
+      {name:'Aftensmad',   time:'19:00', items:[{n:'Oksekød hakket 5%',gram:150},{n:'Søde kartofler (rå)',gram:190},{n:'Broccoli',gram:120},{n:'Olivenolie',gram:8}]},
     ],
     // Variant C – Græksk yoghurt & kyllingelår
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Græksk yoghurt 2%',gram:200},{n:'Havregryn',gram:60},{n:'Jordbær',gram:100},{n:'Honning',gram:10}]},
-      {name:'Frokost',     time:'13:00', items:[{n:'Kyllingelår (kogt)',gram:160},{n:'Brun ris (kogt)',gram:160},{n:'Rød peberfrugt',gram:100},{n:'Champignoner',gram:80}]},
+      {name:'Frokost',     time:'13:00', items:[{n:'Kyllingelår (rå, u. skind)',gram:255},{n:'Brun ris (rå)',gram:55},{n:'Rød peberfrugt',gram:100},{n:'Champignoner',gram:80}]},
       {name:'Snack',       time:'16:00', items:[{n:'Hytteost',gram:150},{n:'Mandler',gram:20}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:160},{n:'Kartofler (kogt)',gram:180},{n:'Spinat',gram:100},{n:'Olivenolie',gram:8}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:160},{n:'Kartofler (rå)',gram:205},{n:'Spinat',gram:100},{n:'Olivenolie',gram:8}]},
     ],
     // Variant D – Asiatisk inspireret
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Havregryn',gram:80},{n:'Skyr (naturel)',gram:150},{n:'Mango',gram:100},{n:'Chiafrø',gram:15}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Hvid ris (kogt)',gram:180},{n:'Kyllingebryst (kogt)',gram:150},{n:'Edamame (kogt)',gram:100},{n:'Sojasauce',gram:15}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Hvid ris (rå)',gram:65},{n:'Kyllingebryst (rå)',gram:205},{n:'Edamame (rå, skallet)',gram:100},{n:'Sojasauce',gram:15}]},
       {name:'Snack',       time:'16:00', items:[{n:'Græksk yoghurt 2%',gram:150},{n:'Kiwi',gram:100}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:160},{n:'Hvid ris (kogt)',gram:160},{n:'Bok choy',gram:150},{n:'Sesamolie',gram:8}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:160},{n:'Hvid ris (rå)',gram:55},{n:'Bok choy',gram:150},{n:'Sesamolie',gram:8}]},
     ],
     // Variant E – Middelhavs-stil
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Rugbrød',gram:80},{n:'Æg (helt)',gram:100},{n:'Avocado',gram:70},{n:'Tomater',gram:80}]},
-      {name:'Frokost',     time:'13:00', items:[{n:'Kikærter (kogt)',gram:200},{n:'Fuldkornspasta (kogt)',gram:160},{n:'Spinat',gram:100},{n:'Feta',gram:30},{n:'Olivenolie',gram:10}]},
+      {name:'Frokost',     time:'13:00', items:[{n:'Kikærter (rå, tørrede)',gram:85},{n:'Fuldkornspasta (rå)',gram:60},{n:'Spinat',gram:100},{n:'Feta',gram:30},{n:'Olivenolie',gram:10}]},
       {name:'Snack',       time:'16:00', items:[{n:'Hytteost',gram:150},{n:'Hindbær',gram:100}]},
-      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingelår (kogt)',gram:170},{n:'Søde kartofler (kogt)',gram:170},{n:'Zucchini',gram:120},{n:'Olivenolie',gram:8}]},
+      {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingelår (rå, u. skind)',gram:270},{n:'Søde kartofler (rå)',gram:180},{n:'Zucchini',gram:120},{n:'Olivenolie',gram:8}]},
     ],
   ],
 };
@@ -1250,7 +1251,7 @@ let lastSaved = { workout: null, diet: null, tilskud: null };
 let savedSnapshot = { workout: null, diet: null, tilskud: null };
 
 function currentWorkoutPlan() {
-  return { program_name: wp.program_name, days: wp.days.map(d => ({ day: d.day, name: d.name, exercises: d.exercises.filter(e => e.name.trim()) })) };
+  return { program_name: wp.program_name, notes: wp.notes || '', days: wp.days.map(d => ({ day: d.day, name: d.name, exercises: d.exercises.filter(e => e.name.trim()) })) };
 }
 function currentDietPlan() {
   return {
@@ -2355,6 +2356,10 @@ function renderTræningTab() {
       <label class="label">Program navn</label>
       <input class="input" id="wp-name" value="${escHtml(wp.program_name)}">
     </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label class="label">Progression / periodisering (valgfrit)</label>
+      <textarea class="input" id="wp-notes" rows="2" placeholder="Fx: Uge 1-4 lineær progression (+2,5kg når alle sæt rammes), uge 5 deload -40% volumen." style="resize:vertical;font-size:.85rem">${escHtml(wp.notes || '')}</textarea>
+    </div>
     <div style="margin-bottom:20px">
       <div class="label" style="margin-bottom:8px">Aktive træningsdage</div>
       <div class="day-toggle-row">
@@ -2418,6 +2423,8 @@ function renderWorkoutEditor() {
 function syncWorkoutDOM() {
   const wpNameEl = document.getElementById('wp-name');
   if (wpNameEl) wp.program_name = wpNameEl.value;
+  const wpNotesEl = document.getElementById('wp-notes');
+  if (wpNotesEl) wp.notes = wpNotesEl.value;
   const dayOrder = Array.from(document.querySelectorAll('#workout-editor [data-day]')).map(el => el.dataset.day);
   if (dayOrder.length) wp.days.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
   document.querySelectorAll('[data-day]').forEach(dayEl => {
@@ -2469,6 +2476,7 @@ async function saveWorkoutPlan() {
     syncWorkoutDOM();
     const plan = {
       program_name: wp.program_name,
+      notes: wp.notes || '',
       days: wp.days.map(d => ({
         day: d.day, name: d.name,
         exercises: d.exercises.filter(e => e.name.trim())
@@ -3032,6 +3040,10 @@ function openGenerator() {
         <label class="label">Din instruks til AI'en (valgfrit)</label>
         <textarea class="input" id="gen-coach-note" rows="3" placeholder="Eks: Undgå mælkeprodukter. Fokus på compound øvelser..." style="resize:vertical;font-size:.85rem">${escHtml(autoNote)}</textarea>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);margin-bottom:12px;cursor:pointer">
+        <input type="checkbox" id="gen-mealprep" style="width:auto">
+        Meal-prep: samme mad til frokost og aftensmad (batch-madlavning) – ellers laver AI'en to forskellige måltider
+      </label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button class="btn btn-gold btn-full" id="claude-diet-btn" onclick="runClaudeDietGenerator()">🥗 AI Kostplan</button>
         <button class="btn btn-gold btn-full" id="claude-workout-btn" onclick="runClaudeWorkoutGenerator()">💪 AI Træningsplan</button>
@@ -3298,13 +3310,17 @@ async function runClaudeDietGenerator() {
   const nMeals = +document.getElementById('gen-n-meals').value || 4;
   const goalLabel = m.goal === 'cut' ? 'Vægttab' : m.goal === 'bulk' ? 'Muskelmasse' : 'Vedligeholdelse';
 
-  // Frokost & Aftensmad tæller som 2 i den daglige total (spises 2 gange).
-  // Snacks = nMeals - 3 (morgenmad=1 + frokost=1 + aftensmad=1 → F&A slot dækker de to)
+  // Snacks = nMeals - 3 (morgenmad + frokost + aftensmad tæller som de første 3)
   const snackCount = Math.max(0, nMeals - 3);
+  const mealPrep = document.getElementById('gen-mealprep')?.checked;
 
-  const slotList = [
+  const slotList = mealPrep ? [
     { slot: 'Morgenmad',        time: '07:30', extra: '' },
     { slot: 'Frokost & Aftensmad', time: '12:30', extra: 'MEALPREP: PRÆCIS SAMME ret spises til BÅDE frokost (12:30) OG aftensmad (18:00). Klienten laver én stor batch søndag. Kalorietallet for dette slot GANGES MED 2 i den daglige total.' },
+  ] : [
+    { slot: 'Morgenmad', time: '07:30', extra: '' },
+    { slot: 'Frokost',   time: '12:30', extra: '' },
+    { slot: 'Aftensmad', time: '18:30', extra: '' },
   ];
   for (let i = 0; i < snackCount; i++) {
     slotList.push({ slot: snackCount > 1 ? `Snack ${i+1}` : 'Snack', time: i === 0 ? '15:00' : '21:00', extra: 'Kræver NUL tilberedning. Klar til at spise.' });
@@ -3341,6 +3357,8 @@ OPGAVE: Generer PRÆCIS 3 VALGMULIGHEDER per måltidsslot. Hver option skal:
 - Passe til klientens madlavningsniveau (${d.cooking_level || 'middel'})
 - Afrunde gram til nærmeste 5g
 
+Tænk som en rigtig kok, ikke som en skabelon: brug krydderier, saucer, marinader og forskellige tilberedningsmetoder (bagt, stegt, wok, bowl, gryde) så optionerne reelt smager forskelligt – ikke bare samme protein+kulhydrat+grønt med byttet navn. Hvis Frokost og Aftensmad er separate slots (ikke meal-prep), skal de være to tydeligt forskellige måltider – ikke bare samme ret to gange. Variér gerne køkkenstil (dansk, asiatisk, mexicansk, middelhavs osv.) på tværs af slots, medmindre coach-noter siger andet.
+
 Kalorier per slot skal tilsammen matche ${m.cal} kcal/dag.
 
 SLOTS:
@@ -3375,7 +3393,7 @@ ${allFoods().map(f => f.n).join(', ')}`;
         'content-type': 'application/json',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000, system: 'Du er Hamza El – dansk online coach. Returner altid præcis det JSON-format der beskrives. Ingen forklaringer, ingen markdown, kun valid JSON.', messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 8000, system: 'Du er Hamza El – dansk online coach. Returner altid præcis det JSON-format der beskrives. Ingen forklaringer, ingen markdown, kun valid JSON.', messages: [{ role: 'user', content: prompt }] })
     });
 
     if (!res.ok) {
@@ -3563,20 +3581,16 @@ async function runClaudeWorkoutGenerator() {
     ul4: 'Upper/Lower 4x/uge — Mandag (Upper A) + Tirsdag (Lower A) + Torsdag (Upper B) + Fredag (Lower B). Upper: bryst, ryg, skuldre, arme. Lower: ben, glutes, core.',
     ul5: 'Upper/Lower 5x/uge — Mandag (Upper A) + Tirsdag (Lower A) + Onsdag (Upper B) + Torsdag (Lower B) + Fredag (Upper C). Upper: bryst, ryg, skuldre, arme. Lower: ben, glutes, core.',
     ppl6: 'Push/Pull/Legs 6x/uge — Mandag (Push A) + Tirsdag (Pull A) + Onsdag (Legs A) + Torsdag (Push B) + Fredag (Pull B) + Lørdag (Legs B). Push: bryst, skuldre, triceps. Pull: ryg, biceps. Legs: quadriceps, hamstrings, glutes, læg.',
-    custom: 'Custom split — tilpas dagene frit.',
   };
   const exp = +(d.years_training || 0);
   const level = exp === 0 ? 'Begynder' : exp <= 2 ? 'Let øvet' : exp <= 5 ? 'Øvet' : 'Avanceret';
 
-  if (split === 'custom') {
-    document.getElementById('gen-modal').classList.add('hidden');
-    switchTab('traening', null);
-    toast('Custom: vælg dage manuelt og tilføj øvelser 💪', 'ok');
-    btn.disabled = false; btn.innerHTML = origText;
-    return;
-  }
-
   const coachNote = document.getElementById('gen-coach-note')?.value.trim();
+  const isCustom = split === 'custom';
+  if (isCustom) {
+    const prefDays = parseInt(d.trainingDays) || 3;
+    splitDescriptions.custom = `Custom — INGEN foruddefineret struktur. Design selv et fornuftigt split (antal dage, ugedage og muskelgruppe-fordeling) ud fra klientens niveau (${level}), mål og evt. coach-noter nedenfor. Klienten har angivet ca. ${prefDays} træningsdage/uge som udgangspunkt, men brug din faglige vurdering.${!coachNote ? ' Ingen coach-note er angivet — brug et velafprøvet split der passer til niveauet (fx fullbody for begyndere, upper/lower eller PPL for øvede).' : ''}`;
+  }
   const clientTrainCtx = [
     d.primary_goal ? `Mål: ${d.primary_goal}` : '',
     d.target_weight ? `Målvægt: ${d.target_weight} kg` : '',
@@ -3595,17 +3609,19 @@ KLIENTPROFIL:
 ${clientTrainCtx}
 ${coachNote ? `\n⚡ COACH-NOTER (TOPPRIORITÉT – LÆS NØJE OG FØLG KREATIVT):\n${coachNote}\n` : ''}
 REGLER:
-1. Følg splittet PRÆCIST – muskelgrupper og dage som beskrevet
+1. ${isCustom ? 'Du bestemmer selv dage og muskelgruppe-fordeling ud fra beskrivelsen ovenfor' : 'Følg splittets dage og muskelgruppe-fordeling som beskrevet'}
 2. Niveau ${level}: ${exp === 0 ? 'Kun compound-øvelser, lær bevægelserne' : exp <= 2 ? 'Compound + basis isolation, 3-4 øvelser per pas' : exp <= 5 ? 'Compound + isolations, periodisering, 4-6 øvelser' : 'Avanceret variation, højt volumen, 5-7 øvelser'}
 3. Skader: INGEN øvelser der belaster skadet område – erstat intelligente alternativer
 4. Reps passer til mål: styrke = 3-6, muskelmasse = 6-12, definition = 12-20
-5. A/B/C dage i samme split SKAL have HELT ANDRE øvelser – absolutt ingen gentagelse
+5. Variér øvelsesvalget mellem A/B/C-dage i samme split så programmet ikke føles som gentagelse. Det er OK og ofte klogt bevidst at gentage et par nøgle-løft (fx squat, bænkpres, dødløft) på tværs af dage hvis det tjener klientens progression – brug din faglige vurdering, ikke en mekanisk regel.
 6. Pauser: tunge compound = 180-240s, moderate = 90-120s, isolation = 60-90s
 7. Brug NØJAGTIGE navne fra øvelseslisten
+8. Overvej progression hen over ugerne (stigende volumen/intensitet, evt. planlagt deload) og opsummer den i "progression_notes" – kort og konkret, så coachen kan give klienten en klar retning fremadrettet i stedet for bare en statisk øvelsesliste.
 
 Returner KUN valid JSON:
 {
   "program_name": "Programnavn der afspejler klientens mål",
+  "progression_notes": "Kort, konkret progressionsplan hen over ugerne",
   "days": [
     {
       "day": "Mandag",
@@ -3630,7 +3646,7 @@ ${allExercises().map(e => e.n).join(', ')}`;
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 4096,
         system: 'Du er Hamza El – dansk online coach. Returner altid præcis det JSON-format der beskrives. Ingen forklaringer, ingen markdown, kun valid JSON.',
         messages: [{ role: 'user', content: prompt }]
@@ -3652,6 +3668,7 @@ ${allExercises().map(e => e.n).join(', ')}`;
     exCnt = 0;
     const exBank = allExercises();
     wp.program_name = json.program_name || 'AI Træningsplan';
+    wp.notes = json.progression_notes || '';
     wp.days = json.days.map(day => ({
       day: day.day,
       name: day.name,
