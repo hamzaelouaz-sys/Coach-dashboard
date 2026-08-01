@@ -795,17 +795,17 @@ const FOOD_BANK = [
   {n:'Solsikkefrø',g:'Fedt',cal:584,pro:21,carb:20,fat:51},
   {n:'Græskarkerner',g:'Fedt',cal:559,pro:30,carb:11,fat:49},
   // ─── Bælgfrugter ─────────────────────────────────────────────────────────
-  {n:'Sorte bønner (rå, tørrede)',g:'Bælgfrugt',cal:341,pro:21.6,carb:62,fat:1.4},
-  {n:'Kikærter (rå, tørrede)',g:'Bælgfrugt',cal:378,pro:20.5,carb:63,fat:6},
+  {n:'Sorte bønner (dåse, afdryppet)',g:'Bælgfrugt',cal:132,pro:8.9,carb:24,fat:0.5},
+  {n:'Kikærter (dåse, afdryppet)',g:'Bælgfrugt',cal:164,pro:8.9,carb:27,fat:2.6},
   {n:'Røde linser (rå, tørrede)',g:'Bælgfrugt',cal:352,pro:24.6,carb:63,fat:1.1},
   {n:'Grønne linser (rå, tørrede)',g:'Bælgfrugt',cal:353,pro:25.8,carb:60,fat:1.1},
-  {n:'Edamame (rå, skallet)',g:'Bælgfrugt',cal:122,pro:11,carb:10,fat:5.2},
+  {n:'Edamame (frosne, skallede)',g:'Bælgfrugt',cal:122,pro:11,carb:10,fat:5.2},
   {n:'Tofu (fast)',g:'Bælgfrugt',cal:76,pro:8,carb:1.9,fat:4.2},
   {n:'Tofu (silke)',g:'Bælgfrugt',cal:55,pro:5,carb:2.9,fat:2.5},
   {n:'Hummus',g:'Bælgfrugt',cal:177,pro:4.9,carb:14,fat:11},
-  {n:'Hvide bønner (rå, tørrede)',g:'Bælgfrugt',cal:337,pro:23.4,carb:61,fat:0.9},
-  {n:'Pintobønner (rå, tørrede)',g:'Bælgfrugt',cal:347,pro:21.4,carb:63,fat:1.2},
-  {n:'Sojabønner (rå, tørrede)',g:'Bælgfrugt',cal:446,pro:36.5,carb:30,fat:20},
+  {n:'Hvide bønner (dåse, afdryppet)',g:'Bælgfrugt',cal:139,pro:9.7,carb:25,fat:0.4},
+  {n:'Pintobønner (dåse, afdryppet)',g:'Bælgfrugt',cal:143,pro:9,carb:26,fat:0.6},
+  {n:'Sojabønner (kogte)',g:'Bælgfrugt',cal:173,pro:17,carb:10,fat:9},
   {n:'Splittede ærter (rå, tørrede)',g:'Bælgfrugt',cal:341,pro:25,carb:61,fat:1.2},
   // ─── Andet ───────────────────────────────────────────────────────────────
   {n:'Honning',g:'Andet',cal:304,pro:0.3,carb:82,fat:0},
@@ -1150,7 +1150,7 @@ const MEAL_POOLS = {
     // Variant E – Vegetarisk bulk
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Havregryn',gram:120},{n:'Proteinpulver (ærte)',gram:30},{n:'Banan',gram:120},{n:'Jordnødder',gram:25}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Quinoa (rå)',gram:65},{n:'Kikærter (rå, tørrede)',gram:85},{n:'Rød peberfrugt',gram:100},{n:'Spinat',gram:100},{n:'Avocado',gram:80}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Quinoa (rå)',gram:65},{n:'Kikærter (dåse, afdryppet)',gram:200},{n:'Rød peberfrugt',gram:100},{n:'Spinat',gram:100},{n:'Avocado',gram:80}]},
       {name:'Snack',       time:'16:00', items:[{n:'Skyr (naturel)',gram:200},{n:'Solsikkefrø',gram:20},{n:'Blåbær',gram:100}]},
       {name:'Aftensmad',   time:'18:30', items:[{n:'Tofu (fast)',gram:200},{n:'Hvid ris (rå)',gram:70},{n:'Broccoli',gram:150},{n:'Sojasauce',gram:15},{n:'Sesamolie',gram:8}]},
       {name:'Aften snack', time:'21:00', items:[{n:'Hytteost',gram:200},{n:'Mandler',gram:30}]},
@@ -1218,14 +1218,14 @@ const MEAL_POOLS = {
     // Variant D – Asiatisk inspireret
     [
       {name:'Morgenmad',   time:'07:00', items:[{n:'Havregryn',gram:80},{n:'Skyr (naturel)',gram:150},{n:'Mango',gram:100},{n:'Chiafrø',gram:15}]},
-      {name:'Frokost',     time:'12:30', items:[{n:'Hvid ris (rå)',gram:65},{n:'Kyllingebryst (rå)',gram:205},{n:'Edamame (rå, skallet)',gram:100},{n:'Sojasauce',gram:15}]},
+      {name:'Frokost',     time:'12:30', items:[{n:'Hvid ris (rå)',gram:65},{n:'Kyllingebryst (rå)',gram:205},{n:'Edamame (frosne, skallede)',gram:100},{n:'Sojasauce',gram:15}]},
       {name:'Snack',       time:'16:00', items:[{n:'Græksk yoghurt 2%',gram:150},{n:'Kiwi',gram:100}]},
       {name:'Aftensmad',   time:'18:30', items:[{n:'Laks (fersk)',gram:160},{n:'Hvid ris (rå)',gram:55},{n:'Bok choy',gram:150},{n:'Sesamolie',gram:8}]},
     ],
     // Variant E – Middelhavs-stil
     [
       {name:'Morgenmad',   time:'07:30', items:[{n:'Rugbrød',gram:80},{n:'Æg (helt)',gram:100},{n:'Avocado',gram:70},{n:'Tomater',gram:80}]},
-      {name:'Frokost',     time:'13:00', items:[{n:'Kikærter (rå, tørrede)',gram:85},{n:'Fuldkornspasta (rå)',gram:60},{n:'Spinat',gram:100},{n:'Feta',gram:30},{n:'Olivenolie',gram:10}]},
+      {name:'Frokost',     time:'13:00', items:[{n:'Kikærter (dåse, afdryppet)',gram:200},{n:'Fuldkornspasta (rå)',gram:60},{n:'Spinat',gram:100},{n:'Feta',gram:30},{n:'Olivenolie',gram:10}]},
       {name:'Snack',       time:'16:00', items:[{n:'Hytteost',gram:150},{n:'Hindbær',gram:100}]},
       {name:'Aftensmad',   time:'18:30', items:[{n:'Kyllingelår (rå, u. skind)',gram:270},{n:'Søde kartofler (rå)',gram:180},{n:'Zucchini',gram:120},{n:'Olivenolie',gram:8}]},
     ],
