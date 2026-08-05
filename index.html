@@ -2043,6 +2043,7 @@ function renderMealCard(meal) {
         <input class="input m-name" value="${escHtml(meal.name)}" placeholder="Måltidsnavn" style="max-width:180px;flex-shrink:0">
         <input class="input m-time" type="time" value="${meal.time||'12:00'}" style="width:105px;flex-shrink:0">
         <div class="meal-ed-totals">${totals.cal} kcal &bull; ${totals.pro}g P &bull; ${totals.carb}g K &bull; ${totals.fat}g F</div>
+        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();duplicateMeal(${meal.id})">📋 Kopier</button>
         <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeMeal(${meal.id})">✕ Fjern</button>
       </div>
       <div style="overflow-x:auto">
@@ -2122,6 +2123,19 @@ function addMeal() {
 function removeMeal(id) {
   dp.meals = dp.meals.filter(m => m.id !== id);
   renderDietEditor();
+}
+
+function duplicateMeal(mealId) {
+  const src = dp.meals.find(m => m.id === mealId);
+  if (!src) return;
+  dp.meals.push({
+    ...src,
+    id: ++mealCnt,
+    name: src.name + ' (kopi)',
+    items: (src.items || []).map(i => ({ ...i, id: ++itemCnt })),
+  });
+  renderDietEditor();
+  toast(`${src.name}: kopieret ✓`, 'ok');
 }
 
 function addItem(mealId) {
