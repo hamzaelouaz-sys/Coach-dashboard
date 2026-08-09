@@ -263,6 +263,10 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5L3.5 13.5a4.95 4.95 0 117-7l7 7a4.95 4.95 0 11-7 7z"/><path d="M8.5 8.5l7 7"/></svg>
         Tilskudsbank
       </div>
+      <div class="nav-item" id="nav-leads" onclick="showLeadsPage()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Leads
+      </div>
     </nav>
     <div class="sb-footer">
       <div class="coach-chip">
@@ -305,6 +309,10 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
         <button class="filter-tab" data-filter="active" onclick="setFilter('active',this)">Aktive</button>
         <input class="search-input" type="text" id="client-search" placeholder="Søg navn eller email..." oninput="renderClientList()">
       </div>
+      <div id="attention-section" class="hidden" style="margin-bottom:22px">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:10px">⚠ Kræver din opmærksomhed</div>
+        <div id="attention-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
       <div id="activity-section" class="hidden" style="margin-bottom:22px">
         <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:10px">Seneste aktivitet</div>
         <div id="activity-list" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -330,6 +338,7 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
           <span id="d-status-badge"></span>
           <button class="btn btn-success btn-sm hidden" id="btn-approve" onclick="approveClient()">✓ Godkend klient</button>
           <button class="btn btn-danger btn-sm hidden" id="btn-deactivate" onclick="deactivateClient()">Deaktiver</button>
+          <button class="btn btn-outline btn-sm" onclick="sendPushReminder()">🔔 Send påmindelse</button>
           <button class="btn btn-danger btn-sm" onclick="deleteClient()" style="background:rgba(220,53,69,.15);border-color:rgba(220,53,69,.4)">🗑 Slet klient</button>
         </div>
       </div>
@@ -422,6 +431,38 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
           <table class="item-table">
             <thead><tr><th>Tilskud</th><th>Dosis</th><th>Tidspunkt</th><th>Note</th><th></th></tr></thead>
             <tbody id="supp-bank-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADS -->
+    <div id="pg-leads" class="hidden page-wrap">
+      <div class="card" style="margin-bottom:18px">
+        <div style="font-size:.85rem;font-weight:700;margin-bottom:14px">Tilføj lead</div>
+        <div style="display:grid;grid-template-columns:1.4fr 1.2fr 1fr 1fr 1.6fr auto;gap:10px;align-items:end">
+          <div class="form-group" style="margin:0"><label class="label">Navn</label><input class="input" id="nl-name" placeholder="F.eks. Anders Jensen"></div>
+          <div class="form-group" style="margin:0"><label class="label">Kontakt</label><input class="input" id="nl-contact" placeholder="Tlf. eller email"></div>
+          <div class="form-group" style="margin:0"><label class="label">Status</label>
+            <select class="input" id="nl-status">
+              <option value="ny">Ny</option>
+              <option value="kontaktet">Kontaktet</option>
+              <option value="interesseret">Interesseret</option>
+              <option value="afvist">Afvist</option>
+              <option value="konverteret">Konverteret</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0"><label class="label">Kilde</label><input class="input" id="nl-kilde" placeholder="F.eks. Instagram"></div>
+          <div class="form-group" style="margin:0"><label class="label">Note</label><input class="input" id="nl-note" placeholder="Valgfri"></div>
+          <button class="btn btn-gold" onclick="addLead()">Tilføj</button>
+        </div>
+      </div>
+      <div class="card">
+        <input class="input" id="lead-search" placeholder="Søg i leads..." oninput="renderLeadsPage()" style="max-width:320px;margin-bottom:16px">
+        <div style="overflow-x:auto">
+          <table class="item-table">
+            <thead><tr><th>Navn</th><th>Kontakt</th><th>Status</th><th>Kilde</th><th>Note</th><th></th></tr></thead>
+            <tbody id="lead-rows"></tbody>
           </table>
         </div>
       </div>
@@ -580,12 +621,87 @@ CREATE POLICY "messages_access" ON messages FOR ALL
   WITH CHECK (
     (auth.uid() = user_id AND sender = 'client')
     OR (auth.email() = 'hamzaelouaz@gmail.com' AND sender = 'coach')
-  );</pre>
+  );
+
+-- diet_adherence: klientens daglige selvrapportering af om kostplanen blev fulgt (log only, ingen auto-feedback)
+CREATE TABLE IF NOT EXISTS diet_adherence (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  week_number INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('ja','delvist','nej')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, date)
+);
+ALTER TABLE diet_adherence ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "da_access" ON diet_adherence;
+CREATE POLICY "da_access" ON diet_adherence FOR ALL
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+
+-- leads: simpel CRM-liste over potentielle klienter (ingen bruger-konto endnu, derfor intet user_id)
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  contact TEXT,
+  status TEXT NOT NULL DEFAULT 'ny' CHECK (status IN ('ny','kontaktet','interesseret','afvist','konverteret')),
+  kilde TEXT,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "leads_access" ON leads;
+CREATE POLICY "leads_access" ON leads FOR ALL
+  USING (auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
+
+-- profiles: simpel betalings-status pr. klient (ingen historik-tabel — Hamza har ingen betalende
+-- klienter endnu, så en flad kolonne-løsning er bevidst valgt frem for en relationel payments-tabel)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'ingen_abonnement' CHECK (payment_status IN ('ingen_abonnement','aktiv','forfalden','stoppet'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS next_payment_date DATE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS monthly_price NUMERIC(8,2);
+
+-- progress-photos: skift bucket fra public til privat — billeder tilgås nu via signerede URLs.
+-- De eksisterende RLS-politikker photo_upload/photo_view (kørt tidligere) er allerede korrekt
+-- afgrænset til ejer-eller-coach og kræver ingen ændring — kun bucket-flaget skal ændres.
+UPDATE storage.buckets SET public = false WHERE id = 'progress-photos';
+
+-- push_subscriptions: browser push-endpoints pr. klient (til manuelt coach-udløste påmindelser —
+-- se send-push Edge Function. Ingen automatik/planlægning, kun coach-trykker-en-knap.)
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  keys JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, endpoint)
+);
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "ps_access" ON push_subscriptions;
+CREATE POLICY "ps_access" ON push_subscriptions FOR ALL
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
     </div>
     <div id="diag-result" style="margin-top:12px;font-size:.82rem;line-height:1.8"></div>
+  </div>
+</div>
+
+<!-- KOPIÉR PLAN FRA KLIENT -->
+<div id="copyplan-modal" class="modal-ov hidden">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-hdr">
+      <div class="modal-title">📋 Kopiér plan fra klient</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('copyplan-modal').classList.add('hidden')">✕</button>
+    </div>
+    <div class="form-group"><label class="label">Vælg klient</label>
+      <select class="input" id="copyplan-source"></select>
+    </div>
+    <div id="copyplan-warn" style="font-size:.8rem;color:var(--muted);margin:10px 0"></div>
+    <button class="btn btn-gold" onclick="confirmCopyPlan()">Kopiér →</button>
   </div>
 </div>
 
@@ -1112,6 +1228,70 @@ function renderSuppBankPage() {
     </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><p>${CUSTOM_SUPPS_BANK.length ? 'Ingen match' : 'Ingen tilføjede tilskud endnu — de 5 standard-tilskud vises stadig som hurtig-tilføj hos klienter'}</p></div></td></tr>`;
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// LEADS — simpel CRM-liste over potentielle klienter
+// ════════════════════════════════════════════════════════════════════════════
+let LEADS = [];
+const LEAD_STATUSES = ['ny','kontaktet','interesseret','afvist','konverteret'];
+const LEAD_STATUS_LABELS = { ny:'Ny', kontaktet:'Kontaktet', interesseret:'Interesseret', afvist:'Afvist', konverteret:'Konverteret' };
+
+async function loadLeads() {
+  const { data } = await sb.from('leads').select('*').order('created_at', { ascending: false });
+  LEADS = data || [];
+}
+
+async function addLead() {
+  const name = document.getElementById('nl-name').value.trim();
+  if (!name) { toast('Skriv et navn', 'err'); return; }
+  const row = {
+    name,
+    contact: document.getElementById('nl-contact').value.trim(),
+    status: document.getElementById('nl-status').value,
+    kilde: document.getElementById('nl-kilde').value.trim(),
+    note: document.getElementById('nl-note').value.trim(),
+  };
+  const { data, error } = await sb.from('leads').insert(row).select().single();
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  LEADS.unshift(data);
+  ['nl-name','nl-contact','nl-kilde','nl-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('nl-status').value = 'ny';
+  renderLeadsPage();
+  toast('Lead tilføjet ✓', 'ok');
+}
+
+async function deleteLead(id) {
+  if (!confirm('Slet dette lead?')) return;
+  const { error } = await sb.from('leads').delete().eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  LEADS = LEADS.filter(l => String(l.id) !== String(id));
+  renderLeadsPage();
+}
+
+async function updateLeadStatus(id, status) {
+  const { error } = await sb.from('leads').update({ status }).eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  const l = LEADS.find(x => String(x.id) === String(id));
+  if (l) l.status = status;
+}
+
+function renderLeadsPage() {
+  const q = (document.getElementById('lead-search').value || '').toLowerCase();
+  const rows = LEADS.filter(l => l.name.toLowerCase().includes(q) || (l.contact||'').toLowerCase().includes(q) || (l.kilde||'').toLowerCase().includes(q));
+  document.getElementById('lead-rows').innerHTML = rows.length ? rows.map(l => `
+    <tr>
+      <td>${escHtml(l.name)}</td>
+      <td style="color:var(--muted)">${escHtml(l.contact || '')}</td>
+      <td>
+        <select class="input" style="padding:4px 8px;font-size:.78rem" onchange="updateLeadStatus('${l.id}', this.value)">
+          ${LEAD_STATUSES.map(s => `<option value="${s}"${s === l.status ? ' selected' : ''}>${LEAD_STATUS_LABELS[s]}</option>`).join('')}
+        </select>
+      </td>
+      <td style="color:var(--muted)">${escHtml(l.kilde || '')}</td>
+      <td style="color:var(--dim);font-size:.78rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l.note || '')}</td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteLead('${l.id}')">✕</button></td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><p>${LEADS.length ? 'Ingen match' : 'Ingen leads endnu'}</p></div></td></tr>`;
+}
+
 // ─── Meal Pools (3 varianter pr. mål – vælges ud fra klient-hash) ──────────
 const MEAL_POOLS = {
   bulk: [
@@ -1235,6 +1415,7 @@ const MEAL_POOLS = {
 // ─── State ────────────────────────────────────────────────────────────────
 let coach = null;
 let clients = [];
+let unreadByClient = {}; // cachet af loadAttentionList(), læses synkront af renderClientList() til badges
 let currentFilter = 'alle';
 let currentClient = null;
 let currentClientData = {};
@@ -1350,6 +1531,7 @@ async function bootCoach(user) {
   document.getElementById('c-av').textContent = initials;
   document.getElementById('c-nm').textContent = user.email.split('@')[0];
   await loadBanks();
+  await loadLeads();
   await loadClients();
 }
 
@@ -1416,8 +1598,76 @@ async function loadClients() {
   const pending = clients.filter(c => c.status === 'pending').length;
   document.getElementById('st-total').textContent = clients.length;
   document.getElementById('st-pending').textContent = pending;
+  await loadAttentionList(); // populerer unreadByClient FØR renderClientList(), så badges er klar med det samme
   renderClientList();
   loadDashboardStats();
+}
+
+// Samlet "kræver handling"-liste: klienter med ulæste beskeder, ingen træning logget denne uge,
+// eller intet check-in i lang tid. Sparer coachen for at skulle klikke sig igennem hver klient
+// manuelt for at se hvem der trænger til opfølgning.
+async function loadAttentionList() {
+  const box = document.getElementById('attention-section');
+  const list = document.getElementById('attention-list');
+
+  // Ulæste beskeder hentes uafhængigt af klientstatus — også en klient der stadig afventer
+  // godkendelse kan skrive, og badges på klientkort skal virke uanset. unreadByClient er
+  // modul-level så renderClientList() kan læse den synkront uden ekstra query.
+  const { data: unreadMsgs } = await sb.from('messages').select('user_id').eq('sender', 'client').eq('read', false);
+  unreadByClient = {};
+  (unreadMsgs || []).forEach(m => { unreadByClient[m.user_id] = (unreadByClient[m.user_id] || 0) + 1; });
+
+  if (!box || !list) return;
+
+  const items = [];
+  clients.forEach(c => {
+    const unread = unreadByClient[c.id] || 0;
+    const name = c.full_name || c.email?.split('@')[0] || 'Ukendt';
+    if (unread > 0) {
+      items.push({ client: c, name, text: `💬 ${unread} ulæst${unread > 1 ? 'e' : ''} besked${unread > 1 ? 'er' : ''}`, prio: 1 });
+    }
+    if (c.payment_status === 'forfalden') {
+      items.push({ client: c, name, text: '💳 Betaling forfalden', prio: 1 });
+    }
+  });
+
+  const activeClients = clients.filter(c => c.status === 'active');
+  if (activeClients.length) {
+    const now = new Date();
+    const soy = new Date(now.getFullYear(), 0, 1);
+    const thisWeek = Math.ceil(((now - soy) / 86400000 + soy.getDay() + 1) / 7);
+    const thisYear = now.getFullYear();
+    const activeIds = activeClients.map(c => c.id);
+
+    const [{ data: wkComp }, { data: allCheckins }] = await Promise.all([
+      sb.from('workout_completions').select('user_id').eq('week_number', thisWeek).eq('year', thisYear).in('user_id', activeIds),
+      sb.from('checkins').select('user_id, created_at').in('user_id', activeIds).order('created_at', { ascending: false })
+    ]);
+
+    const trainedThisWeek = new Set((wkComp || []).map(w => w.user_id));
+    const lastCheckin = {};
+    (allCheckins || []).forEach(c => { if (!lastCheckin[c.user_id]) lastCheckin[c.user_id] = c.created_at; });
+
+    activeClients.forEach(c => {
+      const name = c.full_name || c.email?.split('@')[0] || 'Ukendt';
+      if (!trainedThisWeek.has(c.id)) items.push({ client: c, name, text: '💪 Ingen træning logget denne uge', prio: 2 });
+      const lc = lastCheckin[c.id];
+      const daysSince = lc ? Math.floor((now - new Date(lc)) / 86400000) : null;
+      if (daysSince === null || daysSince > 9) items.push({ client: c, name, text: daysSince === null ? '📋 Har aldrig sendt check-in' : `📋 Ingen check-in i ${daysSince} dage`, prio: 3 });
+    });
+  }
+  items.sort((a, b) => a.prio - b.prio);
+
+  if (!items.length) { box.classList.add('hidden'); return; }
+  list.innerHTML = items.map(it => `
+    <div style="background:var(--surf);border:1px solid rgba(220,53,69,.25);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color var(--trans)" onmouseover="this.style.borderColor='rgba(220,53,69,.5)'" onmouseout="this.style.borderColor='rgba(220,53,69,.25)'" onclick="openClient('${it.client.id}')">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0">${it.name.charAt(0).toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.88rem;font-weight:600">${escHtml(it.name)}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:2px">${it.text}</div>
+      </div>
+    </div>`).join('');
+  box.classList.remove('hidden');
 }
 
 function setFilter(filter, el) {
@@ -1455,7 +1705,9 @@ function renderClientList() {
     return `
       <div class="client-card" onclick="openClient('${c.id}')">
         <div class="cc-top">
-          <div class="cc-avatar">${initials}</div>
+          <div class="cc-avatar" style="position:relative">${initials}
+            ${unreadByClient[c.id] ? `<span style="position:absolute;top:-4px;right:-4px;background:var(--gold);color:#000;border-radius:10px;min-width:16px;height:16px;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surf)">${unreadByClient[c.id]}</span>` : ''}
+          </div>
           <div style="flex:1;min-width:0">
             <div class="cc-name">${escHtml(name)}</div>
             <div class="cc-email">${escHtml(c.email || '')}</div>
@@ -1556,13 +1808,14 @@ async function openClient(id) {
   document.getElementById('btn-deactivate').classList.toggle('hidden', !isActive);
 
   // Load all client data — use limit(1) to avoid maybeSingle() failing on duplicate rows
-  const [intakeRes, cdRes, { data: weightLog }, { data: checkins }, { data: completions }, { data: strengthLogs }] = await Promise.all([
+  const [intakeRes, cdRes, { data: weightLog }, { data: checkins }, { data: completions }, { data: strengthLogs }, { data: dietAdherence }] = await Promise.all([
     sb.from('intake_forms').select('*').eq('user_id', id).order('submitted_at', { ascending: false }).limit(1),
     sb.from('client_data').select('*').eq('user_id', id).order('updated_at', { ascending: false }).limit(1),
     sb.from('weight_log').select('*').eq('user_id', id).order('date', { ascending: false }).limit(60),
     sb.from('checkins').select('*').eq('user_id', id).order('created_at', { ascending: false }),
     sb.from('workout_completions').select('week_number,year,day_name').eq('user_id', id).order('created_at', { ascending: false }).limit(60),
-    sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500)
+    sb.from('strength_logs').select('exercise_name,day_name,week_number,year,set_number,weight_kg,reps,created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(500),
+    sb.from('diet_adherence').select('date,week_number,year,status').eq('user_id', id).order('date', { ascending: false }).limit(120)
   ]);
 
   const intake = intakeRes.data?.[0] || null;
@@ -1581,7 +1834,8 @@ async function openClient(id) {
     weightLog: weightLog || [],
     checkins: checkins || [],
     completions: completions || [],
-    strengthLogs: strengthLogs || []
+    strengthLogs: strengthLogs || [],
+    dietAdherence: dietAdherence || []
   };
 
   // Initialize diet plan editor
@@ -1645,23 +1899,70 @@ async function openClient(id) {
     });
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// KOPIÉR PLAN FRA KLIENT
+// ════════════════════════════════════════════════════════════════════════════
+let copyPlanKind = null; // 'diet' | 'workout'
+
+function openCopyPlan(kind) {
+  copyPlanKind = kind;
+  const sel = document.getElementById('copyplan-source');
+  sel.innerHTML = clients.filter(c => c.id !== currentClient.id)
+    .map(c => `<option value="${c.id}">${escHtml(c.full_name || c.email || 'Ukendt')}</option>`).join('');
+  document.getElementById('copyplan-warn').textContent = kind === 'diet'
+    ? 'Overskriver den nuværende (ugemte) kostplan i editoren — husk selv at trykke Gem bagefter.'
+    : 'Overskriver den nuværende (ugemte) træningsplan i editoren — husk selv at trykke Gem bagefter.';
+  document.getElementById('copyplan-modal').classList.remove('hidden');
+}
+
+async function confirmCopyPlan() {
+  const srcId = document.getElementById('copyplan-source').value;
+  if (!srcId) return;
+  const { data, error } = await sb.from('client_data').select('program').eq('user_id', srcId).order('updated_at', { ascending: false }).limit(1);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  let prog = {};
+  try { prog = JSON.parse(data?.[0]?.program || '{}'); } catch(e) {}
+
+  if (copyPlanKind === 'diet') {
+    const src = prog.diet;
+    if (!src) { toast('Denne klient har ingen kostplan endnu', 'err'); return; }
+    dp = { ...src, meals: (src.meals || []).map(m => ({
+      ...m, id: ++mealCnt,
+      items: (m.items || []).map(it => ({ ...it, id: ++itemCnt }))
+    })) };
+    renderKostplanTab();
+  } else {
+    const src = prog.workout;
+    if (!src) { toast('Denne klient har ingen træningsplan endnu', 'err'); return; }
+    wp = { ...src, days: (src.days || []).map(d => ({
+      ...d, exercises: (d.exercises || []).map(e => ({ ...e, id: ++exCnt }))
+    })) };
+    renderTræningTab();
+  }
+  document.getElementById('copyplan-modal').classList.add('hidden');
+  toast('Plan kopieret — husk at trykke Gem', 'ok');
+}
+
 function showClientList() {
   document.getElementById('pg-client').classList.add('hidden');
   document.getElementById('pg-foods').classList.add('hidden');
   document.getElementById('pg-exercises').classList.add('hidden');
   document.getElementById('pg-supplements').classList.add('hidden');
+  document.getElementById('pg-leads').classList.add('hidden');
   document.getElementById('pg-clients').classList.remove('hidden');
   document.getElementById('main-title').textContent = 'Klienter';
   document.getElementById('nav-clients').classList.add('active');
   document.getElementById('nav-foods').classList.remove('active');
   document.getElementById('nav-exercises').classList.remove('active');
   document.getElementById('nav-supplements').classList.remove('active');
+  document.getElementById('nav-leads').classList.remove('active');
   if (weightChart) { weightChart.destroy(); weightChart = null; }
 }
 
 function showBankPage(page) {
   document.getElementById('pg-clients').classList.add('hidden');
   document.getElementById('pg-client').classList.add('hidden');
+  document.getElementById('pg-leads').classList.add('hidden');
   document.getElementById('pg-foods').classList.toggle('hidden', page !== 'foods');
   document.getElementById('pg-exercises').classList.toggle('hidden', page !== 'exercises');
   document.getElementById('pg-supplements').classList.toggle('hidden', page !== 'supplements');
@@ -1670,8 +1971,26 @@ function showBankPage(page) {
   document.getElementById('nav-foods').classList.toggle('active', page === 'foods');
   document.getElementById('nav-exercises').classList.toggle('active', page === 'exercises');
   document.getElementById('nav-supplements').classList.toggle('active', page === 'supplements');
+  document.getElementById('nav-leads').classList.remove('active');
   if (weightChart) { weightChart.destroy(); weightChart = null; }
   if (page === 'foods') renderFoodBankPage(); else if (page === 'exercises') renderExBankPage(); else renderSuppBankPage();
+}
+
+function showLeadsPage() {
+  document.getElementById('pg-clients').classList.add('hidden');
+  document.getElementById('pg-client').classList.add('hidden');
+  document.getElementById('pg-foods').classList.add('hidden');
+  document.getElementById('pg-exercises').classList.add('hidden');
+  document.getElementById('pg-supplements').classList.add('hidden');
+  document.getElementById('pg-leads').classList.remove('hidden');
+  document.getElementById('main-title').textContent = 'Leads';
+  document.getElementById('nav-clients').classList.remove('active');
+  document.getElementById('nav-foods').classList.remove('active');
+  document.getElementById('nav-exercises').classList.remove('active');
+  document.getElementById('nav-supplements').classList.remove('active');
+  document.getElementById('nav-leads').classList.add('active');
+  if (weightChart) { weightChart.destroy(); weightChart = null; }
+  renderLeadsPage();
 }
 
 function switchTab(tab, el) {
@@ -1826,6 +2145,25 @@ function renderProfilTab() {
         </div>
       </div>
     </div>
+    <div class="card" style="margin-bottom:18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Betaling</div>
+        <select class="input" id="pay-status-sel" style="width:auto" onchange="updatePaymentField('payment_status', this.value)">
+          <option value="ingen_abonnement">Intet abonnement</option>
+          <option value="aktiv">Aktiv</option>
+          <option value="forfalden">Forfalden</option>
+          <option value="stoppet">Stoppet</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Pris/måned (kr.)</div>
+        <input class="input" type="number" id="pay-price-inp" style="width:110px" value="${currentClient.monthly_price ?? ''}" onchange="updatePaymentField('monthly_price', this.value === '' ? null : +this.value)">
+      </div>
+      <div>
+        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Næste betaling</div>
+        <input class="input" type="date" id="pay-date-inp" style="width:150px" value="${currentClient.next_payment_date || ''}" onchange="updatePaymentField('next_payment_date', this.value || null)">
+      </div>
+    </div>
     <div class="profile-grid">
       ${rows.map(([label, val]) => `
         <div class="pf-item">
@@ -1833,6 +2171,31 @@ function renderProfilTab() {
           <div class="pf-value">${escHtml(String(val))}</div>
         </div>`).join('')}
     </div>`;
+  document.getElementById('pay-status-sel').value = currentClient.payment_status || 'ingen_abonnement';
+}
+
+async function updatePaymentField(field, value) {
+  const { error } = await sb.from('profiles').update({ [field]: value }).eq('id', currentClient.id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  currentClient[field] = value;
+  const c = clients.find(x => x.id === currentClient.id);
+  if (c) c[field] = value;
+  toast('Gemt ✓', 'ok');
+}
+
+// Manuelt coach-udløst push-notifikation — ingen automatik/planlægning. Fri tekst så coachen
+// selv har fuld kontrol over ordlyden. Kræver at send-push Edge Function er deployet (se 🔧 SQL
+// for den tilhørende push_subscriptions-tabel).
+async function sendPushReminder() {
+  const msg = prompt('Besked til klienten:', 'Husk at logge dagens vægt 💪');
+  if (!msg) return;
+  const { data: { session } } = await sb.auth.getSession();
+  const { data, error } = await sb.functions.invoke('send-push', {
+    body: { user_id: currentClient.id, title: 'Det Skarpe Liv', body: msg },
+    headers: { Authorization: `Bearer ${session.access_token}` }
+  });
+  if (error) { toast('Kunne ikke sende: ' + error.message, 'err'); return; }
+  toast(data?.sent > 0 ? `Sendt til ${data.sent} enhed(er) ✓` : 'Klienten har ikke aktiveret notifikationer endnu', data?.sent > 0 ? 'ok' : 'err');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1909,7 +2272,8 @@ function renderKostplanTab() {
       <button class="btn btn-outline" onclick="addMeal()">+ Tilføj måltid</button>
       <button class="btn btn-gold" onclick="saveDietPlan()">💾 Gem kostplan</button>
       <span id="diet-saved-at" style="font-size:.76rem;color:var(--muted)"></span>
-      <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
+      <button class="btn btn-outline" onclick="openCopyPlan('diet')" style="margin-left:auto">📋 Kopiér fra klient...</button>
+      <button class="btn btn-outline" onclick="openGenerator()">✨ Generer plan</button>
     </div>
     <div id="diet-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
 
@@ -2388,7 +2752,8 @@ function renderTræningTab() {
     <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="saveWorkoutPlan()">💾 Gem træningsplan</button>
       <span id="wp-saved-at" style="font-size:.76rem;color:var(--muted)"></span>
-      <button class="btn btn-outline" onclick="openGenerator()" style="margin-left:auto">✨ Generer plan</button>
+      <button class="btn btn-outline" onclick="openCopyPlan('workout')" style="margin-left:auto">📋 Kopiér fra klient...</button>
+      <button class="btn btn-outline" onclick="openGenerator()">✨ Generer plan</button>
     </div>
     <div id="workout-save-err" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(220,50,50,.12);border:1px solid var(--red);border-radius:var(--r);color:var(--red);font-size:.82rem;line-height:1.5"></div>`;
   renderWorkoutEditor();
@@ -2616,6 +2981,17 @@ function renderDataTab() {
     compByWeek[key].days.push(c.day_name);
   });
   const compWeeks = Object.values(compByWeek).sort((a,b) => b.year - a.year || b.week - a.week).slice(0,8);
+
+  // Kostefterlevelse — gruppér per uge (samme mønster som træningscompletion ovenfor)
+  const da = currentClientData.dietAdherence || [];
+  const daByWeek = {};
+  da.forEach(r => {
+    const key = `${r.year}-${String(r.week_number).padStart(2,'0')}`;
+    if (!daByWeek[key]) daByWeek[key] = { week: r.week_number, year: r.year, ja: 0, delvist: 0, nej: 0 };
+    if (daByWeek[key][r.status] !== undefined) daByWeek[key][r.status]++;
+  });
+  const daWeeks = Object.values(daByWeek).sort((a,b) => b.year - a.year || b.week - a.week).slice(0,8);
+
   const plannedDays = (currentClientData.workout?.days || []).map(d => d.day);
   const plannedCount = plannedDays.length;
 
@@ -2654,6 +3030,19 @@ function renderDataTab() {
           }).join('')}
         </div>` : ''}
     </div>
+    ${daWeeks.length ? `
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">🍽️ Kostefterlevelse</h3>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${daWeeks.map(w => `
+          <div style="display:flex;align-items:center;gap:14px;font-size:.82rem">
+            <span style="color:var(--muted);min-width:60px">Uge ${w.week}</span>
+            <span style="color:var(--green);font-weight:700">✓ ${w.ja}</span>
+            <span style="color:var(--gold);font-weight:700">~ ${w.delvist}</span>
+            <span style="color:var(--red);font-weight:700">✕ ${w.nej}</span>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
     ${exercisesWithData.length ? `
     <div class="card" style="margin-bottom:18px">
       <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">💪 Styrkefremgang</h3>
