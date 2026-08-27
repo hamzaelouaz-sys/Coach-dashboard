@@ -294,6 +294,7 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('sql-modal').classList.remove('hidden')" title="Supabase SQL & RLS Fix">🔧 SQL</button>
+        <button class="btn btn-outline btn-sm" onclick="openAutomationModal()" title="Automatiske påmindelser">⚙️ Automatik</button>
         <div style="display:flex;align-items:center;gap:7px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:20px;padding:5px 13px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span style="font-size:.8rem;color:var(--gold);font-weight:600;letter-spacing:.2px" id="top-date"></span>
@@ -681,12 +682,108 @@ ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "ps_access" ON push_subscriptions;
 CREATE POLICY "ps_access" ON push_subscriptions FOR ALL
   USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');</pre>
+  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- AUTOMATISERING: daglig vejnings-påmindelse + bødekasse (daily-reminder Edge Function)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 1. Global konfiguration — styrer den daglige påmindelse fra ⚙️ Automatik-knappen
+CREATE TABLE IF NOT EXISTS app_config (
+  key        TEXT PRIMARY KEY,
+  value      JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "app_config_read" ON app_config;
+CREATE POLICY "app_config_read" ON app_config FOR SELECT USING (true);
+DROP POLICY IF EXISTS "app_config_coach" ON app_config;
+CREATE POLICY "app_config_coach" ON app_config FOR ALL
+  USING (auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
+INSERT INTO app_config (key, value) VALUES
+  ('daily_reminder', '{"enabled": false, "title": "Dagens vejning", "body": "Husk at logge din vægt i appen 💪"}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
+-- 2. Bødekasse pr. klient — slås til/fra pr. klient under klientens Profil-fane
+CREATE TABLE IF NOT EXISTS fine_box (
+  user_id    UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  enabled    BOOLEAN NOT NULL DEFAULT false,
+  daily_rate INTEGER NOT NULL DEFAULT 20,
+  start_date DATE NOT NULL DEFAULT ((now() AT TIME ZONE 'Europe/Copenhagen')::date),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE fine_box ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "fine_box_read" ON fine_box;
+CREATE POLICY "fine_box_read" ON fine_box FOR SELECT
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+DROP POLICY IF EXISTS "fine_box_coach" ON fine_box;
+CREATE POLICY "fine_box_coach" ON fine_box FOR ALL
+  USING (auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
+
+-- 3. Bøde-posteringer — én pr. dag klienten ikke vejede sig. Klienten kan SE sine egne,
+--    kun coachen kan oprette/eftergive/markere betalt.
+CREATE TABLE IF NOT EXISTS fine_entries (
+  id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  date       DATE NOT NULL,
+  amount     INTEGER NOT NULL,
+  waived     BOOLEAN NOT NULL DEFAULT false,
+  paid       BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (user_id, date)
+);
+ALTER TABLE fine_entries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "fine_entries_read" ON fine_entries;
+CREATE POLICY "fine_entries_read" ON fine_entries FOR SELECT
+  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
+DROP POLICY IF EXISTS "fine_entries_coach" ON fine_entries;
+CREATE POLICY "fine_entries_coach" ON fine_entries FOR ALL
+  USING (auth.email() = 'hamzaelouaz@gmail.com')
+  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
+
+-- 4. Cron: kald daily-reminder hver time. Funktionen afgør selv (dansk tid) om der
+--    skal sendes påmindelse (kl. 08) eller tælles bøder (kl. 03). DST-sikkert.
+--    Deploy funktionen først:  supabase functions deploy daily-reminder --no-verify-jwt
+--    Sæt hemmeligheden:        supabase secrets set CRON_SECRET=<din-streng>
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
+SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'daily-reminder-hourly';
+SELECT cron.schedule('daily-reminder-hourly', '0 * * * *', $CRON$
+  SELECT net.http_post(
+    url     := 'https://rtcayuwapitueckgprzc.supabase.co/functions/v1/daily-reminder',
+    headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer <CRON_SECRET>'),
+    body    := '{}'::jsonb
+  );
+$CRON$);</pre>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
       <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
     </div>
     <div id="diag-result" style="margin-top:12px;font-size:.82rem;line-height:1.8"></div>
+  </div>
+</div>
+
+<!-- AUTOMATIK MODAL -->
+<div id="automation-modal" class="modal-ov hidden">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hdr">
+      <div class="modal-title">⚙️ Automatiske påmindelser</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('automation-modal').classList.add('hidden')">✕</button>
+    </div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Sender en web push til <strong>alle</strong> klienter med aktiveret notifikation hver morgen kl. 08:00 (dansk tid). Kræver at <code>daily-reminder</code> Edge Function er deployet + cron sat op (se 🔧 SQL).</p>
+    <label style="display:flex;align-items:center;gap:10px;font-size:.9rem;font-weight:600;margin-bottom:14px;cursor:pointer">
+      <input type="checkbox" id="dr-enabled" style="width:18px;height:18px">
+      Daglig vejnings-påmindelse aktiv
+    </label>
+    <div class="form-group"><label class="label">Titel</label>
+      <input class="input" id="dr-title" maxlength="60" placeholder="Dagens vejning">
+    </div>
+    <div class="form-group"><label class="label">Tekst</label>
+      <input class="input" id="dr-body" maxlength="120" placeholder="Husk at logge din vægt i appen 💪">
+    </div>
+    <button class="btn btn-gold" onclick="saveAutomationConfig()">💾 Gem</button>
   </div>
 </div>
 
@@ -2164,6 +2261,9 @@ function renderProfilTab() {
         <input class="input" type="date" id="pay-date-inp" style="width:150px" value="${currentClient.next_payment_date || ''}" onchange="updatePaymentField('next_payment_date', this.value || null)">
       </div>
     </div>
+    <div class="card" id="fine-box-card" style="margin-bottom:18px">
+      <div style="font-size:.82rem;color:var(--muted)">Indlæser bødekasse...</div>
+    </div>
     <div class="profile-grid">
       ${rows.map(([label, val]) => `
         <div class="pf-item">
@@ -2172,6 +2272,7 @@ function renderProfilTab() {
         </div>`).join('')}
     </div>`;
   document.getElementById('pay-status-sel').value = currentClient.payment_status || 'ingen_abonnement';
+  loadFineBox(currentClient.id);
 }
 
 async function updatePaymentField(field, value) {
@@ -2196,6 +2297,120 @@ async function sendPushReminder() {
   });
   if (error) { toast('Kunne ikke sende: ' + error.message, 'err'); return; }
   toast(data?.sent > 0 ? `Sendt til ${data.sent} enhed(er) ✓` : 'Klienten har ikke aktiveret notifikationer endnu', data?.sent > 0 ? 'ok' : 'err');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// AUTOMATIK — daglig påmindelse (global config i app_config-tabellen)
+// ════════════════════════════════════════════════════════════════════════════
+async function openAutomationModal() {
+  document.getElementById('automation-modal').classList.remove('hidden');
+  const { data } = await sb.from('app_config').select('value').eq('key', 'daily_reminder').limit(1);
+  const c = data?.[0]?.value || {};
+  document.getElementById('dr-enabled').checked = !!c.enabled;
+  document.getElementById('dr-title').value = c.title || 'Dagens vejning';
+  document.getElementById('dr-body').value = c.body || 'Husk at logge din vægt i appen 💪';
+}
+
+async function saveAutomationConfig() {
+  const value = {
+    enabled: document.getElementById('dr-enabled').checked,
+    title: document.getElementById('dr-title').value.trim() || 'Dagens vejning',
+    body: document.getElementById('dr-body').value.trim() || 'Husk at logge din vægt i appen 💪',
+  };
+  const { error } = await sb.from('app_config')
+    .upsert({ key: 'daily_reminder', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) { toast('Kunne ikke gemme: ' + error.message, 'err'); return; }
+  toast('Gemt ✓', 'ok');
+  document.getElementById('automation-modal').classList.add('hidden');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// BØDEKASSE — pr. klient. 20 kr/dag klienten ikke logger vægt. Kun for klienter
+// coachen selv slår til. Bøder oprettes automatisk af daily-reminder Edge Function.
+// ════════════════════════════════════════════════════════════════════════════
+async function loadFineBox(uid) {
+  const box = document.getElementById('fine-box-card');
+  if (!box) return;
+  const [{ data: fbArr }, { data: entries }] = await Promise.all([
+    sb.from('fine_box').select('*').eq('user_id', uid).limit(1),
+    sb.from('fine_entries').select('*').eq('user_id', uid).order('date', { ascending: false }),
+  ]);
+  const fb = fbArr?.[0] || { enabled: false, daily_rate: 20 };
+  const list = entries || [];
+  const outstanding = list.filter(e => !e.waived && !e.paid);
+  const total = outstanding.reduce((s, e) => s + e.amount, 0);
+
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:${fb.enabled ? '14px' : '0'}">
+      <div style="width:42px;height:42px;border-radius:12px;background:rgba(220,53,69,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">💰</div>
+      <div style="flex:1;min-width:160px">
+        <div style="font-weight:700;font-size:.95rem">Bødekasse</div>
+        <div style="font-size:.8rem;color:var(--muted)">${fb.enabled
+          ? `${fb.daily_rate} kr. pr. dag uden vægt-log`
+          : 'Slået fra for denne klient'}</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;cursor:pointer">
+        <input type="checkbox" id="fb-enabled" ${fb.enabled ? 'checked' : ''} onchange="toggleFineBox('${uid}', this.checked)" style="width:17px;height:17px">
+        Aktiv
+      </label>
+    </div>
+    ${fb.enabled ? `
+      <div style="display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <div>
+          <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Sats (kr./dag)</div>
+          <input class="input" type="number" id="fb-rate" style="width:100px" value="${fb.daily_rate}" onchange="saveFineRate('${uid}', this.value)">
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:1.5rem;font-weight:800;color:${total > 0 ? 'var(--red)' : 'var(--green)'}">${total} kr.</div>
+          <div style="font-size:.7rem;color:var(--muted)">${outstanding.length} ubetalt${outstanding.length === 1 ? ' dag' : 'e dage'}</div>
+        </div>
+      </div>
+      ${total > 0 ? `<button class="btn btn-outline btn-sm" onclick="markFinesPaid('${uid}')" style="margin-bottom:12px">✓ Marker alt som betalt / nulstil</button>` : ''}
+      <div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:5px">
+        ${list.length ? list.map(e => `
+          <div style="display:flex;align-items:center;gap:10px;font-size:.82rem;padding:6px 10px;background:var(--surf2);border-radius:var(--r);${(e.waived || e.paid) ? 'opacity:.5' : ''}">
+            <span style="color:var(--muted)">${e.date}</span>
+            <span style="font-weight:700;${e.waived ? 'text-decoration:line-through' : ''}">${e.amount} kr.</span>
+            ${e.paid ? '<span style="color:var(--green);font-size:.75rem">betalt</span>' : ''}
+            ${e.waived ? '<span style="color:var(--muted);font-size:.75rem">eftergivet</span>' : ''}
+            ${(!e.waived && !e.paid) ? `<button class="btn btn-ghost btn-sm" onclick="waiveFine(${e.id}, '${uid}')" style="margin-left:auto;font-size:.72rem;padding:2px 8px;color:var(--dim)">Eftergiv</button>` : ''}
+          </div>`).join('') : '<div style="font-size:.82rem;color:var(--muted);padding:4px">Ingen bøder endnu 👍</div>'}
+      </div>
+    ` : ''}`;
+}
+
+async function toggleFineBox(uid, enabled) {
+  const today = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD lokal
+  const payload = { user_id: uid, enabled, updated_at: new Date().toISOString() };
+  if (enabled) payload.start_date = today; // start optælling fra i dag, ikke bagud
+  const { error } = await sb.from('fine_box').upsert(payload, { onConflict: 'user_id' });
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  toast(enabled ? `Bødekasse aktiv fra ${today}` : 'Bødekasse slået fra', 'ok');
+  loadFineBox(uid);
+}
+
+async function saveFineRate(uid, val) {
+  const rate = Math.max(0, Math.round(+val || 0));
+  const { error } = await sb.from('fine_box')
+    .upsert({ user_id: uid, daily_rate: rate, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  toast('Sats gemt ✓', 'ok');
+  loadFineBox(uid);
+}
+
+async function waiveFine(id, uid) {
+  const { error } = await sb.from('fine_entries').update({ waived: true }).eq('id', id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  loadFineBox(uid);
+}
+
+async function markFinesPaid(uid) {
+  if (!confirm('Marker alle ubetalte bøder som betalt? Saldoen nulstilles.')) return;
+  const { error } = await sb.from('fine_entries')
+    .update({ paid: true }).eq('user_id', uid).eq('paid', false).eq('waived', false);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  toast('Bøder markeret som betalt ✓', 'ok');
+  loadFineBox(uid);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
