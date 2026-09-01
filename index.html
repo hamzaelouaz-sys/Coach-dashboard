@@ -99,6 +99,24 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
 .cc-stat{flex:1;text-align:center}
 .cc-stat-v{font-size:.95rem;font-weight:700;color:var(--gold)}
 .cc-stat-l{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+/* ── OVERSIGT: paneler på klient-forsiden (opmærksomhed + aktivitet) ── */
+.ov-panel{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;margin-bottom:16px}
+.ov-panel-head{display:flex;align-items:center;gap:9px;padding:13px 18px;border-bottom:1px solid var(--bdr)}
+.ov-h-title{font-size:.78rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txt)}
+.ov-h-count{font-size:.72rem;font-weight:700;color:var(--muted);background:var(--surf3);border-radius:20px;padding:1px 9px;min-width:20px;text-align:center}
+.ov-panel.attention .ov-panel-head{background:rgba(201,168,76,.06)}
+.ov-h-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.ov-row{display:flex;align-items:center;gap:12px;padding:11px 18px;cursor:pointer;transition:background var(--trans);border-bottom:1px solid var(--bdr)}
+.ov-row:last-child{border-bottom:none}
+.ov-row:hover{background:var(--surf2)}
+.ov-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:#fff;flex-shrink:0}
+.ov-row-main{flex:1;min-width:0}
+.ov-row-name{font-size:.88rem;font-weight:600}
+.ov-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.ov-chip{font-size:.72rem;font-weight:600;color:var(--muted);background:var(--surf3);border-radius:6px;padding:2px 8px;white-space:nowrap}
+.ov-chip.msg{background:rgba(201,168,76,.14);color:var(--gold)}
+.ov-chip.urgent{background:rgba(224,82,82,.14);color:var(--red)}
+.ov-row-when{font-size:.73rem;color:var(--dim);flex-shrink:0;white-space:nowrap}
 /* ── CLIENT DETAIL ── */
 .detail-header{background:var(--surf);border-bottom:1px solid var(--bdr);padding:20px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .detail-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;color:#fff;flex-shrink:0}
@@ -310,13 +328,19 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
         <button class="filter-tab" data-filter="active" onclick="setFilter('active',this)">Aktive</button>
         <input class="search-input" type="text" id="client-search" placeholder="Søg navn eller email..." oninput="renderClientList()">
       </div>
-      <div id="attention-section" class="hidden" style="margin-bottom:22px">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:10px">⚠ Kræver din opmærksomhed</div>
-        <div id="attention-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="attention-section" class="ov-panel attention hidden">
+        <div class="ov-panel-head">
+          <span class="ov-h-dot"></span>
+          <span class="ov-h-title">Kræver din opmærksomhed</span>
+          <span class="ov-h-count" id="attention-count">0</span>
+        </div>
+        <div id="attention-list"></div>
       </div>
-      <div id="activity-section" class="hidden" style="margin-bottom:22px">
-        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:10px">Seneste aktivitet</div>
-        <div id="activity-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="activity-section" class="ov-panel hidden">
+        <div class="ov-panel-head">
+          <span class="ov-h-title">Seneste aktivitet</span>
+        </div>
+        <div id="activity-list"></div>
       </div>
       <div class="clients-grid" id="clients-grid">
         <div class="empty-state"><div class="icon">👥</div><p>Indlæser klienter...</p></div>
@@ -1716,15 +1740,23 @@ async function loadAttentionList() {
 
   if (!box || !list) return;
 
-  const items = [];
+  // Én række pr. klient — hver bekymring bliver en lille "chip" i stedet for sin egen røde boks.
+  // Det holder listen kort og rolig, også når en klient har flere ting der halter.
+  const groups = {};
+  const addIssue = (c, name, text, prio, cls) => {
+    if (!groups[c.id]) groups[c.id] = { client: c, name, prio, issues: [] };
+    groups[c.id].issues.push({ text, cls: cls || '' });
+    groups[c.id].prio = Math.min(groups[c.id].prio, prio);
+  };
+
   clients.forEach(c => {
     const unread = unreadByClient[c.id] || 0;
     const name = c.full_name || c.email?.split('@')[0] || 'Ukendt';
     if (unread > 0) {
-      items.push({ client: c, name, text: `💬 ${unread} ulæst${unread > 1 ? 'e' : ''} besked${unread > 1 ? 'er' : ''}`, prio: 1 });
+      addIssue(c, name, `${unread} ulæst${unread > 1 ? 'e' : ''} besked${unread > 1 ? 'er' : ''}`, 1, 'msg');
     }
     if (c.payment_status === 'forfalden') {
-      items.push({ client: c, name, text: '💳 Betaling forfalden', prio: 1 });
+      addIssue(c, name, 'Betaling forfalden', 1, 'urgent');
     }
   });
 
@@ -1747,21 +1779,22 @@ async function loadAttentionList() {
 
     activeClients.forEach(c => {
       const name = c.full_name || c.email?.split('@')[0] || 'Ukendt';
-      if (!trainedThisWeek.has(c.id)) items.push({ client: c, name, text: '💪 Ingen træning logget denne uge', prio: 2 });
+      if (!trainedThisWeek.has(c.id)) addIssue(c, name, 'Ingen træning denne uge', 2);
       const lc = lastCheckin[c.id];
       const daysSince = lc ? Math.floor((now - new Date(lc)) / 86400000) : null;
-      if (daysSince === null || daysSince > 9) items.push({ client: c, name, text: daysSince === null ? '📋 Har aldrig sendt check-in' : `📋 Ingen check-in i ${daysSince} dage`, prio: 3 });
+      if (daysSince === null || daysSince > 9) addIssue(c, name, daysSince === null ? 'Aldrig sendt check-in' : `Ingen check-in i ${daysSince} dage`, 3);
     });
   }
-  items.sort((a, b) => a.prio - b.prio);
 
-  if (!items.length) { box.classList.add('hidden'); return; }
-  list.innerHTML = items.map(it => `
-    <div style="background:var(--surf);border:1px solid rgba(220,53,69,.25);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color var(--trans)" onmouseover="this.style.borderColor='rgba(220,53,69,.5)'" onmouseout="this.style.borderColor='rgba(220,53,69,.25)'" onclick="openClient('${it.client.id}')">
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0">${it.name.charAt(0).toUpperCase()}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.88rem;font-weight:600">${escHtml(it.name)}</div>
-        <div style="font-size:.75rem;color:var(--muted);margin-top:2px">${it.text}</div>
+  const rows = Object.values(groups).sort((a, b) => a.prio - b.prio || a.name.localeCompare(b.name, 'da'));
+  if (!rows.length) { box.classList.add('hidden'); return; }
+  document.getElementById('attention-count').textContent = rows.length;
+  list.innerHTML = rows.map(g => `
+    <div class="ov-row" onclick="openClient('${g.client.id}')">
+      <div class="ov-av">${g.name.charAt(0).toUpperCase()}</div>
+      <div class="ov-row-main">
+        <div class="ov-row-name">${escHtml(g.name)}</div>
+        <div class="ov-chips">${g.issues.map(i => `<span class="ov-chip ${i.cls}">${escHtml(i.text)}</span>`).join('')}</div>
       </div>
     </div>`).join('');
   box.classList.remove('hidden');
@@ -1776,6 +1809,13 @@ function setFilter(filter, el) {
 
 function renderClientList() {
   const search = document.getElementById('client-search').value.toLowerCase();
+
+  // Skjul oversigts-panelerne mens der søges — så er resultatlisten det eneste i fokus
+  const atSec = document.getElementById('attention-section');
+  const acSec = document.getElementById('activity-section');
+  if (atSec) atSec.style.display = search ? 'none' : '';
+  if (acSec) acSec.style.display = search ? 'none' : '';
+
   let filtered = clients.filter(c => {
     const matchSearch = !search ||
       (c.full_name || '').toLowerCase().includes(search) ||
@@ -1862,16 +1902,17 @@ async function loadDashboardStats() {
     const client = clients.find(c => c.id === ci.user_id);
     const name = client?.full_name || client?.email?.split('@')[0] || 'Ukendt';
     const when = new Date(ci.created_at).toLocaleDateString('da-DK', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    const weight = ci.weight ? `${ci.weight} kg · ` : '';
-    const energy = ci.energy_level ? `Energi: ${ci.energy_level}/10` : '';
+    const parts = [];
+    if (ci.weight) parts.push(`${ci.weight} kg`);
+    if (ci.energy_level) parts.push(`Energi ${ci.energy_level}/10`);
     return `
-      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color var(--trans)" onmouseover="this.style.borderColor='rgba(201,168,76,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.07)'" onclick="openClient('${ci.user_id}')">
-        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0">${name.charAt(0).toUpperCase()}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:.88rem;font-weight:600">${escHtml(name)} <span style="font-weight:400;color:var(--muted)">sendte et check-in</span></div>
-          <div style="font-size:.75rem;color:var(--muted);margin-top:2px">${weight}${energy}</div>
+      <div class="ov-row" onclick="openClient('${ci.user_id}')">
+        <div class="ov-av">${name.charAt(0).toUpperCase()}</div>
+        <div class="ov-row-main">
+          <div class="ov-row-name">${escHtml(name)} <span style="font-weight:400;color:var(--muted)">sendte et check-in</span></div>
+          ${parts.length ? `<div class="ov-chips"><span class="ov-chip">${parts.join(' · ')}</span></div>` : ''}
         </div>
-        <div style="font-size:.73rem;color:var(--dim);flex-shrink:0;white-space:nowrap">${when}</div>
+        <div class="ov-row-when">${when}</div>
       </div>`;
   }).join('');
 }
