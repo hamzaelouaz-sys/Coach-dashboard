@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hamza El – Det Skarpe Liv | Coach</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- Pinnede versioner (ikke @2/@4) så en ny CDN-udgivelse aldrig kan knække dashboardet uden at vi selv har ændret noget -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -311,7 +312,6 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
         <h2 id="main-title">Klienter</h2>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn btn-outline btn-sm" onclick="document.getElementById('sql-modal').classList.remove('hidden')" title="Supabase SQL & RLS Fix">🔧 SQL</button>
         <button class="btn btn-outline btn-sm" onclick="openAutomationModal()" title="Automatiske påmindelser">⚙️ Automatik</button>
         <div style="display:flex;align-items:center;gap:7px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:20px;padding:5px 13px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -326,7 +326,7 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
         <button class="filter-tab active" data-filter="alle" onclick="setFilter('alle',this)">Alle</button>
         <button class="filter-tab" data-filter="pending" onclick="setFilter('pending',this)">Afventer godkendelse</button>
         <button class="filter-tab" data-filter="active" onclick="setFilter('active',this)">Aktive</button>
-        <input class="search-input" type="text" id="client-search" placeholder="Søg navn eller email..." oninput="renderClientList()">
+        <input class="search-input" type="text" id="client-search" placeholder="Søg navn eller email..." oninput="debouncedRenderClientList()">
       </div>
       <div id="attention-section" class="ov-panel attention hidden">
         <div class="ov-panel-head">
@@ -509,286 +509,6 @@ tr[data-ex-id],tr[data-item-id]{cursor:default}
   </div>
 </div>
 
-<!-- SQL Modal -->
-<div id="sql-modal" class="modal-ov hidden">
-  <div class="modal-box" style="max-width:560px">
-    <div class="modal-hdr">
-      <div class="modal-title">🔧 Supabase RLS Fix</div>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('sql-modal').classList.add('hidden')">✕</button>
-    </div>
-    <p style="font-size:.87rem;color:var(--muted);margin-bottom:14px">RLS (Row Level Security) blokerer coachen fra at læse klienters data og gemme planer. Kør <strong>hele</strong> denne SQL i Supabase → SQL Editor:</p>
-    <pre id="sql-code" style="background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;font-size:.78rem;overflow-x:auto;color:var(--gold-l);line-height:1.8">-- ═══ Coach RLS Fix – kør alt på én gang ═══
-
--- Sikrer at client_data kun har én række per bruger (kræves af upsert)
-ALTER TABLE client_data DROP CONSTRAINT IF EXISTS client_data_user_id_key;
-ALTER TABLE client_data ADD CONSTRAINT client_data_user_id_key UNIQUE (user_id);
-
--- profiles: coach ser alle klienter
-DROP POLICY IF EXISTS "profiles_access" ON profiles;
-CREATE POLICY "profiles_access" ON profiles FOR ALL
-  USING (auth.uid() = id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- intake_forms: coach kan læse alle opstartsskemaer
-DROP POLICY IF EXISTS "intake_forms_access" ON intake_forms;
-CREATE POLICY "intake_forms_access" ON intake_forms FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- client_data: coach kan gemme kost- og træningsplaner
-DROP POLICY IF EXISTS "client_data_access" ON client_data;
-CREATE POLICY "client_data_access" ON client_data FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- weight_log: coach kan se vægtkurver
-DROP POLICY IF EXISTS "weight_log_access" ON weight_log;
-CREATE POLICY "weight_log_access" ON weight_log FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- checkins: coach kan se check-in historik
-DROP POLICY IF EXISTS "checkins_access" ON checkins;
-CREATE POLICY "checkins_access" ON checkins FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- weight_log: tilføj skridt og søvn kolonner
-ALTER TABLE weight_log ADD COLUMN IF NOT EXISTS steps INTEGER;
-ALTER TABLE weight_log ADD COLUMN IF NOT EXISTS sleep_hours NUMERIC(3,1);
-
--- workout_completions: ny tabel til at tracke gennemførte træninger
-CREATE TABLE IF NOT EXISTS workout_completions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  week_number INTEGER NOT NULL,
-  year INTEGER NOT NULL,
-  day_name TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE workout_completions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "wc_access" ON workout_completions;
-CREATE POLICY "wc_access" ON workout_completions FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- strength_logs: klienter logger vægt + reps per sæt
-CREATE TABLE IF NOT EXISTS strength_logs (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  exercise_name TEXT NOT NULL,
-  day_name TEXT,
-  week_number INTEGER NOT NULL,
-  year INTEGER NOT NULL,
-  set_number INTEGER NOT NULL,
-  weight_kg NUMERIC(6,2),
-  reps INTEGER,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE strength_logs ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "sl_access" ON strength_logs;
-CREATE POLICY "sl_access" ON strength_logs FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- strength_logs: valgfri RPE (Rate of Perceived Exertion) per sæt, 1-10
-ALTER TABLE strength_logs ADD COLUMN IF NOT EXISTS rpe SMALLINT CHECK (rpe IS NULL OR (rpe >= 1 AND rpe &lt;= 10));
-
--- progress-photos: Storage bucket + upload-politik
--- OBS: Opret først bucket 'progress-photos' (Public) i Supabase Dashboard → Storage
-INSERT INTO storage.buckets (id, name, public) VALUES ('progress-photos', 'progress-photos', true) ON CONFLICT DO NOTHING;
-DROP POLICY IF EXISTS "photo_upload" ON storage.objects;
-CREATE POLICY "photo_upload" ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'progress-photos' AND auth.role() = 'authenticated');
-DROP POLICY IF EXISTS "photo_view" ON storage.objects;
-CREATE POLICY "photo_view" ON storage.objects FOR SELECT
-  USING (bucket_id = 'progress-photos' AND
-    ((storage.foldername(name))[1] = auth.uid()::text OR auth.email() = 'hamzaelouaz@gmail.com'));
-
--- supplement_bank: coachens genbrugelige tilskudskatalog (samme mønster som food_bank/exercise_bank)
-CREATE TABLE IF NOT EXISTS supplement_bank (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  dose TEXT,
-  timing TEXT,
-  note TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- food_bank / exercise_bank / supplement_bank brugte ingen RLS — hvem som helst med
--- den offentlige anon-nøgle kunne skrive/slette i dem uden login. Låses til coachen,
--- ligesom alle andre tabeller. Klientportalen bruger aldrig disse tabeller.
-ALTER TABLE food_bank ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "food_bank_access" ON food_bank;
-CREATE POLICY "food_bank_access" ON food_bank FOR ALL
-  USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
-
-ALTER TABLE exercise_bank ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "exercise_bank_access" ON exercise_bank;
-CREATE POLICY "exercise_bank_access" ON exercise_bank FOR ALL
-  USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
-
-ALTER TABLE supplement_bank ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "supplement_bank_access" ON supplement_bank;
-CREATE POLICY "supplement_bank_access" ON supplement_bank FOR ALL
-  USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
-
--- messages: tilføj edited_at (til "redigeret"-mærke) og lås ordentligt ned med RLS,
--- så en klient kun kan skrive i sin egen tråd som 'client' og ikke kan udgive sig for coachen.
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "messages_access" ON messages;
-CREATE POLICY "messages_access" ON messages FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (
-    (auth.uid() = user_id AND sender = 'client')
-    OR (auth.email() = 'hamzaelouaz@gmail.com' AND sender = 'coach')
-  );
-
--- diet_adherence: klientens daglige selvrapportering af om kostplanen blev fulgt (log only, ingen auto-feedback)
-CREATE TABLE IF NOT EXISTS diet_adherence (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
-  week_number INTEGER NOT NULL,
-  year INTEGER NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('ja','delvist','nej')),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id, date)
-);
-ALTER TABLE diet_adherence ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "da_access" ON diet_adherence;
-CREATE POLICY "da_access" ON diet_adherence FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- leads: simpel CRM-liste over potentielle klienter (ingen bruger-konto endnu, derfor intet user_id)
-CREATE TABLE IF NOT EXISTS leads (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  contact TEXT,
-  status TEXT NOT NULL DEFAULT 'ny' CHECK (status IN ('ny','kontaktet','interesseret','afvist','konverteret')),
-  kilde TEXT,
-  note TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "leads_access" ON leads;
-CREATE POLICY "leads_access" ON leads FOR ALL
-  USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
-
--- profiles: simpel betalings-status pr. klient (ingen historik-tabel — Hamza har ingen betalende
--- klienter endnu, så en flad kolonne-løsning er bevidst valgt frem for en relationel payments-tabel)
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'ingen_abonnement' CHECK (payment_status IN ('ingen_abonnement','aktiv','forfalden','stoppet'));
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS next_payment_date DATE;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS monthly_price NUMERIC(8,2);
-
--- progress-photos: skift bucket fra public til privat — billeder tilgås nu via signerede URLs.
--- De eksisterende RLS-politikker photo_upload/photo_view (kørt tidligere) er allerede korrekt
--- afgrænset til ejer-eller-coach og kræver ingen ændring — kun bucket-flaget skal ændres.
-UPDATE storage.buckets SET public = false WHERE id = 'progress-photos';
-
--- push_subscriptions: browser push-endpoints pr. klient (til manuelt coach-udløste påmindelser —
--- se send-push Edge Function. Ingen automatik/planlægning, kun coach-trykker-en-knap.)
-CREATE TABLE IF NOT EXISTS push_subscriptions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  endpoint TEXT NOT NULL,
-  keys JSONB NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id, endpoint)
-);
-ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "ps_access" ON push_subscriptions;
-CREATE POLICY "ps_access" ON push_subscriptions FOR ALL
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-
--- ═══════════════════════════════════════════════════════════════════════════
--- AUTOMATISERING: daglig vejnings-påmindelse + bødekasse (daily-reminder Edge Function)
--- ═══════════════════════════════════════════════════════════════════════════
-
--- 1. Global konfiguration — styrer den daglige påmindelse fra ⚙️ Automatik-knappen
-CREATE TABLE IF NOT EXISTS app_config (
-  key        TEXT PRIMARY KEY,
-  value      JSONB NOT NULL DEFAULT '{}'::jsonb,
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "app_config_read" ON app_config;
-CREATE POLICY "app_config_read" ON app_config FOR SELECT USING (true);
-DROP POLICY IF EXISTS "app_config_coach" ON app_config;
-CREATE POLICY "app_config_coach" ON app_config FOR ALL
-  USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
-INSERT INTO app_config (key, value) VALUES
-  ('daily_reminder', '{"enabled": false, "title": "Dagens vejning", "body": "Husk at logge din vægt i appen 💪"}'::jsonb)
-ON CONFLICT (key) DO NOTHING;
-
--- 2. Bødekasse pr. klient — slås til/fra pr. klient under klientens Profil-fane
-CREATE TABLE IF NOT EXISTS fine_box (
-  user_id    UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  enabled    BOOLEAN NOT NULL DEFAULT false,
-  daily_rate INTEGER NOT NULL DEFAULT 20,
-  start_date DATE NOT NULL DEFAULT ((now() AT TIME ZONE 'Europe/Copenhagen')::date),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE fine_box ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "fine_box_read" ON fine_box;
-CREATE POLICY "fine_box_read" ON fine_box FOR SELECT
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-DROP POLICY IF EXISTS "fine_box_coach" ON fine_box;
-CREATE POLICY "fine_box_coach" ON fine_box FOR ALL
-  USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
-
--- 3. Bøde-posteringer — én pr. dag klienten ikke vejede sig. Klienten kan SE sine egne,
---    kun coachen kan oprette/eftergive/markere betalt.
-CREATE TABLE IF NOT EXISTS fine_entries (
-  id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  date       DATE NOT NULL,
-  amount     INTEGER NOT NULL,
-  waived     BOOLEAN NOT NULL DEFAULT false,
-  paid       BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (user_id, date)
-);
-ALTER TABLE fine_entries ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "fine_entries_read" ON fine_entries;
-CREATE POLICY "fine_entries_read" ON fine_entries FOR SELECT
-  USING (auth.uid() = user_id OR auth.email() = 'hamzaelouaz@gmail.com');
-DROP POLICY IF EXISTS "fine_entries_coach" ON fine_entries;
-CREATE POLICY "fine_entries_coach" ON fine_entries FOR ALL
-  USING (auth.email() = 'hamzaelouaz@gmail.com')
-  WITH CHECK (auth.email() = 'hamzaelouaz@gmail.com');
-
--- 4. Cron: kald daily-reminder hver time. Funktionen afgør selv (dansk tid) om der
---    skal sendes påmindelse (kl. 08) eller tælles bøder (kl. 03). DST-sikkert.
---    Deploy funktionen først:  supabase functions deploy daily-reminder --no-verify-jwt
---    Sæt hemmeligheden:        supabase secrets set CRON_SECRET=<din-streng>
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'daily-reminder-hourly';
-SELECT cron.schedule('daily-reminder-hourly', '0 * * * *', $CRON$
-  SELECT net.http_post(
-    url     := 'https://rtcayuwapitueckgprzc.supabase.co/functions/v1/daily-reminder',
-    headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer <CRON_SECRET>'),
-    body    := '{}'::jsonb
-  );
-$CRON$);</pre>
-    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn btn-gold btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql-code').textContent).then(()=>toast('SQL kopieret – indsæt i Supabase SQL Editor','ok'))">📋 Kopiér SQL</button>
-      <button class="btn btn-outline btn-sm" onclick="runDiagnostic()">🔍 Test forbindelser</button>
-    </div>
-    <div id="diag-result" style="margin-top:12px;font-size:.82rem;line-height:1.8"></div>
-  </div>
-</div>
-
 <!-- AUTOMATIK MODAL -->
 <div id="automation-modal" class="modal-ov hidden">
   <div class="modal-box" style="max-width:480px">
@@ -796,7 +516,7 @@ $CRON$);</pre>
       <div class="modal-title">⚙️ Automatiske påmindelser</div>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('automation-modal').classList.add('hidden')">✕</button>
     </div>
-    <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Sender en web push til <strong>alle</strong> klienter med aktiveret notifikation hver morgen kl. 08:00 (dansk tid). Kræver at <code>daily-reminder</code> Edge Function er deployet + cron sat op (se 🔧 SQL).</p>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Sender en web push til <strong>alle aktive</strong> klienter med aktiveret notifikation hver morgen kl. 08:00 (dansk tid). Kører via <code>daily-reminder</code> Edge Function + pg_cron (se <code>supabase/migrations</code>).</p>
     <label style="display:flex;align-items:center;gap:10px;font-size:.9rem;font-weight:600;margin-bottom:14px;cursor:pointer">
       <input type="checkbox" id="dr-enabled" style="width:18px;height:18px">
       Daglig vejnings-påmindelse aktiv
@@ -1346,7 +1066,7 @@ function renderSuppBankPage() {
       <td style="color:var(--muted)">${escHtml(s.timing || '')}</td>
       <td style="color:var(--dim);font-size:.78rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.note || '')}</td>
       <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteCustomSupp('${s.id}')">✕</button></td>
-    </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><p>${CUSTOM_SUPPS_BANK.length ? 'Ingen match' : 'Ingen tilføjede tilskud endnu — de 5 standard-tilskud vises stadig som hurtig-tilføj hos klienter'}</p></div></td></tr>`;
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><p>${CUSTOM_SUPPS_BANK.length ? 'Ingen match' : 'Ingen tilføjede tilskud endnu — de indbyggede standard-tilskud vises stadig som hurtig-tilføj hos klienter'}</p></div></td></tr>`;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1624,6 +1344,33 @@ const STD_SUPPS = [
 ];
 const ALL_DAYS = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
 
+// ISO 8601-ugenummer — SAMME funktion som i klient-appen, så "uge 36" betyder det samme begge steder
+// og matcher kalenderen. (Tidligere lå der tre lokale kopier af en ikke-ISO-udregning her i filen.)
+function getWeekYear(date = new Date()) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return { week: Math.ceil(((d - yearStart) / 86400000 + 1) / 7), year: d.getUTCFullYear() };
+}
+
+// Kald en Edge Function med coachens JWT. Fælles for send-push, delete-client og ai-generate.
+async function callEdge(name, body) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new Error('Ikke logget ind');
+  const { data, error } = await sb.functions.invoke(name, {
+    body, headers: { Authorization: `Bearer ${session.access_token}` }
+  });
+  if (error) {
+    // supabase-js pakker HTTP-fejl ind — prøv at få den rigtige fejltekst fra funktionen ud
+    let msg = error.message;
+    try { const j = await error.context?.json?.(); if (j?.error) msg = j.error; } catch {}
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════════════════════════════
@@ -1632,9 +1379,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('top-date').textContent = _ds.charAt(0).toUpperCase() + _ds.slice(1);
   const { data: { session } } = await sb.auth.getSession();
   if (session) await bootCoach(session.user);
-  sb.auth.onAuthStateChange(async (_, session) => {
-    if (session) await bootCoach(session.user);
-    else showAuthPage();
+  sb.auth.onAuthStateChange(async (ev, session) => {
+    // Kun ægte login/logout. TOKEN_REFRESHED (fyrer jævnligt) må ikke genindlæse hele dashboardet
+    // — det ville bl.a. kaste klientlisten om midt i redigering af en plan.
+    if (ev === 'SIGNED_IN' && session) { if (!coach || coach.id !== session.user.id) await bootCoach(session.user); return; }
+    if (ev === 'SIGNED_OUT') showAuthPage();
   });
 });
 
@@ -1651,9 +1400,26 @@ async function bootCoach(user) {
   const initials = user.email.charAt(0).toUpperCase();
   document.getElementById('c-av').textContent = initials;
   document.getElementById('c-nm').textContent = user.email.split('@')[0];
+  localStorage.removeItem('claude_api_key'); // AI-nøglen ligger nu i Supabase secrets, ikke i browseren
   await loadBanks();
   await loadLeads();
   await loadClients();
+  startGlobalMsgRealtime();
+}
+
+// Realtime på nye klientbeskeder — så ulæst-tæller, opmærksomhedsliste og badges på klientkortene
+// opdateres med det samme, uden at coachen skal genindlæse siden. (Beskedtråden i den åbne klient
+// har sit eget abonnement i renderBeskederTab.)
+let globalMsgChannel = null;
+function startGlobalMsgRealtime() {
+  if (globalMsgChannel) sb.removeChannel(globalMsgChannel);
+  globalMsgChannel = sb.channel('coach-all-msgs')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'sender=eq.client' }, async () => {
+      await loadAttentionList();
+      loadDashboardStats();
+      if (!document.getElementById('pg-clients').classList.contains('hidden')) renderClientList();
+    })
+    .subscribe();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1682,8 +1448,11 @@ async function handleLogin(e) {
 }
 
 async function handleLogout() {
+  if (globalMsgChannel) { sb.removeChannel(globalMsgChannel); globalMsgChannel = null; }
+  if (coachMsgChannel) { sb.removeChannel(coachMsgChannel); coachMsgChannel = null; }
   await sb.auth.signOut();
   coach = null; clients = []; currentClient = null;
+  quickStats = {}; quickStatsLoaded = false;
   showAuthPage();
 }
 
@@ -1763,9 +1532,7 @@ async function loadAttentionList() {
   const activeClients = clients.filter(c => c.status === 'active');
   if (activeClients.length) {
     const now = new Date();
-    const soy = new Date(now.getFullYear(), 0, 1);
-    const thisWeek = Math.ceil(((now - soy) / 86400000 + soy.getDay() + 1) / 7);
-    const thisYear = now.getFullYear();
+    const { week: thisWeek, year: thisYear } = getWeekYear(now);
     const activeIds = activeClients.map(c => c.id);
 
     const [{ data: wkComp }, { data: allCheckins }] = await Promise.all([
@@ -1839,6 +1606,9 @@ function renderClientList() {
       ? '<span class="badge badge-active">Aktiv</span>'
       : '<span class="badge badge-pending">Afventer</span>';
     const joined = new Date(c.created_at).toLocaleDateString('da-DK', { day:'numeric', month:'short', year:'numeric' });
+    const qs = quickStats[c.id];
+    const wkTxt = !qs ? '—' : qs.wk === 0 ? '⚠ Ingen' : qs.wk + ' gennemført';
+    const wkCol = !qs ? '' : qs.wk === 0 ? 'var(--red)' : qs.wk >= 3 ? 'var(--green)' : 'var(--gold)';
     return `
       <div class="client-card" onclick="openClient('${c.id}')">
         <div class="cc-top">
@@ -1853,35 +1623,44 @@ function renderClientList() {
         </div>
         <div class="cc-stats">
           <div class="cc-stat"><div class="cc-stat-v">${joined}</div><div class="cc-stat-l">Tilmeldt</div></div>
-          <div class="cc-stat"><div class="cc-stat-v" id="weight-${c.id}">—</div><div class="cc-stat-l">Seneste vægt</div></div>
-          <div class="cc-stat"><div class="cc-stat-v" id="wk-done-${c.id}" style="font-size:.9rem">—</div><div class="cc-stat-l">Træning denne uge</div></div>
+          <div class="cc-stat"><div class="cc-stat-v">${qs?.weight != null ? qs.weight + ' kg' : '—'}</div><div class="cc-stat-l">Seneste vægt</div></div>
+          <div class="cc-stat"><div class="cc-stat-v" style="font-size:.9rem;color:${wkCol}">${wkTxt}</div><div class="cc-stat-l">Træning denne uge</div></div>
         </div>
       </div>`;
   }).join('');
 
-  // Load quick stats for each visible client
-  filtered.forEach(c => loadClientQuickStats(c.id));
+  // Hent kort-statistik samlet (kun første gang / når cachen er tom) — ikke pr. klient pr. render
+  if (!quickStatsLoaded) loadAllQuickStats();
 }
 
-async function loadClientQuickStats(clientId) {
-  const now = new Date();
-  const soy = new Date(now.getFullYear(), 0, 1);
-  const thisWeek = Math.ceil(((now - soy) / 86400000 + soy.getDay() + 1) / 7);
-  const thisYear = now.getFullYear();
+// Søgefeltet fyrede tidligere renderClientList() pr. tastetryk, og hver render hentede 2 queries
+// pr. klient → 20 klienter = 40 requests pr. bogstav. Nu: debounce + samlet cache.
+let _rclTimer = null;
+function debouncedRenderClientList() {
+  clearTimeout(_rclTimer);
+  _rclTimer = setTimeout(renderClientList, 150);
+}
 
+let quickStats = {};        // clientId → { weight, wk }
+let quickStatsLoaded = false;
+async function loadAllQuickStats() {
+  quickStatsLoaded = true;
+  const ids = clients.map(c => c.id);
+  if (!ids.length) return;
+  const { week: thisWeek, year: thisYear } = getWeekYear();
+  // Seneste vægt: hent de nyeste rækker for alle klienter i ét kald og tag første pr. bruger.
+  // (Bounded til 20 pr. klient i gennemsnit — nok til at ramme den seneste vejning for alle.)
   const [{ data: wl }, { data: wkComp }] = await Promise.all([
-    sb.from('weight_log').select('weight').eq('user_id', clientId).not('weight', 'is', null).order('date', { ascending: false }).limit(1),
-    sb.from('workout_completions').select('day_name').eq('user_id', clientId).eq('week_number', thisWeek).eq('year', thisYear)
+    sb.from('weight_log').select('user_id,weight,date').in('user_id', ids).not('weight', 'is', null)
+      .order('date', { ascending: false }).limit(ids.length * 20),
+    sb.from('workout_completions').select('user_id').in('user_id', ids).eq('week_number', thisWeek).eq('year', thisYear)
   ]);
-
-  const wEl = document.getElementById('weight-' + clientId);
-  const wkEl = document.getElementById('wk-done-' + clientId);
-  if (wEl) wEl.textContent = wl?.[0]?.weight ? wl[0].weight + ' kg' : '—';
-  if (wkEl) {
-    const n = wkComp?.length ?? 0;
-    wkEl.textContent = n === 0 ? '⚠ Ingen' : n + ' gennemført';
-    wkEl.style.color = n === 0 ? 'var(--red)' : n >= 3 ? 'var(--green)' : 'var(--gold)';
-  }
+  const stats = {};
+  ids.forEach(id => { stats[id] = { weight: null, wk: 0 }; });
+  (wl || []).forEach(r => { if (stats[r.user_id] && stats[r.user_id].weight == null) stats[r.user_id].weight = r.weight; });
+  (wkComp || []).forEach(r => { if (stats[r.user_id]) stats[r.user_id].wk++; });
+  quickStats = stats;
+  if (!document.getElementById('pg-clients').classList.contains('hidden')) renderClientList();
 }
 
 async function loadDashboardStats() {
@@ -2024,8 +1803,9 @@ async function openClient(id) {
     tilskud: JSON.stringify(currentSupplements()),
   };
 
-  // Show first tab
-  switchTab('profil', document.querySelector('.tab.active'));
+  // Start altid på Profil-fanen. (null → switchTab markerer selv den rigtige fane-knap; tidligere blev
+  // den *forrige* klients aktive fane-knap sendt med, så fx "Kostplan" forblev markeret mens Profil vistes.)
+  switchTab('profil', null);
   // Unread badge
   sb.from('messages').select('id', { count: 'exact' })
     .eq('user_id', currentClient.id).eq('sender', 'client').eq('read', false)
@@ -2132,10 +1912,10 @@ function showLeadsPage() {
 }
 
 function switchTab(tab, el) {
-  // Gem workout-inputs inden vi forlader træningsfanen
+  // Synk redigerede inputs til state inden vi forlader en editor-fane — ellers genopbygges fanen fra
+  // gammel state når man kommer tilbage, og ændringerne er væk. (Kostplan manglede her indtil 2026-09-01.)
   if (!document.getElementById('tab-traening')?.classList.contains('hidden')) syncWorkoutDOM();
-
-  // Gem tilskud-inputs inden vi forlader tilskudsfanen
+  if (!document.getElementById('tab-kostplan')?.classList.contains('hidden')) syncDietDOM();
   if (!document.getElementById('tab-tilskud')?.classList.contains('hidden')) syncTilskudDOM();
 
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -2169,6 +1949,19 @@ async function approveClient() {
   document.getElementById('btn-deactivate').classList.remove('hidden');
   document.getElementById('st-pending').textContent = clients.filter(c => c.status === 'pending').length;
   toast('Klient godkendt! De kan nu se deres plan.', 'ok');
+  // Giv klienten besked pr. mail — appen opdaterer selv via realtime hvis de har den åben, men de fleste har ikke
+  if (currentClient.email) {
+    emailjs.init(EJS_PUBLIC_KEY);
+    emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_REPLY, {
+      to_email: currentClient.email,
+      client_name: currentClient.full_name?.split(' ')[0] || 'der',
+      subject: 'Din konto er godkendt ✓ – Det Skarpe Liv',
+      heading: 'Velkommen om bord',
+      intro: 'Hamza har godkendt din profil. Du kan nu logge ind i klientportalen og se din plan, så snart den er klar.',
+      message_label: 'Klientportal',
+      message: 'https://detskarpeliv.dk/app/'
+    }).catch(err => console.warn('Godkendelses-mail fejl:', JSON.stringify(err)));
+  }
 }
 
 async function deactivateClient() {
@@ -2185,21 +1978,19 @@ async function deactivateClient() {
   toast('Klient deaktiveret.', 'ok');
 }
 
+// Sletning sker i Edge Function "delete-client" (service role): den fjerner ALLE klientens rækker,
+// fotos i Storage og selve auth-brugeren. Tidligere slettede vi kun 5 tabeller herfra med anon-nøglen —
+// klienten kunne stadig logge ind og fik en ny pending-profil, og styrkelog/bøder/fotos m.m. blev liggende.
 async function deleteClient() {
   if (!currentClient) return;
   const name = currentClient.full_name || currentClient.email || 'denne klient';
-  if (!confirm(`Slet ${name} permanent?\n\nAl data slettes: profil, kostplan, træningsplan, vægtlog, check-ins og beskeder.\n\nDette kan IKKE fortrydes.`)) return;
+  if (!confirm(`Slet ${name} permanent?\n\nAl data slettes: login, profil, opstartsskema, planer, vægtlog, styrkelog, check-ins, beskeder, bøder og fotos.\n\nDette kan IKKE fortrydes.`)) return;
+  const typed = prompt(`Skriv SLET for at bekræfte sletning af ${name}:`);
+  if (typed !== 'SLET') { toast('Sletning annulleret', 'err'); return; }
 
   const uid = currentClient.id;
   try {
-    await Promise.all([
-      sb.from('intake_forms').delete().eq('user_id', uid),
-      sb.from('client_data').delete().eq('user_id', uid),
-      sb.from('weight_log').delete().eq('user_id', uid),
-      sb.from('checkins').delete().eq('user_id', uid),
-      sb.from('messages').delete().eq('user_id', uid),
-    ]);
-    await sb.from('profiles').delete().eq('id', uid);
+    await callEdge('delete-client', { user_id: uid });
 
     clients = clients.filter(c => c.id !== uid);
     document.getElementById('st-total').textContent = clients.length;
@@ -2331,13 +2122,10 @@ async function updatePaymentField(field, value) {
 async function sendPushReminder() {
   const msg = prompt('Besked til klienten:', 'Husk at logge dagens vægt 💪');
   if (!msg) return;
-  const { data: { session } } = await sb.auth.getSession();
-  const { data, error } = await sb.functions.invoke('send-push', {
-    body: { user_id: currentClient.id, title: 'Det Skarpe Liv', body: msg },
-    headers: { Authorization: `Bearer ${session.access_token}` }
-  });
-  if (error) { toast('Kunne ikke sende: ' + error.message, 'err'); return; }
-  toast(data?.sent > 0 ? `Sendt til ${data.sent} enhed(er) ✓` : 'Klienten har ikke aktiveret notifikationer endnu', data?.sent > 0 ? 'ok' : 'err');
+  try {
+    const data = await callEdge('send-push', { user_id: currentClient.id, title: 'Det Skarpe Liv', body: msg });
+    toast(data?.sent > 0 ? `Sendt til ${data.sent} enhed(er) ✓` : 'Klienten har ikke aktiveret notifikationer endnu', data?.sent > 0 ? 'ok' : 'err');
+  } catch (e) { toast('Kunne ikke sende: ' + e.message, 'err'); }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -2801,8 +2589,8 @@ async function saveDietPlan() {
 
       // Silent RLS block: UPDATE returned no rows but no error either
       if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
-        console.warn('[saveDietPlan] UPDATE affected 0 rows — RLS may be blocking. Run SQL from 🔧-button.');
-        showSaveError('diet', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Kør SQL fra 🔧-knappen øverst.');
+        console.warn('[saveDietPlan] UPDATE affected 0 rows — RLS may be blocking.');
+        showSaveError('diet', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Tjek policies i Supabase (supabase/migrations).');
         return;
       }
     } else {
@@ -2930,7 +2718,7 @@ async function saveSupplements() {
         program: JSON.stringify(prog), updated_at: new Date().toISOString()
       }).eq('user_id', currentClient.id).select('id');
       if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
-        showSaveError('tilskud', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Kør SQL fra 🔧-knappen øverst.');
+        showSaveError('tilskud', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Tjek policies i Supabase (supabase/migrations).');
         return;
       }
     } else {
@@ -3132,7 +2920,7 @@ async function saveWorkoutPlan() {
       }).eq('user_id', currentClient.id).select('id');
 
       if (!saveRes.error && (!saveRes.data || saveRes.data.length === 0)) {
-        showSaveError('workout', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Kør SQL fra 🔧-knappen øverst.');
+        showSaveError('workout', 'UPDATE ramte 0 rækker — RLS blokerer sandsynligvis. Tjek policies i Supabase (supabase/migrations).');
         return;
       }
     } else {
@@ -3252,10 +3040,7 @@ function renderDataTab() {
   const plannedCount = plannedDays.length;
 
   // Current week number
-  const now = new Date();
-  const soy = new Date(now.getFullYear(), 0, 1);
-  const thisWeek = Math.ceil(((now - soy) / 86400000 + soy.getDay() + 1) / 7);
-  const thisYear = now.getFullYear();
+  const { week: thisWeek, year: thisYear } = getWeekYear();
   const thisWeekComp = comps.filter(c => c.week_number === thisWeek && c.year === thisYear);
   const thisWeekDone = thisWeekComp.length;
 
@@ -3647,7 +3432,6 @@ function openGenerator() {
   const m = calcClientTDEE();
   const d = currentClientData.intake || {};
   const goalLabel = d.primary_goal || 'Ikke angivet';
-  const savedKey = localStorage.getItem('claude_api_key') || '';
   const autoNote = [
     d.allergies?.trim()     ? `Allergier: ${d.allergies}` : '',
     d.food_dislikes?.trim() ? `Kan ikke lide: ${d.food_dislikes}` : '',
@@ -3666,11 +3450,6 @@ function openGenerator() {
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
         <span style="font-size:.9rem;font-weight:700;color:var(--gold)">✨ Claude AI Generator</span>
         <span style="font-size:.72rem;color:var(--green);background:rgba(76,175,125,.12);border:1px solid rgba(76,175,125,.25);border-radius:10px;padding:1px 8px">Anbefalet</span>
-      </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="label">Anthropic API-nøgle</label>
-        <input class="input" type="password" id="claude-api-key" value="${escHtml(savedKey)}" placeholder="sk-ant-..." autocomplete="off">
-        <div style="font-size:.72rem;color:var(--dim);margin-top:4px">Gemmes kun i din browser · Hent på console.anthropic.com</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div class="form-group" style="margin:0">
@@ -3710,7 +3489,7 @@ function openGenerator() {
     </div>
 
     <details>
-      <summary style="font-size:.81rem;color:var(--muted);cursor:pointer;user-select:none;padding:4px 0;margin-bottom:8px">Brug skabelon i stedet (ingen API-nøgle)</summary>
+      <summary style="font-size:.81rem;color:var(--muted);cursor:pointer;user-select:none;padding:4px 0;margin-bottom:8px">Brug skabelon i stedet (uden AI)</summary>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
         <button class="btn btn-outline btn-full" onclick="runDietGenerator()">Skabelon kostplan</button>
         <button class="btn btn-outline btn-full" onclick="runWorkoutGenerator()">Skabelon træning</button>
@@ -3946,11 +3725,16 @@ function runWorkoutGenerator() {
 // CLAUDE AI GENERATORER
 // ════════════════════════════════════════════════════════════════════════════
 
-async function runClaudeDietGenerator() {
-  const apiKey = document.getElementById('claude-api-key')?.value.trim();
-  if (!apiKey) { toast('Indtast Claude API-nøgle', 'err'); return; }
-  localStorage.setItem('claude_api_key', apiKey);
+// AI-kald går via Edge Function "ai-generate" (API-nøglen ligger i Supabase secrets, aldrig i browseren).
+// Returnerer den parsede JSON fra modellen.
+async function aiGenerate(prompt, maxTokens) {
+  const data = await callEdge('ai-generate', { prompt, max_tokens: maxTokens });
+  let text = String(data?.text || '').trim();
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  return JSON.parse(text);
+}
 
+async function runClaudeDietGenerator() {
   const btn = document.getElementById('claude-diet-btn');
   const origText = btn.innerHTML;
   btn.disabled = true;
@@ -4044,27 +3828,7 @@ TILGÆNGELIGE INGREDIENSER (brug NØJAGTIGE navne):
 ${allFoods().map(f => f.n).join(', ')}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 8000, system: 'Du er Hamza El – dansk online coach. Returner altid præcis det JSON-format der beskrives. Ingen forklaringer, ingen markdown, kun valid JSON.', messages: [{ role: 'user', content: prompt }] })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    let text = data.content[0].text.trim();
-    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-
-    const json = JSON.parse(text);
+    const json = await aiGenerate(prompt, 8000);
     if (!Array.isArray(json.slots) || json.slots.length === 0) throw new Error('AI returnerede ingen slots');
 
     let iCnt = 0;
@@ -4221,10 +3985,6 @@ function buildDietPlan() {
 }
 
 async function runClaudeWorkoutGenerator() {
-  const apiKey = document.getElementById('claude-api-key')?.value.trim();
-  if (!apiKey) { toast('Indtast Claude API-nøgle', 'err'); return; }
-  localStorage.setItem('claude_api_key', apiKey);
-
   const btn = document.getElementById('claude-workout-btn');
   const origText = btn.innerHTML;
   btn.disabled = true;
@@ -4296,32 +4056,7 @@ TILGÆNGELIGE ØVELSER:
 ${allExercises().map(e => e.n).join(', ')}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-5',
-        max_tokens: 4096,
-        system: 'Du er Hamza El – dansk online coach. Returner altid præcis det JSON-format der beskrives. Ingen forklaringer, ingen markdown, kun valid JSON.',
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    let text = data.content[0].text.trim();
-    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-
-    const json = JSON.parse(text);
+    const json = await aiGenerate(prompt, 4096);
     if (!Array.isArray(json.days) || json.days.length === 0) throw new Error('AI returnerede ingen træningsdage');
 
     exCnt = 0;
@@ -4348,68 +4083,6 @@ ${allExercises().map(e => e.n).join(', ')}`;
     btn.disabled = false;
     btn.innerHTML = origText;
   }
-}
-
-async function runDiagnostic() {
-  const out = document.getElementById('diag-result');
-  out.innerHTML = 'Tester...';
-
-  function withTimeout(promise, ms = 8000) {
-    return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), ms))]);
-  }
-
-  async function testTable(name, queryFn) {
-    try {
-      const { error } = await withTimeout(queryFn());
-      const ok = !error;
-      return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0">
-        <span style="color:${ok?'var(--green)':'var(--red)'};font-size:1rem">${ok?'✓':'✗'}</span>
-        <span style="font-family:monospace;font-size:.82rem">${name}</span>
-        <span style="color:var(--muted);font-size:.78rem">${ok ? 'OK' : error.message}</span>
-      </div>`;
-    } catch(e) {
-      return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0">
-        <span style="color:var(--red);font-size:1rem">✗</span>
-        <span style="font-family:monospace;font-size:.82rem">${name}</span>
-        <span style="color:var(--muted);font-size:.78rem">${e.message}</span>
-      </div>`;
-    }
-  }
-
-  const tables = [
-    ['profiles',            () => sb.from('profiles').select('id').limit(1)],
-    ['intake_forms',        () => sb.from('intake_forms').select('id').limit(1)],
-    ['client_data',         () => sb.from('client_data').select('id').limit(1)],
-    ['weight_log',          () => sb.from('weight_log').select('id').limit(1)],
-    ['checkins',            () => sb.from('checkins').select('id').limit(1)],
-    ['workout_completions', () => sb.from('workout_completions').select('id').limit(1)],
-    ['strength_logs',       () => sb.from('strength_logs').select('id').limit(1)],
-  ];
-
-  const rows = [];
-  for (const [name, fn] of tables) {
-    rows.push(await testTable(name, fn));
-  }
-
-  // Storage test separat (kan opføre sig anderledes)
-  let storageRow;
-  try {
-    const res = await withTimeout(sb.storage.from('progress-photos').list('', { limit: 1 }));
-    const ok = !res.error;
-    storageRow = `<div style="display:flex;gap:8px;align-items:center;padding:3px 0">
-      <span style="color:${ok?'var(--green)':'var(--red)'};font-size:1rem">${ok?'✓':'✗'}</span>
-      <span style="font-family:monospace;font-size:.82rem">storage: progress-photos</span>
-      <span style="color:var(--muted);font-size:.78rem">${ok ? 'OK' : res.error.message}</span>
-    </div>`;
-  } catch(e) {
-    storageRow = `<div style="display:flex;gap:8px;align-items:center;padding:3px 0">
-      <span style="color:var(--red);font-size:1rem">✗</span>
-      <span style="font-family:monospace;font-size:.82rem">storage: progress-photos</span>
-      <span style="color:var(--muted);font-size:.78rem">${e.message}</span>
-    </div>`;
-  }
-
-  out.innerHTML = '<div style="font-weight:700;margin-bottom:6px;font-size:.8rem">TABELLER</div>' + rows.join('') + storageRow;
 }
 
 function escHtml(str) {
@@ -4634,11 +4307,14 @@ async function renderFotosTab() {
       return;
     }
 
-    const photoCards = files.map(f => {
-      const { data: { publicUrl } } = sb.storage.from(BUCKET).getPublicUrl(`${uid}/${f.name}`);
+    // Bucket'en er PRIVAT — billeder kan kun hentes via signerede URLs (1 times gyldighed).
+    // getPublicUrl gav 404 for alle fotos efter bucket'en blev lukket, og onerror skjulte dem stille.
+    const signed = await Promise.all(files.map(f => sb.storage.from(BUCKET).createSignedUrl(`${uid}/${f.name}`, 3600)));
+    const photoCards = files.map((f, i) => {
+      const url = signed[i]?.data?.signedUrl || '';
       const label = f.name.replace(/\.[^.]+$/, '').replace(/_\d+$/, '').replace(/_/g, ' ');
       return `<div style="display:flex;flex-direction:column;gap:6px">
-        <img src="${publicUrl}" alt="${escHtml(label)}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:var(--r);border:1px solid var(--bdr);background:var(--surf2)" loading="lazy" onerror="this.style.display='none'">
+        <a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${escHtml(label)}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:var(--r);border:1px solid var(--bdr);background:var(--surf2)" loading="lazy"></a>
         <div style="font-size:.78rem;color:var(--muted);text-align:center;text-transform:capitalize">${escHtml(label)}</div>
       </div>`;
     }).join('');
@@ -4653,7 +4329,7 @@ async function renderFotosTab() {
   } catch (err) {
     el.innerHTML = `<div style="padding:16px;color:var(--red);font-size:.85rem">
       Fejl: ${escHtml(err.message)}<br><br>
-      <span style="color:var(--muted)">Sørg for at oprette en Supabase Storage bucket kaldet <strong>progress-photos</strong> og sæt den til public.</span>
+      <span style="color:var(--muted)">Tjek at Storage-bucket'en <strong>progress-photos</strong> findes (privat) og at photo_view-policyen giver coachen adgang.</span>
     </div>`;
   }
 }

@@ -110,7 +110,14 @@ async function sendDailyReminder() {
   const title = c.title || "Dagens vejning";
   const body = c.body || "Husk at logge din vægt i appen 💪";
 
-  const { data: subs } = await supabase.from("push_subscriptions").select("*");
+  // Kun aktive klienter — en der stadig afventer godkendelse skal ikke få daglige påmindelser.
+  // profiles.id ER auth-bruger-id'et (se resten af koden), så det matcher push_subscriptions.user_id.
+  const { data: activeProfiles } = await supabase
+    .from("profiles").select("id").eq("status", "active");
+  const activeIds = new Set((activeProfiles || []).map((p: { id: string }) => p.id));
+
+  const { data: allSubs } = await supabase.from("push_subscriptions").select("*");
+  const subs = (allSubs || []).filter((s: { user_id: string }) => activeIds.has(s.user_id));
   const results = await Promise.allSettled(
     (subs || []).map((s) =>
       webpush.sendNotification(
