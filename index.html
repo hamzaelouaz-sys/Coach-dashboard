@@ -158,6 +158,11 @@ select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg
 .item-table td{padding:6px 8px;border-bottom:1px solid var(--bdr)}
 .item-table tr:last-child td{border-bottom:none}
 .item-table .input{padding:6px 10px;font-size:.83rem}
+.variant-tabs{display:flex;gap:6px;padding:10px 16px 0;flex-wrap:wrap}
+.v-tab{padding:5px 12px;border-radius:999px;border:1px solid var(--bdr);background:var(--surf2);color:var(--muted);font-size:.74rem;font-weight:600;cursor:pointer}
+.v-tab.active{background:var(--gold);color:#000;border-color:var(--gold)}
+.variant-block{padding-top:8px}
+.variant-block-hdr{display:flex;align-items:center;gap:8px;padding:8px 16px;flex-wrap:wrap}
 .add-meal-row{display:flex;gap:10px;align-items:center;padding:14px 16px}
 .day-editor{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
 .day-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
@@ -1271,7 +1276,8 @@ let weightChart = null;
 let dp = { plan_name: 'Personlig kostplan', calories: 2000, protein: 150, carbs: 200, fat: 65, meals: [] };
 let wp = { program_name: 'Styrketræningsplan', days: [] };
 let supp = []; // kosttilskud tildelt den aktuelle klient: [{name,dose,timing,note}]
-let mealCnt = 0, itemCnt = 0, exCnt = 0;
+let mealCnt = 0, itemCnt = 0, exCnt = 0, variantCnt = 0;
+let mealActiveVariant = {}; // meal.id → id på den variant-fane coachen sidst havde åben
 
 // ── Ugemte ændringer + "sidst gemt" (undgår at coachen mister arbejde ved skift af klient/tab) ──
 let lastSaved = { workout: null, diet: null, tilskud: null };
@@ -1284,11 +1290,67 @@ function currentDietPlan() {
   return {
     plan_name: dp.plan_name, calories: dp.calories, protein: dp.protein, carbs: dp.carbs, fat: dp.fat,
     meals: dp.meals.map(m => ({
-      ...m,
-      calories: m.items.reduce((a,i)=>a+(+i.calories||0),0), protein: m.items.reduce((a,i)=>a+(+i.protein||0),0),
-      carbs: m.items.reduce((a,i)=>a+(+i.carbs||0),0), fat: m.items.reduce((a,i)=>a+(+i.fat||0),0),
+      id: m.id, slotKey: m.slotKey, name: m.name, time: m.time,
+      variants: (m.variants || []).map(v => ({
+        id: v.id, label: v.label || '', note: v.note || '', items: v.items,
+        calories: (v.items||[]).reduce((a,i)=>a+(+i.calories||0),0), protein: (v.items||[]).reduce((a,i)=>a+(+i.protein||0),0),
+        carbs: (v.items||[]).reduce((a,i)=>a+(+i.carbs||0),0), fat: (v.items||[]).reduce((a,i)=>a+(+i.fat||0),0),
+      }))
     }))
   };
+}
+
+// Stabil måltids-nøgle der IKKE ændrer sig når coachen omarrangerer måltider
+// (i modsætning til m.id, som genberegnes ud fra rækkefølgen hver gang planen
+// indlæses). Klient-appen bruger denne til at huske hvilken variant klienten
+// har valgt pr. måltid, uafhængigt af drag-and-drop-rækkefølge.
+function genSlotKey() {
+  return 'sk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+// Ældre gemte planer (og AI/skabelon-genererede planer) har måltider som flade
+// objekter ({items, calories, ...} direkte på måltidet). Denne pakker dem ind
+// som første (primære) variant, så al editor-kode kan regne med m.variants.
+function wrapLegacyMeals(meals) {
+  return (meals || []).map(m => {
+    if (m.variants && m.variants.length) return m.slotKey ? m : { ...m, slotKey: genSlotKey() };
+    return {
+      id: m.id, slotKey: m.slotKey || genSlotKey(), name: m.name, time: m.time,
+      variants: [{
+        id: ++variantCnt, label: '', note: m.note || '',
+        calories: m.calories||0, protein: m.protein||0, carbs: m.carbs||0, fat: m.fat||0,
+        items: m.items || []
+      }]
+    };
+  });
+}
+
+// Bruges når en kostplan indlæses fra Supabase (ny klient eller "kopiér fra
+// klient") — sikrer garanteret unikke id'er på måltid/variant/ingrediens (gamle
+// eller AI-genererede planer kan have manglende/ens id'er) og pakker gamle
+// flade måltider ind som én variant, jf. wrapLegacyMeals. slotKey bevares hvis
+// den allerede findes (ellers ville klientens variant-valg blive nulstillet
+// hver gang coachen bare åbner og gemmer planen igen).
+function normalizeMealSlots(rawMeals) {
+  return (rawMeals || []).map(raw => {
+    const rawVariants = (raw.variants && raw.variants.length) ? raw.variants : [{
+      label: '', note: raw.note || '', items: raw.items || [],
+      calories: raw.calories||0, protein: raw.protein||0, carbs: raw.carbs||0, fat: raw.fat||0
+    }];
+    return {
+      id: ++mealCnt,
+      slotKey: raw.slotKey || genSlotKey(),
+      name: raw.name,
+      time: raw.time,
+      variants: rawVariants.map(v => ({
+        id: ++variantCnt,
+        label: v.label || '',
+        note: v.note || '',
+        calories: v.calories||0, protein: v.protein||0, carbs: v.carbs||0, fat: v.fat||0,
+        items: (v.items || []).map(it => ({ ...it, id: ++itemCnt }))
+      }))
+    };
+  });
 }
 function currentSupplements() {
   return supp.filter(s => s.name);
@@ -1763,14 +1825,11 @@ async function openClient(id) {
   // Initialize diet plan editor
   if (currentClientData.diet) {
     dp = { ...currentClientData.diet };
-    // Tildel garanteret unikke id'er til hvert måltid og hver ingrediens.
+    // Tildel garanteret unikke id'er til hvert måltid, variant og hver ingrediens.
     // Gamle/AI-genererede planer kan have manglende eller ens id'er, hvilket
     // fik removeMeal (filter på id) til at slette FLERE måltider på én gang.
-    mealCnt = 0; itemCnt = 0;
-    (dp.meals || []).forEach(m => {
-      m.id = ++mealCnt;
-      (m.items || []).forEach(it => { it.id = ++itemCnt; });
-    });
+    mealCnt = 0; itemCnt = 0; variantCnt = 0;
+    dp.meals = normalizeMealSlots(dp.meals);
   } else {
     // Prefill macro goals from specific columns if they exist
     dp = {
@@ -1781,8 +1840,9 @@ async function openClient(id) {
       fat: clientRow?.fedt_goal || 65,
       meals: []
     };
-    mealCnt = 0; itemCnt = 0;
+    mealCnt = 0; itemCnt = 0; variantCnt = 0;
   }
+  mealActiveVariant = {};
 
   if (currentClientData.workout) {
     wp = { ...currentClientData.workout };
@@ -1849,10 +1909,8 @@ async function confirmCopyPlan() {
   if (copyPlanKind === 'diet') {
     const src = prog.diet;
     if (!src) { toast('Denne klient har ingen kostplan endnu', 'err'); return; }
-    dp = { ...src, meals: (src.meals || []).map(m => ({
-      ...m, id: ++mealCnt,
-      items: (m.items || []).map(it => ({ ...it, id: ++itemCnt }))
-    })) };
+    dp = { ...src, meals: normalizeMealSlots(src.meals) };
+    mealActiveVariant = {};
     renderKostplanTab();
   } else {
     const src = prog.workout;
@@ -2398,11 +2456,11 @@ function renderDietEditor() {
   const el = document.getElementById('diet-editor');
   if (!el) return;
   el.innerHTML = (dp.meals || []).map(meal => renderMealCard(meal)).join('');
-  // Live-opdatering: enhver ændring i et måltid opdaterer både måltidets egen
+  // Live-opdatering: enhver ændring i en variant opdaterer både variantens egen
   // total og det samlede makro-overblik mod planmålene.
   el.oninput = e => {
-    const card = e.target.closest('[data-meal-id]');
-    if (card) refreshMealTotals(card);
+    const block = e.target.closest('.variant-block');
+    if (block) refreshVariantTotals(block);
     refreshPlanSummary();
   };
   enableDragReorder(el, '.meal-ed-card', syncDietDOM);
@@ -2410,14 +2468,26 @@ function renderDietEditor() {
   refreshPlanSummary();
 }
 
-// Samlet makro-overblik: summerer alle måltider i editoren og sammenligner
-// med planmålene (dp-kcal osv.). Farvekodet så coachen med det samme ser om
-// planen rammer det, vi har regnet frem til.
+// Skift hvilken variant-fane der vises for et måltid — ren DOM-manipulation
+// (ingen re-render), så ingen data går tabt, og markerer valget så det huskes
+// ved næste renderDietEditor().
+function switchVariantTab(mealId, variantId) {
+  const card = document.querySelector(`.meal-ed-card[data-meal-id="${mealId}"]`);
+  if (!card) return;
+  card.querySelectorAll('.variant-block').forEach(b => { b.style.display = (+b.dataset.variantId === variantId) ? '' : 'none'; });
+  card.querySelectorAll('.v-tab').forEach(t => t.classList.toggle('active', +t.dataset.variantTab === variantId));
+  mealActiveVariant[mealId] = variantId;
+}
+
+// Samlet makro-overblik: summerer KUN den primære variant (★, første fane) pr.
+// måltid — det er den klienten rammer i dagens total, hvis vedkommende ikke
+// selv har byttet til et alternativ. De øvrige varianter er alternativer med
+// (typisk) lignende kalorietal, og skal ikke lægges oveni.
 function refreshPlanSummary() {
   const el = document.getElementById('plan-summary');
   if (!el) return;
   let cal = 0, pro = 0, carb = 0, fat = 0;
-  document.querySelectorAll('#diet-editor [data-item-id]').forEach(r => {
+  document.querySelectorAll('#diet-editor .variant-block[data-primary="true"] [data-item-id]').forEach(r => {
     cal  += +r.querySelector('.i-cal')?.value  || 0;
     pro  += +r.querySelector('.i-pro')?.value  || 0;
     carb += +r.querySelector('.i-carb')?.value || 0;
@@ -2445,25 +2515,45 @@ function planSummaryCell(label, val, target, unit, tol) {
 }
 
 function renderMealCard(meal) {
-  const totals = (meal.items || []).reduce((a, i) => ({
+  // Selvhelbredende: hvis meal.variants mangler (bør ikke ske efter
+  // normalizeMealSlots/wrapLegacyMeals, men er en billig sikkerhed).
+  if (!meal.variants || !meal.variants.length) {
+    meal.variants = [{ id: ++variantCnt, label: '', note: meal.note||'', items: meal.items||[], calories: meal.calories||0, protein: meal.protein||0, carbs: meal.carbs||0, fat: meal.fat||0 }];
+  }
+  const variants = meal.variants;
+  const activeId = mealActiveVariant[meal.id] || variants[0].id;
+  const primaryTotals = (variants[0].items || []).reduce((a, i) => ({
     cal: a.cal + (+i.calories||0), pro: a.pro + (+i.protein||0),
     carb: a.carb + (+i.carbs||0), fat: a.fat + (+i.fat||0)
   }), { cal: 0, pro: 0, carb: 0, fat: 0 });
-  return `
-    <div class="meal-ed-card" data-meal-id="${meal.id}">
-      <div class="meal-ed-hdr">
-        <span class="drag-handle" draggable="true" title="Træk for at ændre rækkefølge">⠿</span>
-        <input class="input m-name" value="${escHtml(meal.name)}" placeholder="Måltidsnavn" style="max-width:180px;flex-shrink:0">
-        <input class="input m-time" type="time" value="${meal.time||'12:00'}" style="width:105px;flex-shrink:0">
-        <div class="meal-ed-totals">${totals.cal} kcal &bull; ${totals.pro}g P &bull; ${totals.carb}g K &bull; ${totals.fat}g F</div>
-        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();duplicateMeal(${meal.id})">📋 Kopier</button>
-        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeMeal(${meal.id})">✕ Fjern</button>
+
+  const tabsHtml = variants.length > 1 ? `
+    <div class="variant-tabs">
+      ${variants.map((v, i) => {
+        const label = (v.label && v.label.trim()) ? v.label : `Variant ${i+1}`;
+        return `<button type="button" class="v-tab ${v.id===activeId?'active':''}" data-variant-tab="${v.id}"
+                   onclick="switchVariantTab(${meal.id},${v.id})"
+                   ${i===0?'title="Denne variant tæller med i dagens samlede kalorier/makroer øverst"':''}>${i===0?'★ ':''}${escHtml(label)}</button>`;
+      }).join('')}
+    </div>` : '';
+
+  const blocksHtml = variants.map((v, i) => {
+    const totals = (v.items || []).reduce((a, it) => ({
+      cal: a.cal + (+it.calories||0), pro: a.pro + (+it.protein||0),
+      carb: a.carb + (+it.carbs||0), fat: a.fat + (+it.fat||0)
+    }), { cal: 0, pro: 0, carb: 0, fat: 0 });
+    return `
+    <div class="variant-block" data-variant-id="${v.id}" data-primary="${i===0}" style="${v.id===activeId?'':'display:none'}">
+      <div class="variant-block-hdr">
+        <input class="input v-name" value="${escHtml(v.label||'')}" placeholder="${variants.length>1 ? 'Navn på denne variant (fx Havregrød med bær)' : 'Valgfrit navn på retten'}" style="flex:1;min-width:180px">
+        <div class="variant-totals" style="font-size:.78rem;color:var(--muted)">${totals.cal} kcal &bull; ${totals.pro}g P &bull; ${totals.carb}g K &bull; ${totals.fat}g F</div>
+        ${variants.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeVariant(${meal.id},${v.id})">✕ Fjern variant</button>` : ''}
       </div>
       <div style="overflow-x:auto">
         <table class="item-table">
           <thead><tr><th></th><th style="min-width:180px">Fødevare</th><th>Gram</th><th>kcal</th><th>Protein</th><th>Kulh.</th><th>Fedt</th><th></th></tr></thead>
           <tbody>
-            ${(meal.items || []).map(item => {
+            ${(v.items || []).map(item => {
               const gram = item.gram || (parseInt(item.amount) || 0);
               return `
               <tr data-item-id="${item.id}" data-c100="${item.cal100||0}" data-p100="${item.pro100||0}" data-k100="${item.carb100||0}" data-f100="${item.fat100||0}">
@@ -2476,17 +2566,33 @@ function renderMealCard(meal) {
                 <td><input class="input i-pro" type="number" value="${item.protein||0}" min="0" step="0.1" style="width:65px"></td>
                 <td><input class="input i-carb" type="number" value="${item.carbs||0}" min="0" step="0.1" style="width:65px"></td>
                 <td><input class="input i-fat" type="number" value="${item.fat||0}" min="0" step="0.1" style="width:65px"></td>
-                <td><button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeItem(${meal.id},${item.id})">✕</button></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeItem(${meal.id},${v.id},${item.id})">✕</button></td>
               </tr>`;}).join('')}
           </tbody>
         </table>
       </div>
       <div style="padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();addItem(${meal.id})">+ Ingrediens</button>
+        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();addItem(${meal.id},${v.id})">+ Ingrediens</button>
       </div>
       <div style="padding:0 14px 14px">
-        <textarea class="input m-note" rows="2" placeholder="Tilberedningsvejledning til klienten (valgfrit)..." style="font-size:.82rem;resize:vertical;color:var(--muted)">${escHtml(meal.note||'')}</textarea>
+        <textarea class="input v-note" rows="2" placeholder="Tilberedningsvejledning til klienten (valgfrit)..." style="font-size:.82rem;resize:vertical;color:var(--muted)">${escHtml(v.note||'')}</textarea>
       </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="meal-ed-card" data-meal-id="${meal.id}">
+      <div class="meal-ed-hdr">
+        <span class="drag-handle" draggable="true" title="Træk for at ændre rækkefølge">⠿</span>
+        <input class="input m-name" value="${escHtml(meal.name)}" placeholder="Måltidsnavn (fx Morgenmad)" style="max-width:180px;flex-shrink:0">
+        <input class="input m-time" type="time" value="${meal.time||'12:00'}" style="width:105px;flex-shrink:0">
+        <div class="meal-ed-totals">${primaryTotals.cal} kcal &bull; ${primaryTotals.pro}g P &bull; ${primaryTotals.carb}g K &bull; ${primaryTotals.fat}g F</div>
+        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();addVariant(${meal.id})" title="Tilføj endnu en udgave af dette måltid, som klienten selv kan vælge/bytte til i appen">+ Alternativ</button>
+        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();duplicateMeal(${meal.id})">📋 Kopier</button>
+        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeMeal(${meal.id})">✕ Fjern</button>
+      </div>
+      ${tabsHtml}
+      ${blocksHtml}
     </div>`;
 }
 
@@ -2499,67 +2605,97 @@ function syncDietDOM() {
   dp.fat = +v('dp-fat') || dp.fat;
   const mealOrder = Array.from(document.querySelectorAll('#diet-editor [data-meal-id]')).map(el => +el.dataset.mealId);
   if (mealOrder.length) dp.meals.sort((a, b) => mealOrder.indexOf(a.id) - mealOrder.indexOf(b.id));
-  document.querySelectorAll('[data-meal-id]').forEach(card => {
+  document.querySelectorAll('#diet-editor [data-meal-id]').forEach(card => {
     const meal = dp.meals.find(m => m.id === +card.dataset.mealId);
     if (!meal) return;
     meal.name = card.querySelector('.m-name')?.value || meal.name;
     meal.time = card.querySelector('.m-time')?.value || meal.time;
-    meal.note = card.querySelector('.m-note')?.value ?? (meal.note || '');
-    const newItems = [];
-    card.querySelectorAll('[data-item-id]').forEach(row => {
-      newItems.push({
-        id: +row.dataset.itemId,
-        name: row.querySelector('.i-name')?.value || '',
-        gram: +row.querySelector('.i-gram')?.value || 0,
-        cal100: +row.dataset.c100 || 0,
-        pro100: +row.dataset.p100 || 0,
-        carb100: +row.dataset.k100 || 0,
-        fat100: +row.dataset.f100 || 0,
-        calories: +row.querySelector('.i-cal')?.value || 0,
-        protein: +row.querySelector('.i-pro')?.value || 0,
-        carbs: +row.querySelector('.i-carb')?.value || 0,
-        fat: +row.querySelector('.i-fat')?.value || 0,
+    card.querySelectorAll('.variant-block').forEach(block => {
+      const variant = (meal.variants || []).find(vv => vv.id === +block.dataset.variantId);
+      if (!variant) return;
+      variant.label = block.querySelector('.v-name')?.value || '';
+      variant.note = block.querySelector('.v-note')?.value ?? (variant.note || '');
+      const newItems = [];
+      block.querySelectorAll('[data-item-id]').forEach(row => {
+        newItems.push({
+          id: +row.dataset.itemId,
+          name: row.querySelector('.i-name')?.value || '',
+          gram: +row.querySelector('.i-gram')?.value || 0,
+          cal100: +row.dataset.c100 || 0,
+          pro100: +row.dataset.p100 || 0,
+          carb100: +row.dataset.k100 || 0,
+          fat100: +row.dataset.f100 || 0,
+          calories: +row.querySelector('.i-cal')?.value || 0,
+          protein: +row.querySelector('.i-pro')?.value || 0,
+          carbs: +row.querySelector('.i-carb')?.value || 0,
+          fat: +row.querySelector('.i-fat')?.value || 0,
+        });
       });
+      variant.items = newItems;
+      const t = variant.items.reduce((a,i)=>({calories:a.calories+i.calories,protein:a.protein+i.protein,carbs:a.carbs+i.carbs,fat:a.fat+i.fat}),{calories:0,protein:0,carbs:0,fat:0});
+      Object.assign(variant, t);
     });
-    meal.items = newItems;
-    const t = meal.items.reduce((a,i)=>({calories:a.calories+i.calories,protein:a.protein+i.protein,carbs:a.carbs+i.carbs,fat:a.fat+i.fat}),{calories:0,protein:0,carbs:0,fat:0});
-    Object.assign(meal, t);
   });
 }
 
 function addMeal() {
   syncDietDOM();
-  dp.meals.push({ id: ++mealCnt, name: 'Nyt måltid', time: '12:00', calories:0, protein:0, carbs:0, fat:0, items: [] });
+  dp.meals.push({ id: ++mealCnt, slotKey: genSlotKey(), name: 'Nyt måltid', time: '12:00', variants: [{ id: ++variantCnt, label:'', note:'', calories:0, protein:0, carbs:0, fat:0, items: [] }] });
   renderDietEditor();
 }
 
 function removeMeal(id) {
   dp.meals = dp.meals.filter(m => m.id !== id);
+  delete mealActiveVariant[id];
   renderDietEditor();
 }
 
 function duplicateMeal(mealId) {
   const src = dp.meals.find(m => m.id === mealId);
   if (!src) return;
+  const newId = ++mealCnt;
   dp.meals.push({
     ...src,
-    id: ++mealCnt,
+    id: newId,
+    slotKey: genSlotKey(),
     name: src.name + ' (kopi)',
-    items: (src.items || []).map(i => ({ ...i, id: ++itemCnt })),
+    variants: (src.variants || []).map(v => ({ ...v, id: ++variantCnt, items: (v.items || []).map(i => ({ ...i, id: ++itemCnt })) })),
   });
   renderDietEditor();
   toast(`${src.name}: kopieret ✓`, 'ok');
 }
 
-function addItem(mealId) {
+// Tilføjer en ny, tom variant (alternativ udgave) til et måltid — klienten kan
+// selv vælge mellem alle varianter i sin app; kun den første (★) tæller med i
+// planens samlede kalorie-/makrototal ovenfor.
+function addVariant(mealId) {
   const meal = dp.meals.find(m => m.id === mealId);
-  if (meal) meal.items.push({ id: ++itemCnt, name:'', gram:0, cal100:0, pro100:0, carb100:0, fat100:0, calories:0, protein:0, carbs:0, fat:0 });
+  if (!meal) return;
+  const v = { id: ++variantCnt, label: '', note: '', calories:0, protein:0, carbs:0, fat:0, items: [] };
+  meal.variants.push(v);
+  mealActiveVariant[mealId] = v.id;
   renderDietEditor();
 }
 
-function removeItem(mealId, itemId) {
+function removeVariant(mealId, variantId) {
   const meal = dp.meals.find(m => m.id === mealId);
-  if (meal) meal.items = meal.items.filter(i => i.id !== itemId);
+  if (!meal || meal.variants.length <= 1) return;
+  meal.variants = meal.variants.filter(v => v.id !== variantId);
+  delete mealActiveVariant[mealId];
+  renderDietEditor();
+}
+
+function addItem(mealId, variantId) {
+  const meal = dp.meals.find(m => m.id === mealId);
+  const variant = meal?.variants.find(v => v.id === variantId);
+  if (variant) variant.items.push({ id: ++itemCnt, name:'', gram:0, cal100:0, pro100:0, carb100:0, fat100:0, calories:0, protein:0, carbs:0, fat:0 });
+  renderDietEditor();
+}
+
+function removeItem(mealId, variantId, itemId) {
+  const meal = dp.meals.find(m => m.id === mealId);
+  const variant = meal?.variants.find(v => v.id === variantId);
+  if (variant) variant.items = variant.items.filter(i => i.id !== itemId);
   renderDietEditor();
 }
 
@@ -2571,11 +2707,14 @@ async function saveDietPlan() {
       plan_name: dp.plan_name,
       calories: dp.calories, protein: dp.protein, carbs: dp.carbs, fat: dp.fat,
       meals: dp.meals.map(m => ({
-        ...m,
-        calories: m.items.reduce((a,i)=>a+(+i.calories||0),0),
-        protein: m.items.reduce((a,i)=>a+(+i.protein||0),0),
-        carbs: m.items.reduce((a,i)=>a+(+i.carbs||0),0),
-        fat: m.items.reduce((a,i)=>a+(+i.fat||0),0),
+        id: m.id, slotKey: m.slotKey, name: m.name, time: m.time,
+        variants: (m.variants || []).map(v => ({
+          id: v.id, label: v.label || '', note: v.note || '', items: v.items,
+          calories: (v.items||[]).reduce((a,i)=>a+(+i.calories||0),0),
+          protein: (v.items||[]).reduce((a,i)=>a+(+i.protein||0),0),
+          carbs: (v.items||[]).reduce((a,i)=>a+(+i.carbs||0),0),
+          fat: (v.items||[]).reduce((a,i)=>a+(+i.fat||0),0),
+        }))
       }))
     };
 
@@ -3366,20 +3505,26 @@ function setItemMacros(row, g, cal100, pro100, carb100, fat100) {
   row.querySelector('.i-pro').value = +(pro100 * f).toFixed(1);
   row.querySelector('.i-carb').value = +(carb100 * f).toFixed(1);
   row.querySelector('.i-fat').value = +(fat100 * f).toFixed(1);
-  refreshMealTotals(row.closest('[data-meal-id]'));
+  refreshVariantTotals(row.closest('.variant-block'));
 }
 
-function refreshMealTotals(card) {
-  if (!card) return;
+function refreshVariantTotals(block) {
+  if (!block) return;
   let cal=0,pro=0,carb=0,fat=0;
-  card.querySelectorAll('[data-item-id]').forEach(r => {
+  block.querySelectorAll('[data-item-id]').forEach(r => {
     cal += +r.querySelector('.i-cal')?.value||0;
     pro += +r.querySelector('.i-pro')?.value||0;
     carb += +r.querySelector('.i-carb')?.value||0;
     fat += +r.querySelector('.i-fat')?.value||0;
   });
-  const tot = card.querySelector('.meal-ed-totals');
-  if (tot) tot.textContent = `${Math.round(cal)} kcal · ${+pro.toFixed(1)}g P · ${+carb.toFixed(1)}g K · ${+fat.toFixed(1)}g F`;
+  const txt = `${Math.round(cal)} kcal · ${+pro.toFixed(1)}g P · ${+carb.toFixed(1)}g K · ${+fat.toFixed(1)}g F`;
+  const tot = block.querySelector('.variant-totals');
+  if (tot) tot.textContent = txt;
+  // Den primære variant (★) styrer også totalen i måltidets header-linje.
+  if (block.dataset.primary === 'true') {
+    const hdrTot = block.closest('.meal-ed-card')?.querySelector('.meal-ed-totals');
+    if (hdrTot) hdrTot.textContent = txt;
+  }
 }
 
 document.addEventListener('click', e => {
@@ -3558,6 +3703,8 @@ function runDietGenerator() {
     return { id:++mealCnt, name:meal.name, time:meal.time, items,
              calories:Math.round(tot.cal), protein:+tot.pro.toFixed(1), carbs:+tot.carb.toFixed(1), fat:+tot.fat.toFixed(1) };
   });
+  dp.meals = wrapLegacyMeals(dp.meals);
+  mealActiveVariant = {};
 
   document.getElementById('gen-modal').classList.add('hidden');
   switchTab('kostplan', null);
@@ -3982,7 +4129,8 @@ function buildDietPlan() {
   itemCnt = scaledMeals.reduce((mx, x) => Math.max(mx, ...x.items.map(i => i.id), 0), 0);
   dp.calories = m.cal; dp.protein = m.pro; dp.carbs = m.carb; dp.fat = m.fat;
   dp.plan_name = 'AI Kostplan';
-  dp.meals = scaledMeals;
+  dp.meals = wrapLegacyMeals(scaledMeals);
+  mealActiveVariant = {};
   document.getElementById('gen-modal').classList.add('hidden');
   switchTab('kostplan', null);
   renderDietEditor();
